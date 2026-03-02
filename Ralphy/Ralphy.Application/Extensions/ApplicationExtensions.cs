@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using Ralphy.Application.Mappings;
 using System.Reflection;
 
 namespace Ralphy.Application.Extensions
@@ -9,7 +10,10 @@ namespace Ralphy.Application.Extensions
         public static IServiceCollection AddApplication(
             this IServiceCollection services)
         {
-            // Register all validators in Ralphy.Application assembly
+            // AutoMapper
+            services.AddAutoMapper(typeof(MappingProfile));
+
+            // FluentValidation
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
             return services;

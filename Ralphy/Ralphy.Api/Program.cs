@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -13,6 +14,7 @@ Log.Logger = new LoggerConfiguration()
 
 try
 {
+
     var builder = WebApplication.CreateBuilder(args);
 
     // Use full Serilog config from appsettings.json
@@ -59,6 +61,10 @@ try
     builder.Services.AddApplication();
 
     var app = builder.Build();
+
+    // Temporary - verify AutoMapper config
+    var mapper = app.Services.GetRequiredService<IMapper>();
+    mapper.ConfigurationProvider.AssertConfigurationIsValid();
 
     // Auto migrate on startup
     using (var scope = app.Services.CreateScope())
