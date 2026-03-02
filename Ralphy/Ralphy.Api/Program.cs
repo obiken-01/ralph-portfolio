@@ -4,19 +4,22 @@ using Ralphy.Infrastructure.Extensions;
 using Ralphy.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
-// Serilog must be configured BEFORE builder
+// Configure Serilog from appsettings.json
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
-    .WriteTo.File("logs/ralphy-.log", rollingInterval: RollingInterval.Day)
-    .CreateLogger();
+    .CreateBootstrapLogger();
 
 try
 {
     var builder = WebApplication.CreateBuilder(args);
 
-    builder.Host.UseSerilog();
+    // Use full Serilog config from appsettings.json
+    builder.Host.UseSerilog((context, services, configuration) =>
+        configuration
+            .ReadFrom.Configuration(context.Configuration)
+            .ReadFrom.Services(services)
+            .Enrich.FromLogContext());
 
-    // Add services to the container
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(c =>
@@ -42,7 +45,13 @@ try
         db.Database.Migrate();
     }
 
-    // Enable Swagger in Development
+    // Request logging
+    app.UseSerilogRequestLogging(options =>
+    {
+        options.MessageTemplate =
+            "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000}ms";
+    });
+
     if (app.Environment.IsDevelopment())
     {
         app.UseSwagger();
@@ -57,11 +66,12 @@ try
     app.UseAuthorization();
     app.MapControllers();
 
+    Log.Information("Ralphy API is starting...");
+
     app.Run();
 }
 catch (Exception ex)
 {
-    // Catch startup errors and log them
     Log.Fatal(ex, "Application failed to start");
 }
 finally
