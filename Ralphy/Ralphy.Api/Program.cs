@@ -1,8 +1,10 @@
-using Microsoft.OpenApi.Models;
-using Serilog;
-using Ralphy.Infrastructure.Extensions;
-using Ralphy.Infrastructure.Data;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
+using Ralphy.Application.Extensions;
+using Ralphy.Infrastructure.Data;
+using Ralphy.Infrastructure.Extensions;
+using Serilog;
 
 // Configure Serilog from appsettings.json
 Log.Logger = new LoggerConfiguration()
@@ -20,7 +22,27 @@ try
             .ReadFrom.Services(services)
             .Enrich.FromLogContext());
 
-    builder.Services.AddControllers();
+    // Controllers with validation config
+    builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var errors = context.ModelState
+                .Where(e => e.Value?.Errors.Count > 0)
+                .SelectMany(e => e.Value!.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+
+            return new BadRequestObjectResult(new
+            {
+                StatusCode = 400,
+                Message = "Validation failed",
+                Errors = errors
+            });
+        };
+    });
+
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(c =>
     {
@@ -34,6 +56,7 @@ try
 
     // Register Infrastructure
     builder.Services.AddInfrastructure(builder.Configuration);
+    builder.Services.AddApplication();
 
     var app = builder.Build();
 
