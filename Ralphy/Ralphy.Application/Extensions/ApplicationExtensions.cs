@@ -1,6 +1,8 @@
 ﻿using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Ralphy.Application.Mappings;
+using Ralphy.Application.Services;
+using Ralphy.Application.Services.Interfaces;
 using System.Reflection;
 
 namespace Ralphy.Application.Extensions
@@ -15,6 +17,9 @@ namespace Ralphy.Application.Extensions
 
             // FluentValidation
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+
+            // Services
+            services.AddScoped<IAuthService, AuthService>();
 
             return services;
         }

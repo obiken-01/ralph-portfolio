@@ -14,6 +14,7 @@ namespace Ralphy.Infrastructure.Data
         public IPhotoRepository Photos { get; }
         public ICommentRepository Comments { get; }
         public ILocationRepository Locations { get; }
+        public IRefreshTokenRepository RefreshTokens { get; }
 
         public UnitOfWork(AppDbContext context)
         {
@@ -24,6 +25,7 @@ namespace Ralphy.Infrastructure.Data
             Photos = new PhotoRepository(context);
             Comments = new CommentRepository(context);
             Locations = new LocationRepository(context);
+            RefreshTokens = new RefreshTokenRepository(context);
         }
 
         public async Task<int> SaveChangesAsync() =>

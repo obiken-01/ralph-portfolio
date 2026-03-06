@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Ralphy.Domain.Interfaces;
 using Ralphy.Infrastructure.Data;
+using Ralphy.Infrastructure.Services;
 
 namespace Ralphy.Infrastructure.Extensions
 {
@@ -18,6 +19,12 @@ namespace Ralphy.Infrastructure.Extensions
 
             // Unit of Work
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+            // Token Service
+            services.AddScoped<ITokenService, TokenService>();
+
+            // Password Service
+            services.AddScoped<IPasswordService, PasswordService>();
 
             return services;
         }

@@ -11,6 +11,8 @@ namespace Ralphy.Domain.Interfaces
         ICommentRepository Comments { get; }
         ILocationRepository Locations { get; }
 
+        IRefreshTokenRepository RefreshTokens { get; }
+
         Task<int> SaveChangesAsync();
     }
 }
