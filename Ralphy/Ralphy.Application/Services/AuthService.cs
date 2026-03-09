@@ -70,8 +70,43 @@ namespace Ralphy.Application.Services
             };
         }
 
-        public Task<LoginResponseDto> LoginAsync(LoginRequestDto request)
-            => throw new NotImplementedException();
+        public async Task<LoginResponseDto> LoginAsync(LoginRequestDto request)
+        {
+            // Find user by email
+            var user = await _unitOfWork.Users.GetByEmailAsync(request.Email);
+            if (user == null)
+                throw new UnauthorizedAccessException("Invalid email or password");
+
+            // Verify password
+            if (!_passwordService.VerifyPassword(request.Password, user.PasswordHash))
+                throw new UnauthorizedAccessException("Invalid email or password");
+
+            // Revoke all existing refresh tokens
+            await _unitOfWork.RefreshTokens.RevokeAllUserTokensAsync(user.Id);
+
+            // Generate new tokens
+            var accessToken = _tokenService.GenerateAccessToken(user);
+            var refreshToken = _tokenService.GenerateRefreshToken();
+
+            // Save new refresh token
+            var refreshTokenEntity = new RefreshToken
+            {
+                Token = refreshToken,
+                UserId = user.Id,
+                ExpiresAt = DateTime.UtcNow.AddDays(7)
+            };
+
+            await _unitOfWork.RefreshTokens.AddAsync(refreshTokenEntity);
+            await _unitOfWork.SaveChangesAsync();
+
+            return new LoginResponseDto
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(15),
+                User = _mapper.Map<UserDto>(user)
+            };
+        }
 
         public Task<LoginResponseDto> RefreshTokenAsync(RefreshTokenRequestDto request)
             => throw new NotImplementedException();
