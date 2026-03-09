@@ -2,6 +2,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Ralphy.Api.Middleware;
 using Ralphy.Application.Extensions;
 using Ralphy.Infrastructure.Data;
 using Ralphy.Infrastructure.Extensions;
@@ -54,6 +55,32 @@ try
             Version = "v1",
             Description = "Personal Travel Blog API for Ralphy"
         });
+
+        // Add JWT auth to Swagger
+        c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "Bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description = "Enter your JWT token. Example: eyJhbGci..."
+        });
+
+        c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
     });
 
     // Register Infrastructure
@@ -74,6 +101,9 @@ try
         db.Database.Migrate();
     }
 
+    // Global exception handling
+    app.UseMiddleware<ExceptionMiddleware>();
+
     // Request logging
     app.UseSerilogRequestLogging(options =>
     {
@@ -92,6 +122,7 @@ try
     }
 
     app.UseHttpsRedirection();
+    app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
 

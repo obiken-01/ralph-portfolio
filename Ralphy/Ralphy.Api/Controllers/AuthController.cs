@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Ralphy.Application.DTOs.Auth;
 using Ralphy.Application.Services.Interfaces;
@@ -144,6 +145,25 @@ namespace Ralphy.Api.Controllers
                     Message = ex.Message
                 });
             }
+        }
+
+        [Authorize]
+        [HttpGet("me")]
+        public IActionResult Me()
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst("sub")?.Value;
+            var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                ?? User.FindFirst("email")?.Value;
+            var username = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                ?? User.FindFirst("unique_name")?.Value;
+
+            return Ok(new
+            {
+                UserId = userId,
+                Email = email,
+                Username = username
+            });
         }
     }
 }
