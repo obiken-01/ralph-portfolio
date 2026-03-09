@@ -85,5 +85,65 @@ namespace Ralphy.Api.Controllers
                 });
             }
         }
+
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequestDto request)
+        {
+            if (string.IsNullOrEmpty(request.RefreshToken))
+            {
+                return BadRequest(new
+                {
+                    StatusCode = 400,
+                    Message = "Refresh token is required"
+                });
+            }
+
+            try
+            {
+                var result = await _authService.RefreshTokenAsync(request);
+                _logger.LogInformation("Token refreshed successfully");
+                return Ok(result);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new
+                {
+                    StatusCode = 401,
+                    Message = ex.Message
+                });
+            }
+        }
+
+        [HttpPost("revoke")]
+        public async Task<IActionResult> Revoke([FromBody] RefreshTokenRequestDto request)
+        {
+            if (string.IsNullOrEmpty(request.RefreshToken))
+            {
+                return BadRequest(new
+                {
+                    StatusCode = 400,
+                    Message = "Refresh token is required"
+                });
+            }
+
+            try
+            {
+                await _authService.RevokeTokenAsync(request.RefreshToken);
+                _logger.LogInformation("Token revoked successfully");
+                return Ok(new
+                {
+                    StatusCode = 200,
+                    Message = "Token revoked successfully"
+                });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new
+                {
+                    StatusCode = 401,
+                    Message = ex.Message
+                });
+            }
+        }
     }
 }

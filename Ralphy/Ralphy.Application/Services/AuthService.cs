@@ -108,10 +108,73 @@ namespace Ralphy.Application.Services
             };
         }
 
-        public Task<LoginResponseDto> RefreshTokenAsync(RefreshTokenRequestDto request)
-            => throw new NotImplementedException();
+        public async Task<LoginResponseDto> RefreshTokenAsync(RefreshTokenRequestDto request)
+        {
+            // Find refresh token in DB
+            var refreshToken = await _unitOfWork.RefreshTokens
+                .GetByTokenAsync(request.RefreshToken);
 
-        public Task RevokeTokenAsync(string refreshToken)
-            => throw new NotImplementedException();
+            // Validate refresh token
+            if (refreshToken == null)
+                throw new UnauthorizedAccessException("Invalid refresh token");
+
+            if (refreshToken.IsExpired)
+                throw new UnauthorizedAccessException("Refresh token has expired");
+
+            if (refreshToken.IsRevoked)
+                throw new UnauthorizedAccessException("Refresh token has been revoked");
+
+            // Get user
+            var user = refreshToken.User;
+            if (user == null)
+                throw new UnauthorizedAccessException("User not found");
+
+            // Revoke old refresh token
+            refreshToken.RevokedAt = DateTime.UtcNow;
+
+            // Generate new tokens
+            var newAccessToken = _tokenService.GenerateAccessToken(user);
+            var newRefreshToken = _tokenService.GenerateRefreshToken();
+
+            // Link old token to new token (for token rotation tracking)
+            refreshToken.ReplacedByToken = newRefreshToken;
+            await _unitOfWork.RefreshTokens.UpdateAsync(refreshToken);
+
+            // Save new refresh token
+            var newRefreshTokenEntity = new RefreshToken
+            {
+                Token = newRefreshToken,
+                UserId = user.Id,
+                ExpiresAt = DateTime.UtcNow.AddDays(7)
+            };
+
+            await _unitOfWork.RefreshTokens.AddAsync(newRefreshTokenEntity);
+            await _unitOfWork.SaveChangesAsync();
+
+            return new LoginResponseDto
+            {
+                AccessToken = newAccessToken,
+                RefreshToken = newRefreshToken,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(15),
+                User = _mapper.Map<UserDto>(user)
+            };
+        }
+
+        public async Task RevokeTokenAsync(string refreshToken)
+        {
+            var token = await _unitOfWork.RefreshTokens
+                .GetByTokenAsync(refreshToken);
+
+            if (token == null)
+                throw new UnauthorizedAccessException("Invalid refresh token");
+
+            if (!token.IsActive)
+                throw new UnauthorizedAccessException("Refresh token is already inactive");
+
+            // Revoke token
+            token.RevokedAt = DateTime.UtcNow;
+            await _unitOfWork.RefreshTokens.UpdateAsync(token);
+            await _unitOfWork.SaveChangesAsync();
+        }
     }
 }
