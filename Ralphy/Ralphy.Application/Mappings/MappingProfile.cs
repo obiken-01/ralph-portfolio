@@ -39,6 +39,10 @@ namespace Ralphy.Application.Mappings
                 .ForMember(dest => dest.Locations, opt => opt.Ignore())
                 .ForMember(dest => dest.Status, opt => opt.Ignore());
 
+            CreateMap<Trip, TripWithPostsDto>()
+                .ForMember(dest => dest.Posts, opt => opt.MapFrom(src => src.Posts))
+                .ForMember(dest => dest.Locations, opt => opt.MapFrom(src => src.Locations));
+
             // Post mappings
             CreateMap<Post, PostDto>();
             CreateMap<CreatePostDto, Post>()
