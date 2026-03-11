@@ -70,6 +70,15 @@ namespace Ralphy.Application.Mappings
                 .ForMember(dest => dest.ViewCount, opt => opt.Ignore())
                 .ForMember(dest => dest.PublishedAt, opt => opt.Ignore());
 
+            CreateMap<Post, PostWithDetailsDto>()
+                .ForMember(dest => dest.Photos,
+                    opt => opt.MapFrom(src => src.Photos))
+                .ForMember(dest => dest.Comments,
+                    opt => opt.MapFrom(src => src.Comments))
+                .ForMember(dest => dest.Tags,
+                    opt => opt.MapFrom(src =>
+                        src.PostTags.Select(pt => pt.Tag.Name).ToList()));
+
             // Photo mappings
             CreateMap<Photo, PhotoDto>();
 
