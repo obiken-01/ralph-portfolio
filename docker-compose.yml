@@ -49,8 +49,8 @@ services:
       ACCEPT_EULA: Y
       SEQ_FIRSTRUN_NOAUTHENTICATION: true
     ports:
-      - "5341:80"      # Seq web UI → http://localhost:5341
-      - "5342:5341"    # Seq ingestion
+      - "5441:80"      # Seq web UI → http://localhost:5441
+      - "5442:5341"    # Seq ingestion
     volumes:
       - seqdata:/data
     healthcheck:
