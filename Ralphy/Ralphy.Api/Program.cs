@@ -11,6 +11,7 @@ using Serilog;
 // Configure Serilog from appsettings.json
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
+    .WriteTo.Seq("http://seq:5341")
     .CreateBootstrapLogger();
 
 try

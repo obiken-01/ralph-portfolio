@@ -16,8 +16,11 @@ services:
       - Cloudinary__CloudName=${CLOUDINARY_CLOUD_NAME}
       - Cloudinary__ApiKey=${CLOUDINARY_API_KEY}
       - Cloudinary__ApiSecret=${CLOUDINARY_API_SECRET}
+      - Seq__ServerUrl=http://seq:5341
     depends_on:
       db:
+        condition: service_healthy
+      seq:
         condition: service_healthy
     restart: unless-stopped
 
@@ -39,5 +42,24 @@ services:
       retries: 5
     restart: unless-stopped
 
+  seq:
+    image: datalust/seq:latest
+    container_name: ralphy-seq
+    environment:
+      ACCEPT_EULA: Y
+      SEQ_FIRSTRUN_NOAUTHENTICATION: true
+    ports:
+      - "5341:80"      # Seq web UI → http://localhost:5341
+      - "5342:5341"    # Seq ingestion
+    volumes:
+      - seqdata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/api || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
 volumes:
   pgdata:
+  seqdata:
