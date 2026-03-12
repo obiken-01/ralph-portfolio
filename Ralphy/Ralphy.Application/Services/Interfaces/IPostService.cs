@@ -10,7 +10,7 @@ namespace Ralphy.Application.Services.Interfaces
 
         Task<PostDto?> GetByIdAsync(int id);
 
-        Task<PostDto?> GetPostWithDetailsAsync(int id);
+        Task<PostWithDetailsDto?> GetPostWithDetailsAsync(int id);
 
         Task<IEnumerable<PostDto>> GetByTripIdAsync(int tripId);
 

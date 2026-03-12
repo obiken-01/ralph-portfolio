@@ -4,6 +4,7 @@ using Ralphy.Application.DTOs.Comments;
 using Ralphy.Application.DTOs.Locations;
 using Ralphy.Application.DTOs.Photos;
 using Ralphy.Application.DTOs.Posts;
+using Ralphy.Application.DTOs.Tags;
 using Ralphy.Application.DTOs.Trips;
 using Ralphy.Domain.Entities;
 
@@ -78,6 +79,14 @@ namespace Ralphy.Application.Mappings
                 .ForMember(dest => dest.Tags,
                     opt => opt.MapFrom(src =>
                         src.PostTags.Select(pt => pt.Tag.Name).ToList()));
+
+            // Tag mappings
+            CreateMap<Tag, TagDto>();
+            CreateMap<CreateTagDto, Tag>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.PostTags, opt => opt.Ignore());
 
             // Photo mappings
             CreateMap<Photo, PhotoDto>();

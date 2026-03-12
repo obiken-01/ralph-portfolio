@@ -15,6 +15,8 @@ namespace Ralphy.Infrastructure.Data
         public ICommentRepository Comments { get; }
         public ILocationRepository Locations { get; }
         public IRefreshTokenRepository RefreshTokens { get; }
+        public ITagRepository Tags { get; }
+        public IPostTagRepository PostTags { get; }
 
         public UnitOfWork(AppDbContext context)
         {
@@ -26,6 +28,8 @@ namespace Ralphy.Infrastructure.Data
             Comments = new CommentRepository(context);
             Locations = new LocationRepository(context);
             RefreshTokens = new RefreshTokenRepository(context);
+            Tags = new TagRepository(context);
+            PostTags = new PostTagRepository(context);
         }
 
         public async Task<int> SaveChangesAsync() =>

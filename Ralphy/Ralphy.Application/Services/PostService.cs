@@ -39,13 +39,13 @@ namespace Ralphy.Application.Services
             return _mapper.Map<PostDto>(post);
         }
 
-        public async Task<PostDto?> GetPostWithDetailsAsync(int id)
+        public async Task<PostWithDetailsDto?> GetPostWithDetailsAsync(int id)
         {
             var post = await _unitOfWork.Posts.GetPostWithDetailsAsync(id);
             if (post == null)
                 throw new KeyNotFoundException($"Post with ID {id} not found");
 
-            return _mapper.Map<PostDto>(post);
+            return _mapper.Map<PostWithDetailsDto>(post);
         }
 
         public async Task<IEnumerable<PostDto>> GetByTripIdAsync(int tripId)

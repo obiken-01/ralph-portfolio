@@ -13,6 +13,9 @@ namespace Ralphy.Domain.Interfaces
 
         IRefreshTokenRepository RefreshTokens { get; }
 
+        ITagRepository Tags { get; }
+        IPostTagRepository PostTags { get; }
+
         Task<int> SaveChangesAsync();
     }
 }
