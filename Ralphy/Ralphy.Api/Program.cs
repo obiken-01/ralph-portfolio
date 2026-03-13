@@ -88,6 +88,17 @@ try
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddApplication();
 
+    // Allow large file uploads (100MB for videos)
+    builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+    {
+        options.MultipartBodyLengthLimit = 100 * 1024 * 1024; // 100MB
+    });
+
+    builder.WebHost.ConfigureKestrel(options =>
+    {
+        options.Limits.MaxRequestBodySize = 100 * 1024 * 1024; // 100MB
+    });
+
     var app = builder.Build();
 
     // Temporary - verify AutoMapper config

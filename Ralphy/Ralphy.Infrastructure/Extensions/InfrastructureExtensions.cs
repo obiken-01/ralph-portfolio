@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using CloudinaryDotNet;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -7,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using Ralphy.Domain.Interfaces;
 using Ralphy.Infrastructure.Data;
 using Ralphy.Infrastructure.Services;
+using Ralphy.Infrastructure.Settings;
 using System.Text;
 
 namespace Ralphy.Infrastructure.Extensions
@@ -72,6 +74,21 @@ namespace Ralphy.Infrastructure.Extensions
             });
 
             services.AddAuthorization();
+
+            // Add after Password Service registration
+            services.Configure<CloudinarySettings>(
+                configuration.GetSection("Cloudinary"));
+
+            var cloudinarySettings = new CloudinarySettings();
+            configuration.GetSection("Cloudinary").Bind(cloudinarySettings);
+
+            var cloudinaryAccount = new Account(
+                cloudinarySettings.CloudName,
+                cloudinarySettings.ApiKey,
+                cloudinarySettings.ApiSecret);
+
+            services.AddSingleton(new Cloudinary(cloudinaryAccount));
+            services.AddScoped<ICloudinaryService, CloudinaryService>();
 
             return services;
         }
