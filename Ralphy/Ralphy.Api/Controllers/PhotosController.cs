@@ -118,5 +118,35 @@ namespace Ralphy.Api.Controllers
                 return Unauthorized(new { StatusCode = 401, Message = ex.Message });
             }
         }
+
+        [HttpGet("post/{postId}/phone")]
+        public async Task<IActionResult> GetPhonePhotos(int postId)
+        {
+            try
+            {
+                var photos = await _photoService.GetBySourceAsync(
+                    postId, MediaSource.Phone);
+                return Ok(photos);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { StatusCode = 404, Message = ex.Message });
+            }
+        }
+
+        [HttpGet("post/{postId}/drone")]
+        public async Task<IActionResult> GetDronePhotos(int postId)
+        {
+            try
+            {
+                var photos = await _photoService.GetBySourceAsync(
+                    postId, MediaSource.Drone);
+                return Ok(photos);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { StatusCode = 404, Message = ex.Message });
+            }
+        }
     }
 }

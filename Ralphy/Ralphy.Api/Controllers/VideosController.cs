@@ -122,5 +122,35 @@ namespace Ralphy.Api.Controllers
                 return BadRequest(new { StatusCode = 400, Message = ex.Message });
             }
         }
+
+        [HttpGet("post/{postId}/phone")]
+        public async Task<IActionResult> GetPhoneVideos(int postId)
+        {
+            try
+            {
+                var videos = await _videoService.GetBySourceAsync(
+                    postId, MediaSource.Phone);
+                return Ok(videos);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { StatusCode = 404, Message = ex.Message });
+            }
+        }
+
+        [HttpGet("post/{postId}/drone")]
+        public async Task<IActionResult> GetDroneVideos(int postId)
+        {
+            try
+            {
+                var videos = await _videoService.GetBySourceAsync(
+                    postId, MediaSource.Drone);
+                return Ok(videos);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { StatusCode = 404, Message = ex.Message });
+            }
+        }
     }
 }

@@ -15,6 +15,8 @@ namespace Ralphy.Application.Services.Interfaces
 
         Task<IEnumerable<PhotoDto>> GetByPostIdAsync(int postId);
 
+        Task<IEnumerable<PhotoDto>> GetBySourceAsync(int postId, MediaSource source);
+
         Task DeleteAsync(int id, int userId);
     }
 }

@@ -77,7 +77,9 @@ namespace Ralphy.Application.Services
                 throw new KeyNotFoundException($"Post with ID {postId} not found");
 
             var photos = await _unitOfWork.Photos.GetByPostIdAsync(postId);
-            return _mapper.Map<IEnumerable<PhotoDto>>(photos);
+
+            return _mapper.Map<IEnumerable<PhotoDto>>(
+                photos.Where(p => p.Type == MediaType.Image));
         }
 
         public async Task DeleteAsync(int id, int userId)
@@ -102,6 +104,23 @@ namespace Ralphy.Application.Services
             // Delete from DB
             await _unitOfWork.Photos.DeleteAsync(photo);
             await _unitOfWork.SaveChangesAsync();
+        }
+
+        public async Task<IEnumerable<PhotoDto>> GetBySourceAsync(
+            int postId, MediaSource source)
+        {
+            var post = await _unitOfWork.Posts.GetByIdAsync(postId);
+            if (post == null)
+                throw new KeyNotFoundException($"Post with ID {postId} not found");
+
+            var photos = await _unitOfWork.Photos.GetByPostIdAsync(postId);
+
+            // Filter by source and type Image only
+            var filtered = photos.Where(p =>
+                p.Source == source &&
+                p.Type == MediaType.Image);
+
+            return _mapper.Map<IEnumerable<PhotoDto>>(filtered);
         }
     }
 }

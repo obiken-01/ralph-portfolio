@@ -102,5 +102,22 @@ namespace Ralphy.Application.Services
             await _unitOfWork.Photos.DeleteAsync(video);
             await _unitOfWork.SaveChangesAsync();
         }
+
+        public async Task<IEnumerable<PhotoDto>> GetBySourceAsync(
+            int postId, MediaSource source)
+        {
+            var post = await _unitOfWork.Posts.GetByIdAsync(postId);
+            if (post == null)
+                throw new KeyNotFoundException($"Post with ID {postId} not found");
+
+            var photos = await _unitOfWork.Photos.GetByPostIdAsync(postId);
+
+            // Filter by source and type Video only
+            var filtered = photos.Where(p =>
+                p.Source == source &&
+                p.Type == MediaType.Video);
+
+            return _mapper.Map<IEnumerable<PhotoDto>>(filtered);
+        }
     }
 }
