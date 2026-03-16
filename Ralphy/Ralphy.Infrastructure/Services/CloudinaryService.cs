@@ -85,8 +85,11 @@ namespace Ralphy.Infrastructure.Services
                 Folder = folder,
                 PublicId = publicId,
                 Overwrite = true,
-                Transformation = new Transformation()
-                    .Quality("auto")
+                EagerAsync = true,
+                EagerTransforms = new List<Transformation>
+                {
+                    new Transformation().Quality("auto")
+                }
             };
 
             var result = await _cloudinary.UploadAsync(uploadParams);

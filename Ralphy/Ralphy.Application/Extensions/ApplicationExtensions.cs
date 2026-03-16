@@ -26,6 +26,7 @@ namespace Ralphy.Application.Extensions
             services.AddScoped<ILocationService, LocationService>();
             services.AddScoped<ICommentService, CommentService>();
             services.AddScoped<IPhotoService, PhotoService>();
+            services.AddScoped<IVideoService, VideoService>();
 
             return services;
         }
