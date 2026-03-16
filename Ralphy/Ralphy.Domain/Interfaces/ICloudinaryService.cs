@@ -16,5 +16,7 @@ namespace Ralphy.Domain.Interfaces
             string? publicId = null);
 
         Task<bool> DeleteMediaAsync(string publicId, bool isVideo = false);
+
+        Task DeleteManyAsync(IEnumerable<string> publicIds, bool isVideo = false);
     }
 }

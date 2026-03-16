@@ -11,11 +11,16 @@ namespace Ralphy.Application.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly ICloudinaryService _cloudinaryService;
 
-        public PostService(IUnitOfWork unitOfWork, IMapper mapper)
+        public PostService(
+            IUnitOfWork unitOfWork, 
+            IMapper mapper,
+            ICloudinaryService cloudinaryService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _cloudinaryService = cloudinaryService;
         }
 
         public async Task<IEnumerable<PostDto>> GetAllPublishedAsync()
@@ -111,6 +116,22 @@ namespace Ralphy.Application.Services
                 throw new UnauthorizedAccessException(
                     "You are not authorized to delete this post");
 
+            // Delete all photos from Cloudinary
+            var imagePublicIds = post.Photos
+                .Where(p => p.Type == MediaType.Image)
+                .Select(p => p.PublicId);
+
+            var videoPublicIds = post.Photos
+                .Where(p => p.Type == MediaType.Video)
+                .Select(p => p.PublicId);
+
+            if (imagePublicIds.Any())
+                await _cloudinaryService.DeleteManyAsync(imagePublicIds);
+
+            if (videoPublicIds.Any())
+                await _cloudinaryService.DeleteManyAsync(videoPublicIds, isVideo: true);
+
+            // Delete post from DB (cascade deletes photos, comments, tags)
             await _unitOfWork.Posts.DeleteAsync(post);
             await _unitOfWork.SaveChangesAsync();
         }

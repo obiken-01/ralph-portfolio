@@ -141,6 +141,35 @@ namespace Ralphy.Infrastructure.Services
             return false;
         }
 
+        public async Task DeleteManyAsync(
+            IEnumerable<string> publicIds, bool isVideo = false)
+        {
+            var resourceType = isVideo
+                ? ResourceType.Video
+                : ResourceType.Image;
+
+            foreach (var publicId in publicIds)
+            {
+                var deleteParams = new DeletionParams(publicId)
+                {
+                    ResourceType = resourceType
+                };
+
+                var result = await _cloudinary.DestroyAsync(deleteParams);
+
+                if (result.Result == "ok")
+                {
+                    _logger.LogInformation(
+                        "Media deleted from Cloudinary: {PublicId}", publicId);
+                }
+                else
+                {
+                    _logger.LogWarning(
+                        "Failed to delete media from Cloudinary: {PublicId}", publicId);
+                }
+            }
+        }
+
         // ── Private Helpers ──────────────────────────────────────────
 
         private static void ValidateImageFile(IFormFile file)
