@@ -1,6 +1,7 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Ralphy.Application.Common;
 using Ralphy.Application.DTOs.Auth;
 using Ralphy.Application.Services.Interfaces;
 
@@ -30,69 +31,49 @@ namespace Ralphy.Api.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
         {
-            var validationResult = await _registerValidator.ValidateAsync(request);
-            if (!validationResult.IsValid)
-                return BadRequest(new
-                {
-                    StatusCode = 400,
-                    Message = "Validation failed",
-                    Errors = validationResult.Errors.Select(e => e.ErrorMessage)
-                });
+            var validation = await _registerValidator.ValidateAsync(request);
+            if (!validation.IsValid)
+                return BadRequest(ApiResponse<object>.Fail(400, "Validation failed",
+                    validation.Errors.Select(e => e.ErrorMessage)));
 
             var result = await _authService.RegisterAsync(request);
-            _logger.LogInformation("User registered successfully: {Email}", request.Email);
-            return Ok(result);
+            _logger.LogInformation("User registered: {Email}", request.Email);
+            return Ok(ApiResponse<LoginResponseDto>.Ok(result, "Registration successful"));
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
         {
-            var validationResult = await _loginValidator.ValidateAsync(request);
-            if (!validationResult.IsValid)
-                return BadRequest(new
-                {
-                    StatusCode = 400,
-                    Message = "Validation failed",
-                    Errors = validationResult.Errors.Select(e => e.ErrorMessage)
-                });
+            var validation = await _loginValidator.ValidateAsync(request);
+            if (!validation.IsValid)
+                return BadRequest(ApiResponse<object>.Fail(400, "Validation failed",
+                    validation.Errors.Select(e => e.ErrorMessage)));
 
             var result = await _authService.LoginAsync(request);
-            _logger.LogInformation("User logged in successfully: {Email}", request.Email);
-            return Ok(result);
+            _logger.LogInformation("User logged in: {Email}", request.Email);
+            return Ok(ApiResponse<LoginResponseDto>.Ok(result, "Login successful"));
         }
 
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequestDto request)
         {
             if (string.IsNullOrEmpty(request.RefreshToken))
-                return BadRequest(new
-                {
-                    StatusCode = 400,
-                    Message = "Refresh token is required"
-                });
+                return BadRequest(ApiResponse<object>.Fail(400, "Refresh token is required"));
 
             var result = await _authService.RefreshTokenAsync(request);
             _logger.LogInformation("Token refreshed successfully");
-            return Ok(result);
+            return Ok(ApiResponse<LoginResponseDto>.Ok(result, "Token refreshed"));
         }
 
         [HttpPost("revoke")]
         public async Task<IActionResult> Revoke([FromBody] RefreshTokenRequestDto request)
         {
             if (string.IsNullOrEmpty(request.RefreshToken))
-                return BadRequest(new
-                {
-                    StatusCode = 400,
-                    Message = "Refresh token is required"
-                });
+                return BadRequest(ApiResponse<object>.Fail(400, "Refresh token is required"));
 
             await _authService.RevokeTokenAsync(request.RefreshToken);
             _logger.LogInformation("Token revoked successfully");
-            return Ok(new
-            {
-                StatusCode = 200,
-                Message = "Token revoked successfully"
-            });
+            return Ok(ApiResponse.OkMessage("Token revoked successfully"));
         }
 
         [Authorize]
@@ -106,7 +87,8 @@ namespace Ralphy.Api.Controllers
             var username = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
                 ?? User.FindFirst("unique_name")?.Value;
 
-            return Ok(new { UserId = userId, Email = email, Username = username });
+            var data = new { UserId = userId, Email = email, Username = username };
+            return Ok(ApiResponse<object>.Ok(data));
         }
     }
 }

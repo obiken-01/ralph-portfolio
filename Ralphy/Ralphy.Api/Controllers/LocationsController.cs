@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Ralphy.Api.Helpers;
+using Ralphy.Application.Common;
 using Ralphy.Application.DTOs.Locations;
 using Ralphy.Application.Services.Interfaces;
 
@@ -29,53 +30,44 @@ namespace Ralphy.Api.Controllers
         public async Task<IActionResult> GetAll()
         {
             var locations = await _locationService.GetAllAsync();
-            return Ok(locations);
+            return Ok(ApiResponse<IEnumerable<LocationDto>>.Ok(locations));
         }
 
         [HttpGet("trip/{tripId}")]
         public async Task<IActionResult> GetByTripId(int tripId)
         {
             var locations = await _locationService.GetByTripIdAsync(tripId);
-            return Ok(locations);
+            return Ok(ApiResponse<IEnumerable<LocationDto>>.Ok(locations));
         }
 
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateLocationDto request)
         {
-            var validationResult = await _validator.ValidateAsync(request);
-            if (!validationResult.IsValid)
-                return BadRequest(new
-                {
-                    StatusCode = 400,
-                    Message = "Validation failed",
-                    Errors = validationResult.Errors.Select(e => e.ErrorMessage)
-                });
+            var validation = await _validator.ValidateAsync(request);
+            if (!validation.IsValid)
+                return BadRequest(ApiResponse<object>.Fail(400, "Validation failed",
+                    validation.Errors.Select(e => e.ErrorMessage)));
 
             var userId = ClaimsHelper.GetUserId(User);
             var location = await _locationService.CreateAsync(request, userId);
             _logger.LogInformation("Location created: {PlaceName}", request.PlaceName);
-            return Ok(location);
+            return Ok(ApiResponse<LocationDto>.Ok(location, "Location created successfully"));
         }
 
         [Authorize]
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(
-            int id, [FromBody] CreateLocationDto request)
+        public async Task<IActionResult> Update(int id, [FromBody] CreateLocationDto request)
         {
-            var validationResult = await _validator.ValidateAsync(request);
-            if (!validationResult.IsValid)
-                return BadRequest(new
-                {
-                    StatusCode = 400,
-                    Message = "Validation failed",
-                    Errors = validationResult.Errors.Select(e => e.ErrorMessage)
-                });
+            var validation = await _validator.ValidateAsync(request);
+            if (!validation.IsValid)
+                return BadRequest(ApiResponse<object>.Fail(400, "Validation failed",
+                    validation.Errors.Select(e => e.ErrorMessage)));
 
             var userId = ClaimsHelper.GetUserId(User);
             var location = await _locationService.UpdateAsync(id, request, userId);
             _logger.LogInformation("Location updated: {Id}", id);
-            return Ok(location);
+            return Ok(ApiResponse<LocationDto>.Ok(location, "Location updated successfully"));
         }
 
         [Authorize]
@@ -85,7 +77,7 @@ namespace Ralphy.Api.Controllers
             var userId = ClaimsHelper.GetUserId(User);
             await _locationService.DeleteAsync(id, userId);
             _logger.LogInformation("Location deleted: {Id}", id);
-            return Ok(new { StatusCode = 200, Message = "Location deleted successfully" });
+            return Ok(ApiResponse.OkMessage("Location deleted successfully"));
         }
     }
 }

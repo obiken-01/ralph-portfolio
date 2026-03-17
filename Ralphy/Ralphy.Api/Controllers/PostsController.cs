@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Ralphy.Api.Helpers;
+using Ralphy.Application.Common;
 using Ralphy.Application.DTOs.Posts;
 using Ralphy.Application.Services.Interfaces;
 
@@ -32,7 +33,7 @@ namespace Ralphy.Api.Controllers
         public async Task<IActionResult> GetAllPublished()
         {
             var posts = await _postService.GetAllPublishedAsync();
-            return Ok(posts);
+            return Ok(ApiResponse<IEnumerable<PostDto>>.Ok(posts));
         }
 
         [HttpGet("{id}")]
@@ -40,14 +41,14 @@ namespace Ralphy.Api.Controllers
         {
             await _postService.IncrementViewCountAsync(id);
             var post = await _postService.GetPostWithDetailsAsync(id);
-            return Ok(post);
+            return Ok(ApiResponse<PostWithDetailsDto>.Ok(post!));
         }
 
         [HttpGet("trip/{tripId}")]
         public async Task<IActionResult> GetByTripId(int tripId)
         {
             var posts = await _postService.GetByTripIdAsync(tripId);
-            return Ok(posts);
+            return Ok(ApiResponse<IEnumerable<PostDto>>.Ok(posts));
         }
 
         [Authorize]
@@ -55,45 +56,38 @@ namespace Ralphy.Api.Controllers
         public async Task<IActionResult> GetAll()
         {
             var posts = await _postService.GetAllAsync();
-            return Ok(posts);
+            return Ok(ApiResponse<IEnumerable<PostDto>>.Ok(posts));
         }
 
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreatePostDto request)
         {
-            var validationResult = await _createValidator.ValidateAsync(request);
-            if (!validationResult.IsValid)
-                return BadRequest(new
-                {
-                    StatusCode = 400,
-                    Message = "Validation failed",
-                    Errors = validationResult.Errors.Select(e => e.ErrorMessage)
-                });
+            var validation = await _createValidator.ValidateAsync(request);
+            if (!validation.IsValid)
+                return BadRequest(ApiResponse<object>.Fail(400, "Validation failed",
+                    validation.Errors.Select(e => e.ErrorMessage)));
 
             var userId = ClaimsHelper.GetUserId(User);
             var post = await _postService.CreateAsync(request, userId);
             _logger.LogInformation("Post created: {Title}", request.Title);
-            return CreatedAtAction(nameof(GetById), new { id = post.Id }, post);
+            return CreatedAtAction(nameof(GetById), new { id = post.Id },
+                ApiResponse<PostDto>.Created(post, "Post created successfully"));
         }
 
         [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdatePostDto request)
         {
-            var validationResult = await _updateValidator.ValidateAsync(request);
-            if (!validationResult.IsValid)
-                return BadRequest(new
-                {
-                    StatusCode = 400,
-                    Message = "Validation failed",
-                    Errors = validationResult.Errors.Select(e => e.ErrorMessage)
-                });
+            var validation = await _updateValidator.ValidateAsync(request);
+            if (!validation.IsValid)
+                return BadRequest(ApiResponse<object>.Fail(400, "Validation failed",
+                    validation.Errors.Select(e => e.ErrorMessage)));
 
             var userId = ClaimsHelper.GetUserId(User);
             var post = await _postService.UpdateAsync(id, request, userId);
             _logger.LogInformation("Post updated: {Id}", id);
-            return Ok(post);
+            return Ok(ApiResponse<PostDto>.Ok(post, "Post updated successfully"));
         }
 
         [Authorize]
@@ -103,7 +97,7 @@ namespace Ralphy.Api.Controllers
             var userId = ClaimsHelper.GetUserId(User);
             await _postService.DeleteAsync(id, userId);
             _logger.LogInformation("Post deleted: {Id}", id);
-            return Ok(new { StatusCode = 200, Message = "Post deleted successfully" });
+            return Ok(ApiResponse.OkMessage("Post deleted successfully"));
         }
 
         [Authorize]
@@ -113,7 +107,7 @@ namespace Ralphy.Api.Controllers
             var userId = ClaimsHelper.GetUserId(User);
             await _postService.PublishAsync(id, userId);
             _logger.LogInformation("Post published: {Id}", id);
-            return Ok(new { StatusCode = 200, Message = "Post published successfully" });
+            return Ok(ApiResponse.OkMessage("Post published successfully"));
         }
 
         [Authorize]
@@ -123,7 +117,7 @@ namespace Ralphy.Api.Controllers
             var userId = ClaimsHelper.GetUserId(User);
             await _postService.UnpublishAsync(id, userId);
             _logger.LogInformation("Post unpublished: {Id}", id);
-            return Ok(new { StatusCode = 200, Message = "Post unpublished successfully" });
+            return Ok(ApiResponse.OkMessage("Post unpublished successfully"));
         }
     }
 }

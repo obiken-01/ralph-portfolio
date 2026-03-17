@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Ralphy.Api.Helpers;
+using Ralphy.Application.Common;
 using Ralphy.Application.DTOs.Trips;
 using Ralphy.Application.Services.Interfaces;
 
@@ -13,9 +14,7 @@ namespace Ralphy.Api.Controllers
         private readonly ITripService _tripService;
         private readonly ILogger<TripsController> _logger;
 
-        public TripsController(
-            ITripService tripService,
-            ILogger<TripsController> logger)
+        public TripsController(ITripService tripService, ILogger<TripsController> logger)
         {
             _tripService = tripService;
             _logger = logger;
@@ -25,21 +24,21 @@ namespace Ralphy.Api.Controllers
         public async Task<IActionResult> GetAllPublished()
         {
             var trips = await _tripService.GetAllPublishedAsync();
-            return Ok(trips);
+            return Ok(ApiResponse<IEnumerable<TripDto>>.Ok(trips));
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
             var trip = await _tripService.GetByIdAsync(id);
-            return Ok(trip);
+            return Ok(ApiResponse<TripDto>.Ok(trip!));
         }
 
         [HttpGet("{id}/posts")]
         public async Task<IActionResult> GetTripWithPosts(int id)
         {
             var trip = await _tripService.GetTripWithPostsAsync(id);
-            return Ok(trip);
+            return Ok(ApiResponse<TripDto>.Ok(trip!));
         }
 
         [Authorize]
@@ -47,7 +46,7 @@ namespace Ralphy.Api.Controllers
         public async Task<IActionResult> GetAll()
         {
             var trips = await _tripService.GetAllAsync();
-            return Ok(trips);
+            return Ok(ApiResponse<IEnumerable<TripDto>>.Ok(trips));
         }
 
         [Authorize]
@@ -57,7 +56,8 @@ namespace Ralphy.Api.Controllers
             var userId = ClaimsHelper.GetUserId(User);
             var trip = await _tripService.CreateAsync(request, userId);
             _logger.LogInformation("Trip created: {Title}", request.Title);
-            return CreatedAtAction(nameof(GetById), new { id = trip.Id }, trip);
+            return CreatedAtAction(nameof(GetById), new { id = trip.Id },
+                ApiResponse<TripDto>.Created(trip, "Trip created successfully"));
         }
 
         [Authorize]
@@ -67,7 +67,7 @@ namespace Ralphy.Api.Controllers
             var userId = ClaimsHelper.GetUserId(User);
             var trip = await _tripService.UpdateAsync(id, request, userId);
             _logger.LogInformation("Trip updated: {Id}", id);
-            return Ok(trip);
+            return Ok(ApiResponse<TripDto>.Ok(trip, "Trip updated successfully"));
         }
 
         [Authorize]
@@ -77,7 +77,7 @@ namespace Ralphy.Api.Controllers
             var userId = ClaimsHelper.GetUserId(User);
             await _tripService.DeleteAsync(id, userId);
             _logger.LogInformation("Trip deleted: {Id}", id);
-            return Ok(new { StatusCode = 200, Message = "Trip deleted successfully" });
+            return Ok(ApiResponse.OkMessage("Trip deleted successfully"));
         }
 
         [Authorize]
@@ -87,7 +87,7 @@ namespace Ralphy.Api.Controllers
             var userId = ClaimsHelper.GetUserId(User);
             await _tripService.PublishAsync(id, userId);
             _logger.LogInformation("Trip published: {Id}", id);
-            return Ok(new { StatusCode = 200, Message = "Trip published successfully" });
+            return Ok(ApiResponse.OkMessage("Trip published successfully"));
         }
 
         [Authorize]
@@ -97,7 +97,7 @@ namespace Ralphy.Api.Controllers
             var userId = ClaimsHelper.GetUserId(User);
             await _tripService.UnpublishAsync(id, userId);
             _logger.LogInformation("Trip unpublished: {Id}", id);
-            return Ok(new { StatusCode = 200, Message = "Trip unpublished successfully" });
+            return Ok(ApiResponse.OkMessage("Trip unpublished successfully"));
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using Ralphy.Application.Common;
+using System.Net;
 using System.Text.Json;
 
 namespace Ralphy.Api.Middleware
@@ -42,16 +43,12 @@ namespace Ralphy.Api.Middleware
             {
                 KeyNotFoundException =>
                     (HttpStatusCode.NotFound, ex.Message),
-
                 UnauthorizedAccessException =>
                     (HttpStatusCode.Unauthorized, ex.Message),
-
                 InvalidOperationException =>
                     (HttpStatusCode.BadRequest, ex.Message),
-
                 ArgumentException =>
                     (HttpStatusCode.BadRequest, ex.Message),
-
                 _ =>
                     (HttpStatusCode.InternalServerError,
                     "An unexpected error occurred")
@@ -59,11 +56,8 @@ namespace Ralphy.Api.Middleware
 
             context.Response.StatusCode = (int)statusCode;
 
-            var response = new
-            {
-                StatusCode = (int)statusCode,
-                Message = message
-            };
+            var response = ApiResponse<object>.Fail(
+                (int)statusCode, message);
 
             var json = JsonSerializer.Serialize(response,
                 new JsonSerializerOptions
