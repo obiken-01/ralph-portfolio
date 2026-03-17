@@ -99,6 +99,23 @@ try
         options.Limits.MaxRequestBodySize = 100 * 1024 * 1024; // 100MB
     });
 
+    // CORS
+    var allowedOrigins = builder.Configuration
+        .GetSection("Cors:AllowedOrigins")
+        .Get<string[]>() ?? Array.Empty<string>();
+
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("RalphyPolicy", policy =>
+        {
+            policy
+                .WithOrigins(allowedOrigins)
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
+        });
+    });
+
     var app = builder.Build();
 
     // Temporary - verify AutoMapper config
@@ -134,6 +151,7 @@ try
     }
 
     app.UseHttpsRedirection();
+    app.UseCors("RalphyPolicy");
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();

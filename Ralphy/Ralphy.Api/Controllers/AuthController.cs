@@ -32,29 +32,16 @@ namespace Ralphy.Api.Controllers
         {
             var validationResult = await _registerValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
-            {
                 return BadRequest(new
                 {
                     StatusCode = 400,
                     Message = "Validation failed",
                     Errors = validationResult.Errors.Select(e => e.ErrorMessage)
                 });
-            }
 
-            try
-            {
-                var result = await _authService.RegisterAsync(request);
-                _logger.LogInformation("User registered successfully: {Email}", request.Email);
-                return Ok(result);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(new
-                {
-                    StatusCode = 409,
-                    Message = ex.Message
-                });
-            }
+            var result = await _authService.RegisterAsync(request);
+            _logger.LogInformation("User registered successfully: {Email}", request.Email);
+            return Ok(result);
         }
 
         [HttpPost("login")]
@@ -62,89 +49,50 @@ namespace Ralphy.Api.Controllers
         {
             var validationResult = await _loginValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
-            {
                 return BadRequest(new
                 {
                     StatusCode = 400,
                     Message = "Validation failed",
                     Errors = validationResult.Errors.Select(e => e.ErrorMessage)
                 });
-            }
 
-            try
-            {
-                var result = await _authService.LoginAsync(request);
-                _logger.LogInformation("User logged in successfully: {Email}", request.Email);
-                return Ok(result);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new
-                {
-                    StatusCode = 401,
-                    Message = ex.Message
-                });
-            }
+            var result = await _authService.LoginAsync(request);
+            _logger.LogInformation("User logged in successfully: {Email}", request.Email);
+            return Ok(result);
         }
 
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequestDto request)
         {
             if (string.IsNullOrEmpty(request.RefreshToken))
-            {
                 return BadRequest(new
                 {
                     StatusCode = 400,
                     Message = "Refresh token is required"
                 });
-            }
 
-            try
-            {
-                var result = await _authService.RefreshTokenAsync(request);
-                _logger.LogInformation("Token refreshed successfully");
-                return Ok(result);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new
-                {
-                    StatusCode = 401,
-                    Message = ex.Message
-                });
-            }
+            var result = await _authService.RefreshTokenAsync(request);
+            _logger.LogInformation("Token refreshed successfully");
+            return Ok(result);
         }
 
         [HttpPost("revoke")]
         public async Task<IActionResult> Revoke([FromBody] RefreshTokenRequestDto request)
         {
             if (string.IsNullOrEmpty(request.RefreshToken))
-            {
                 return BadRequest(new
                 {
                     StatusCode = 400,
                     Message = "Refresh token is required"
                 });
-            }
 
-            try
+            await _authService.RevokeTokenAsync(request.RefreshToken);
+            _logger.LogInformation("Token revoked successfully");
+            return Ok(new
             {
-                await _authService.RevokeTokenAsync(request.RefreshToken);
-                _logger.LogInformation("Token revoked successfully");
-                return Ok(new
-                {
-                    StatusCode = 200,
-                    Message = "Token revoked successfully"
-                });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new
-                {
-                    StatusCode = 401,
-                    Message = ex.Message
-                });
-            }
+                StatusCode = 200,
+                Message = "Token revoked successfully"
+            });
         }
 
         [Authorize]
@@ -158,12 +106,7 @@ namespace Ralphy.Api.Controllers
             var username = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
                 ?? User.FindFirst("unique_name")?.Value;
 
-            return Ok(new
-            {
-                UserId = userId,
-                Email = email,
-                Username = username
-            });
+            return Ok(new { UserId = userId, Email = email, Username = username });
         }
     }
 }

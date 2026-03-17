@@ -25,7 +25,6 @@ namespace Ralphy.Api.Controllers
             _logger = logger;
         }
 
-        // Public endpoint
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -33,32 +32,22 @@ namespace Ralphy.Api.Controllers
             return Ok(tags);
         }
 
-        // Admin endpoints
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateTagDto request)
         {
             var validationResult = await _createValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
-            {
                 return BadRequest(new
                 {
                     StatusCode = 400,
                     Message = "Validation failed",
                     Errors = validationResult.Errors.Select(e => e.ErrorMessage)
                 });
-            }
 
-            try
-            {
-                var tag = await _tagService.CreateAsync(request);
-                _logger.LogInformation("Tag created: {Name}", request.Name);
-                return Ok(tag);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(new { StatusCode = 409, Message = ex.Message });
-            }
+            var tag = await _tagService.CreateAsync(request);
+            _logger.LogInformation("Tag created: {Name}", request.Name);
+            return Ok(tag);
         }
 
         [Authorize]
@@ -66,70 +55,29 @@ namespace Ralphy.Api.Controllers
         public async Task<IActionResult> AssignTags(
             int postId, [FromBody] AssignTagDto request)
         {
-            try
-            {
-                var userId = ClaimsHelper.GetUserId(User);
-                await _tagService.AssignTagsToPostAsync(postId, request, userId);
-                _logger.LogInformation("Tags assigned to post: {PostId}", postId);
-                return Ok(new
-                {
-                    StatusCode = 200,
-                    Message = "Tags assigned successfully"
-                });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { StatusCode = 404, Message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new { StatusCode = 401, Message = ex.Message });
-            }
+            var userId = ClaimsHelper.GetUserId(User);
+            await _tagService.AssignTagsToPostAsync(postId, request, userId);
+            _logger.LogInformation("Tags assigned to post: {PostId}", postId);
+            return Ok(new { StatusCode = 200, Message = "Tags assigned successfully" });
         }
 
         [Authorize]
         [HttpDelete("remove/{postId}")]
         public async Task<IActionResult> RemoveTags(int postId)
         {
-            try
-            {
-                var userId = ClaimsHelper.GetUserId(User);
-                await _tagService.RemoveTagsFromPostAsync(postId, userId);
-                _logger.LogInformation("Tags removed from post: {PostId}", postId);
-                return Ok(new
-                {
-                    StatusCode = 200,
-                    Message = "Tags removed successfully"
-                });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { StatusCode = 404, Message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new { StatusCode = 401, Message = ex.Message });
-            }
+            var userId = ClaimsHelper.GetUserId(User);
+            await _tagService.RemoveTagsFromPostAsync(postId, userId);
+            _logger.LogInformation("Tags removed from post: {PostId}", postId);
+            return Ok(new { StatusCode = 200, Message = "Tags removed successfully" });
         }
 
         [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            try
-            {
-                await _tagService.DeleteAsync(id);
-                _logger.LogInformation("Tag deleted: {Id}", id);
-                return Ok(new
-                {
-                    StatusCode = 200,
-                    Message = "Tag deleted successfully"
-                });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { StatusCode = 404, Message = ex.Message });
-            }
+            await _tagService.DeleteAsync(id);
+            _logger.LogInformation("Tag deleted: {Id}", id);
+            return Ok(new { StatusCode = 200, Message = "Tag deleted successfully" });
         }
     }
 }

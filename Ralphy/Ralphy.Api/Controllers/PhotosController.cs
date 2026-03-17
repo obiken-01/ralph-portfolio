@@ -21,22 +21,27 @@ namespace Ralphy.Api.Controllers
             _logger = logger;
         }
 
-        // Public endpoint
         [HttpGet("post/{postId}")]
         public async Task<IActionResult> GetByPostId(int postId)
         {
-            try
-            {
-                var photos = await _photoService.GetByPostIdAsync(postId);
-                return Ok(photos);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { StatusCode = 404, Message = ex.Message });
-            }
+            var photos = await _photoService.GetByPostIdAsync(postId);
+            return Ok(photos);
         }
 
-        // Admin endpoints
+        [HttpGet("post/{postId}/phone")]
+        public async Task<IActionResult> GetPhonePhotos(int postId)
+        {
+            var photos = await _photoService.GetBySourceAsync(postId, MediaSource.Phone);
+            return Ok(photos);
+        }
+
+        [HttpGet("post/{postId}/drone")]
+        public async Task<IActionResult> GetDronePhotos(int postId)
+        {
+            var photos = await _photoService.GetBySourceAsync(postId, MediaSource.Drone);
+            return Ok(photos);
+        }
+
         [Authorize]
         [HttpPost("upload/{postId}")]
         public async Task<IActionResult> Upload(
@@ -46,107 +51,33 @@ namespace Ralphy.Api.Controllers
             [FromForm] string? caption = null)
         {
             if (file == null || file.Length == 0)
-            {
-                return BadRequest(new
-                {
-                    StatusCode = 400,
-                    Message = "No file provided"
-                });
-            }
+                return BadRequest(new { StatusCode = 400, Message = "No file provided" });
 
-            // Parse source
             if (!Enum.TryParse<MediaSource>(source, true, out var mediaSource))
-            {
                 return BadRequest(new
                 {
                     StatusCode = 400,
                     Message = "Invalid source. Use 'Phone' or 'Drone'"
                 });
-            }
 
-            try
-            {
-                var userId = ClaimsHelper.GetUserId(User);
-                var photo = await _photoService.UploadPhotoAsync(
-                    file, postId, mediaSource, caption, userId);
+            var userId = ClaimsHelper.GetUserId(User);
+            var photo = await _photoService.UploadPhotoAsync(
+                file, postId, mediaSource, caption, userId);
 
-                _logger.LogInformation(
-                    "Photo uploaded for post {PostId} from {Source}",
-                    postId, source);
+            _logger.LogInformation(
+                "Photo uploaded for post {PostId} from {Source}", postId, source);
 
-                return Ok(photo);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { StatusCode = 400, Message = ex.Message });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { StatusCode = 404, Message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new { StatusCode = 401, Message = ex.Message });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { StatusCode = 400, Message = ex.Message });
-            }
+            return Ok(photo);
         }
 
         [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            try
-            {
-                var userId = ClaimsHelper.GetUserId(User);
-                await _photoService.DeleteAsync(id, userId);
-                _logger.LogInformation("Photo deleted: {Id}", id);
-                return Ok(new
-                {
-                    StatusCode = 200,
-                    Message = "Photo deleted successfully"
-                });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { StatusCode = 404, Message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new { StatusCode = 401, Message = ex.Message });
-            }
-        }
-
-        [HttpGet("post/{postId}/phone")]
-        public async Task<IActionResult> GetPhonePhotos(int postId)
-        {
-            try
-            {
-                var photos = await _photoService.GetBySourceAsync(
-                    postId, MediaSource.Phone);
-                return Ok(photos);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { StatusCode = 404, Message = ex.Message });
-            }
-        }
-
-        [HttpGet("post/{postId}/drone")]
-        public async Task<IActionResult> GetDronePhotos(int postId)
-        {
-            try
-            {
-                var photos = await _photoService.GetBySourceAsync(
-                    postId, MediaSource.Drone);
-                return Ok(photos);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { StatusCode = 404, Message = ex.Message });
-            }
+            var userId = ClaimsHelper.GetUserId(User);
+            await _photoService.DeleteAsync(id, userId);
+            _logger.LogInformation("Photo deleted: {Id}", id);
+            return Ok(new { StatusCode = 200, Message = "Photo deleted successfully" });
         }
     }
 }

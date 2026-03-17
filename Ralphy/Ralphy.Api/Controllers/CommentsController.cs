@@ -25,19 +25,11 @@ namespace Ralphy.Api.Controllers
             _logger = logger;
         }
 
-        // Public endpoints
         [HttpGet("post/{postId}")]
         public async Task<IActionResult> GetByPostId(int postId)
         {
-            try
-            {
-                var comments = await _commentService.GetByPostIdAsync(postId);
-                return Ok(comments);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { StatusCode = 404, Message = ex.Message });
-            }
+            var comments = await _commentService.GetByPostIdAsync(postId);
+            return Ok(comments);
         }
 
         [HttpPost("post/{postId}")]
@@ -46,57 +38,28 @@ namespace Ralphy.Api.Controllers
         {
             var validationResult = await _validator.ValidateAsync(request);
             if (!validationResult.IsValid)
-            {
                 return BadRequest(new
                 {
                     StatusCode = 400,
                     Message = "Validation failed",
                     Errors = validationResult.Errors.Select(e => e.ErrorMessage)
                 });
-            }
 
-            try
-            {
-                var comment = await _commentService.CreateAsync(postId, request);
-                _logger.LogInformation(
-                    "Comment added to post: {PostId} by {Author}",
-                    postId, request.AuthorName);
-                return Ok(comment);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { StatusCode = 404, Message = ex.Message });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { StatusCode = 400, Message = ex.Message });
-            }
+            var comment = await _commentService.CreateAsync(postId, request);
+            _logger.LogInformation(
+                "Comment added to post: {PostId} by {Author}",
+                postId, request.AuthorName);
+            return Ok(comment);
         }
 
-        // Admin endpoint
         [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            try
-            {
-                var userId = ClaimsHelper.GetUserId(User);
-                await _commentService.DeleteAsync(id, userId);
-                _logger.LogInformation("Comment deleted: {Id}", id);
-                return Ok(new
-                {
-                    StatusCode = 200,
-                    Message = "Comment deleted successfully"
-                });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { StatusCode = 404, Message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new { StatusCode = 401, Message = ex.Message });
-            }
+            var userId = ClaimsHelper.GetUserId(User);
+            await _commentService.DeleteAsync(id, userId);
+            _logger.LogInformation("Comment deleted: {Id}", id);
+            return Ok(new { StatusCode = 200, Message = "Comment deleted successfully" });
         }
     }
 }

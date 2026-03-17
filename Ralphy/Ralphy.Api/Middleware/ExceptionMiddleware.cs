@@ -24,7 +24,11 @@ namespace Ralphy.Api.Middleware
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An unhandled exception occurred");
+                _logger.LogError(ex,
+                    "Unhandled exception for {Method} {Path}",
+                    context.Request.Method,
+                    context.Request.Path);
+
                 await HandleExceptionAsync(context, ex);
             }
         }
@@ -34,31 +38,32 @@ namespace Ralphy.Api.Middleware
         {
             context.Response.ContentType = "application/json";
 
-            var response = ex switch
+            var (statusCode, message) = ex switch
             {
-                UnauthorizedAccessException => new
-                {
-                    StatusCode = (int)HttpStatusCode.Unauthorized,
-                    Message = ex.Message
-                },
-                InvalidOperationException => new
-                {
-                    StatusCode = (int)HttpStatusCode.Conflict,
-                    Message = ex.Message
-                },
-                KeyNotFoundException => new
-                {
-                    StatusCode = (int)HttpStatusCode.NotFound,
-                    Message = ex.Message
-                },
-                _ => new
-                {
-                    StatusCode = (int)HttpStatusCode.InternalServerError,
-                    Message = "An unexpected error occurred"
-                }
+                KeyNotFoundException =>
+                    (HttpStatusCode.NotFound, ex.Message),
+
+                UnauthorizedAccessException =>
+                    (HttpStatusCode.Unauthorized, ex.Message),
+
+                InvalidOperationException =>
+                    (HttpStatusCode.BadRequest, ex.Message),
+
+                ArgumentException =>
+                    (HttpStatusCode.BadRequest, ex.Message),
+
+                _ =>
+                    (HttpStatusCode.InternalServerError,
+                    "An unexpected error occurred")
             };
 
-            context.Response.StatusCode = response.StatusCode;
+            context.Response.StatusCode = (int)statusCode;
+
+            var response = new
+            {
+                StatusCode = (int)statusCode,
+                Message = message
+            };
 
             var json = JsonSerializer.Serialize(response,
                 new JsonSerializerOptions

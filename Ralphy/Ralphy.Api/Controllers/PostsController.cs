@@ -28,7 +28,6 @@ namespace Ralphy.Api.Controllers
             _logger = logger;
         }
 
-        // Public endpoints
         [HttpGet]
         public async Task<IActionResult> GetAllPublished()
         {
@@ -39,33 +38,18 @@ namespace Ralphy.Api.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            try
-            {
-                await _postService.IncrementViewCountAsync(id);
-                var post = await _postService.GetPostWithDetailsAsync(id);
-                return Ok(post);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { StatusCode = 404, Message = ex.Message });
-            }
+            await _postService.IncrementViewCountAsync(id);
+            var post = await _postService.GetPostWithDetailsAsync(id);
+            return Ok(post);
         }
 
         [HttpGet("trip/{tripId}")]
         public async Task<IActionResult> GetByTripId(int tripId)
         {
-            try
-            {
-                var posts = await _postService.GetByTripIdAsync(tripId);
-                return Ok(posts);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { StatusCode = 404, Message = ex.Message });
-            }
+            var posts = await _postService.GetByTripIdAsync(tripId);
+            return Ok(posts);
         }
 
-        // Admin endpoints
         [Authorize]
         [HttpGet("all")]
         public async Task<IActionResult> GetAll()
@@ -80,30 +64,17 @@ namespace Ralphy.Api.Controllers
         {
             var validationResult = await _createValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
-            {
                 return BadRequest(new
                 {
                     StatusCode = 400,
                     Message = "Validation failed",
                     Errors = validationResult.Errors.Select(e => e.ErrorMessage)
                 });
-            }
 
-            try
-            {
-                var userId = ClaimsHelper.GetUserId(User);
-                var post = await _postService.CreateAsync(request, userId);
-                _logger.LogInformation("Post created: {Title}", request.Title);
-                return CreatedAtAction(nameof(GetById), new { id = post.Id }, post);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { StatusCode = 404, Message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new { StatusCode = 401, Message = ex.Message });
-            }
+            var userId = ClaimsHelper.GetUserId(User);
+            var post = await _postService.CreateAsync(request, userId);
+            _logger.LogInformation("Post created: {Title}", request.Title);
+            return CreatedAtAction(nameof(GetById), new { id = post.Id }, post);
         }
 
         [Authorize]
@@ -112,93 +83,47 @@ namespace Ralphy.Api.Controllers
         {
             var validationResult = await _updateValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
-            {
                 return BadRequest(new
                 {
                     StatusCode = 400,
                     Message = "Validation failed",
                     Errors = validationResult.Errors.Select(e => e.ErrorMessage)
                 });
-            }
 
-            try
-            {
-                var userId = ClaimsHelper.GetUserId(User);
-                var post = await _postService.UpdateAsync(id, request, userId);
-                _logger.LogInformation("Post updated: {Id}", id);
-                return Ok(post);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { StatusCode = 404, Message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new { StatusCode = 401, Message = ex.Message });
-            }
+            var userId = ClaimsHelper.GetUserId(User);
+            var post = await _postService.UpdateAsync(id, request, userId);
+            _logger.LogInformation("Post updated: {Id}", id);
+            return Ok(post);
         }
 
         [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            try
-            {
-                var userId = ClaimsHelper.GetUserId(User);
-                await _postService.DeleteAsync(id, userId);
-                _logger.LogInformation("Post deleted: {Id}", id);
-                return Ok(new { StatusCode = 200, Message = "Post deleted successfully" });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { StatusCode = 404, Message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new { StatusCode = 401, Message = ex.Message });
-            }
+            var userId = ClaimsHelper.GetUserId(User);
+            await _postService.DeleteAsync(id, userId);
+            _logger.LogInformation("Post deleted: {Id}", id);
+            return Ok(new { StatusCode = 200, Message = "Post deleted successfully" });
         }
 
         [Authorize]
         [HttpPut("{id}/publish")]
         public async Task<IActionResult> Publish(int id)
         {
-            try
-            {
-                var userId = ClaimsHelper.GetUserId(User);
-                await _postService.PublishAsync(id, userId);
-                _logger.LogInformation("Post published: {Id}", id);
-                return Ok(new { StatusCode = 200, Message = "Post published successfully" });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { StatusCode = 404, Message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new { StatusCode = 401, Message = ex.Message });
-            }
+            var userId = ClaimsHelper.GetUserId(User);
+            await _postService.PublishAsync(id, userId);
+            _logger.LogInformation("Post published: {Id}", id);
+            return Ok(new { StatusCode = 200, Message = "Post published successfully" });
         }
 
         [Authorize]
         [HttpPut("{id}/unpublish")]
         public async Task<IActionResult> Unpublish(int id)
         {
-            try
-            {
-                var userId = ClaimsHelper.GetUserId(User);
-                await _postService.UnpublishAsync(id, userId);
-                _logger.LogInformation("Post unpublished: {Id}", id);
-                return Ok(new { StatusCode = 200, Message = "Post unpublished successfully" });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { StatusCode = 404, Message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new { StatusCode = 401, Message = ex.Message });
-            }
+            var userId = ClaimsHelper.GetUserId(User);
+            await _postService.UnpublishAsync(id, userId);
+            _logger.LogInformation("Post unpublished: {Id}", id);
+            return Ok(new { StatusCode = 200, Message = "Post unpublished successfully" });
         }
     }
 }
