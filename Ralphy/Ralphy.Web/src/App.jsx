@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from './context/AuthProvider'
 import ProtectedRoute from './routes/ProtectedRoute'
+import Layout from './components/common/Layout'
 
 // Public pages
 import HomePage        from './pages/public/HomePage'
@@ -10,6 +11,7 @@ import TripDetailPage  from './pages/public/TripDetailPage'
 import PostDetailPage  from './pages/public/PostDetailPage'
 import MapPage         from './pages/public/MapPage'
 import TimelinePage    from './pages/public/TimelinePage'
+import AboutPage       from './pages/public/AboutPage'
 
 // Auth
 import LoginPage from './pages/auth/LoginPage'
@@ -27,19 +29,33 @@ export default function App() {
         <Toaster position="top-right" />
         <Routes>
 
-          {/* ── Public routes ── */}
-          <Route path="/"              element={<HomePage />} />
-          <Route path="/trips"         element={<TripsPage />} />
-          <Route path="/trips/:id"     element={<TripDetailPage />} />
-          <Route path="/trips/:tripId/posts/:postId"
-                                       element={<PostDetailPage />} />
-          <Route path="/map"           element={<MapPage />} />
-          <Route path="/timeline"      element={<TimelinePage />} />
+          {/* ── Public routes (with Navbar + Footer) ── */}
+          <Route path="/" element={
+            <Layout><HomePage /></Layout>
+          }/>
+          <Route path="/trips" element={
+            <Layout><TripsPage /></Layout>
+          }/>
+          <Route path="/trips/:id" element={
+            <Layout><TripDetailPage /></Layout>
+          }/>
+          <Route path="/trips/:tripId/posts/:postId" element={
+            <Layout><PostDetailPage /></Layout>
+          }/>
+          <Route path="/map" element={
+            <Layout><MapPage /></Layout>
+          }/>
+          <Route path="/timeline" element={
+            <Layout><TimelinePage /></Layout>
+          }/>
+          <Route path="/about" element={
+            <Layout><AboutPage /></Layout>
+          }/>
 
-          {/* ── Auth ── */}
-          <Route path="/login"         element={<LoginPage />} />
+          {/* ── Auth (no Navbar/Footer) ── */}
+          <Route path="/login" element={<LoginPage />} />
 
-          {/* ── Admin (protected) ── */}
+          {/* ── Admin (protected, no public Navbar/Footer) ── */}
           <Route path="/admin" element={
             <ProtectedRoute><DashboardPage /></ProtectedRoute>
           }/>
