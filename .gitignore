@@ -9,9 +9,21 @@
 *.user
 *.userosscache
 *.sln.docstates
+
+# Secrets
 *.env
+.env
+.env.local
+.env.production
 docker-compose.override.yml
 appsettings.Development.json
+
+# Frontend
+Ralphy.Web/node_modules/
+Ralphy.Web/dist/
+Ralphy.Web/.env
+Ralphy.Web/.env.local
+Ralphy.Web/.env.production
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
