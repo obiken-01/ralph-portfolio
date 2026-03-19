@@ -18,7 +18,11 @@ namespace Ralphy.Application.Mappings
             CreateMap<User, UserDto>();
 
             // Trip mappings
-            CreateMap<Trip, TripDto>();
+            CreateMap<Trip, TripDto>()
+                .ForMember(dest => dest.Status,
+                    opt => opt.MapFrom(src => src.Status.ToString()))
+                .ForMember(dest => dest.PostCount,
+                    opt => opt.MapFrom(src => src.Posts != null ? src.Posts.Count : 0));
             CreateMap<CreateTripDto, Trip>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())

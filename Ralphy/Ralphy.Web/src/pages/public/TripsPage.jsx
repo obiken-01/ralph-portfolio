@@ -78,7 +78,7 @@ function TripCard({ trip }) {
                         border-t border-slate-100">
           <div className="flex items-center gap-3">
             <span className="text-xs text-slate-400">
-              📝 {trip.posts?.length ?? 0} posts
+              📝 {trip.postCount ?? 0} posts
             </span>
           </div>
           <span className="text-xs text-blue-600 font-medium

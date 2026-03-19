@@ -14,6 +14,7 @@ namespace Ralphy.Infrastructure.Data.Repositories
         public async Task<IEnumerable<Trip>> GetAllPublishedAsync() =>
             await _dbSet
                 .Where(t => t.Status == PostStatus.Published)
+                .Include(t => t.Posts)
                 .OrderByDescending(t => t.StartDate)
                 .ToListAsync();
 

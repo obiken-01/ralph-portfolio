@@ -14,5 +14,6 @@ namespace Ralphy.Application.DTOs.Trips
         public string? CoverImageUrl { get; set; }
         public PostStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
+        public int PostCount { get; set; }
     }
 }
