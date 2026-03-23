@@ -9,13 +9,13 @@ import toast from 'react-hot-toast'
 function TripModal({ trip, onClose, onSaved }) {
   const isEdit = !!trip
   const [form, setForm] = useState({
-    title:       trip?.title       ?? '',
-    description: trip?.description ?? '',
-    country:     trip?.country     ?? '',
-    city:        trip?.city        ?? '',
-    startDate:   trip?.startDate
+    title:         trip?.title         ?? '',
+    description:   trip?.description   ?? '',
+    country:       trip?.country       ?? '',
+    city:          trip?.city          ?? '',
+    startDate:     trip?.startDate
       ? trip.startDate.substring(0, 10) : '',
-    endDate:     trip?.endDate
+    endDate:       trip?.endDate
       ? trip.endDate.substring(0, 10)   : '',
     coverImageUrl: trip?.coverImageUrl ?? '',
   })
@@ -76,11 +76,8 @@ function TripModal({ trip, onClose, onSaved }) {
               Title *
             </label>
             <input
-              type="text"
-              name="title"
-              value={form.title}
-              onChange={handleChange}
-              required
+              type="text" name="title" value={form.title}
+              onChange={handleChange} required
               placeholder="e.g. Apo Reef Adventure"
               className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700
                          rounded-lg text-white placeholder-slate-500 text-sm
@@ -95,10 +92,8 @@ function TripModal({ trip, onClose, onSaved }) {
               Description
             </label>
             <textarea
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              rows={3}
+              name="description" value={form.description}
+              onChange={handleChange} rows={3}
               placeholder="Short description of this trip..."
               className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700
                          rounded-lg text-white placeholder-slate-500 text-sm
@@ -114,12 +109,8 @@ function TripModal({ trip, onClose, onSaved }) {
                 Country *
               </label>
               <input
-                type="text"
-                name="country"
-                value={form.country}
-                onChange={handleChange}
-                required
-                placeholder="Philippines"
+                type="text" name="country" value={form.country}
+                onChange={handleChange} required placeholder="Philippines"
                 className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700
                            rounded-lg text-white placeholder-slate-500 text-sm
                            focus:outline-none focus:ring-2 focus:ring-blue-500
@@ -131,12 +122,8 @@ function TripModal({ trip, onClose, onSaved }) {
                 City *
               </label>
               <input
-                type="text"
-                name="city"
-                value={form.city}
-                onChange={handleChange}
-                required
-                placeholder="San Jose"
+                type="text" name="city" value={form.city}
+                onChange={handleChange} required placeholder="San Jose"
                 className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700
                            rounded-lg text-white placeholder-slate-500 text-sm
                            focus:outline-none focus:ring-2 focus:ring-blue-500
@@ -152,11 +139,8 @@ function TripModal({ trip, onClose, onSaved }) {
                 Start Date *
               </label>
               <input
-                type="date"
-                name="startDate"
-                value={form.startDate}
-                onChange={handleChange}
-                required
+                type="date" name="startDate" value={form.startDate}
+                onChange={handleChange} required
                 className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700
                            rounded-lg text-white text-sm focus:outline-none
                            focus:ring-2 focus:ring-blue-500 transition
@@ -168,9 +152,7 @@ function TripModal({ trip, onClose, onSaved }) {
                 End Date
               </label>
               <input
-                type="date"
-                name="endDate"
-                value={form.endDate}
+                type="date" name="endDate" value={form.endDate}
                 onChange={handleChange}
                 className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700
                            rounded-lg text-white text-sm focus:outline-none
@@ -186,9 +168,7 @@ function TripModal({ trip, onClose, onSaved }) {
               Cover Image URL
             </label>
             <input
-              type="url"
-              name="coverImageUrl"
-              value={form.coverImageUrl}
+              type="url" name="coverImageUrl" value={form.coverImageUrl}
               onChange={handleChange}
               placeholder="https://res.cloudinary.com/..."
               className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700
@@ -198,8 +178,7 @@ function TripModal({ trip, onClose, onSaved }) {
             />
             {form.coverImageUrl && (
               <img
-                src={form.coverImageUrl}
-                alt="Cover preview"
+                src={form.coverImageUrl} alt="Cover preview"
                 className="mt-2 h-24 w-full object-cover rounded-lg
                            border border-slate-700"
                 onError={(e) => e.target.style.display = 'none'}
@@ -210,8 +189,7 @@ function TripModal({ trip, onClose, onSaved }) {
           {/* Actions */}
           <div className="flex gap-3 pt-2">
             <button
-              type="button"
-              onClick={onClose}
+              type="button" onClick={onClose}
               className="flex-1 px-4 py-2.5 bg-slate-800 hover:bg-slate-700
                          text-slate-300 text-sm font-medium rounded-lg
                          transition-colors"
@@ -219,8 +197,7 @@ function TripModal({ trip, onClose, onSaved }) {
               Cancel
             </button>
             <button
-              type="submit"
-              disabled={saving}
+              type="submit" disabled={saving}
               className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700
                          disabled:bg-blue-800 text-white text-sm font-semibold
                          rounded-lg transition-colors flex items-center
@@ -280,9 +257,7 @@ function DeleteModal({ trip, onClose, onDeleted }) {
           <h2 className="text-white font-semibold mb-1">Delete Trip</h2>
           <p className="text-slate-400 text-sm">
             Are you sure you want to delete
-            <span className="text-white font-medium">
-              {' '}{trip.title}
-            </span>?
+            <span className="text-white font-medium"> {trip.title}</span>?
             This will also delete all posts and media.
           </p>
         </div>
@@ -296,8 +271,7 @@ function DeleteModal({ trip, onClose, onDeleted }) {
             Cancel
           </button>
           <button
-            onClick={handleDelete}
-            disabled={deleting}
+            onClick={handleDelete} disabled={deleting}
             className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700
                        disabled:bg-red-800 text-white text-sm font-semibold
                        rounded-lg transition-colors flex items-center
@@ -320,12 +294,12 @@ function DeleteModal({ trip, onClose, onDeleted }) {
 
 // ── Main Page ───────────────────────────────────────────────────
 export default function AdminTripsPage() {
-  const [trips,       setTrips]       = useState([])
-  const [loading,     setLoading]     = useState(true)
-  const [showModal,   setShowModal]   = useState(false)
-  const [editTrip,    setEditTrip]    = useState(null)
-  const [deleteTrip,  setDeleteTrip]  = useState(null)
-  const [togglingId,  setTogglingId]  = useState(null)
+  const [trips,      setTrips]      = useState([])
+  const [loading,    setLoading]    = useState(true)
+  const [showModal,  setShowModal]  = useState(false)
+  const [editTrip,   setEditTrip]   = useState(null)
+  const [deleteTrip, setDeleteTrip] = useState(null)
+  const [togglingId, setTogglingId] = useState(null)
 
   const fetchTrips = async () => {
     try {
@@ -361,7 +335,7 @@ export default function AdminTripsPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-6xl mx-auto">
+      <div className="w-full max-w-6xl mx-auto">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -391,37 +365,19 @@ export default function AdminTripsPage() {
                         overflow-hidden">
 
           {/* Table header */}
-          <div className="grid grid-cols-12 gap-4 px-5 py-3
-                          border-b border-slate-800 bg-slate-800/50">
-            <div className="col-span-5">
+          <div className="flex items-center px-5 py-3 border-b border-slate-800
+                          bg-slate-800/50">
+            <div className="flex-1">
               <span className="text-xs font-semibold text-slate-400
-                               uppercase tracking-widest">
-                Trip
-              </span>
+                               uppercase tracking-widest">Trip</span>
             </div>
-            <div className="col-span-2 hidden sm:block">
+            <div className="w-28 flex justify-center">
               <span className="text-xs font-semibold text-slate-400
-                               uppercase tracking-widest">
-                Date
-              </span>
+                               uppercase tracking-widest">Status</span>
             </div>
-            <div className="col-span-2 hidden sm:block">
+            <div className="w-24 flex justify-end">
               <span className="text-xs font-semibold text-slate-400
-                               uppercase tracking-widest">
-                Posts
-              </span>
-            </div>
-            <div className="col-span-2">
-              <span className="text-xs font-semibold text-slate-400
-                               uppercase tracking-widest">
-                Status
-              </span>
-            </div>
-            <div className="col-span-1">
-              <span className="text-xs font-semibold text-slate-400
-                               uppercase tracking-widest">
-                Actions
-              </span>
+                               uppercase tracking-widest">Actions</span>
             </div>
           </div>
 
@@ -442,9 +398,7 @@ export default function AdminTripsPage() {
           ) : trips.length === 0 ? (
             <div className="p-12 text-center">
               <span className="text-4xl block mb-3">🗺️</span>
-              <p className="text-slate-400 text-sm mb-3">
-                No trips yet.
-              </p>
+              <p className="text-slate-400 text-sm mb-3">No trips yet.</p>
               <button
                 onClick={() => { setEditTrip(null); setShowModal(true) }}
                 className="text-blue-400 text-sm hover:underline"
@@ -453,129 +407,119 @@ export default function AdminTripsPage() {
               </button>
             </div>
           ) : (
-            trips.map((trip) => (
-              <div
-                key={trip.id}
-                className="grid grid-cols-12 gap-4 px-5 py-4 border-b
-                           border-slate-800 last:border-0 hover:bg-slate-800/30
-                           transition-colors items-center"
-              >
-                {/* Trip info */}
-                <div className="col-span-5 flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-lg bg-slate-800
-                                  overflow-hidden flex-shrink-0">
-                    {trip.coverImageUrl ? (
-                      <img src={trip.coverImageUrl} alt={trip.title}
-                           className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center
-                                      justify-center text-lg">🗺️</div>
-                    )}
+            trips.map((trip) => {
+              const isPublished = trip.status === 'Published' || trip.status === 1
+              return (
+                <div
+                  key={trip.id}
+                  className="flex items-center px-5 py-4 border-b
+                             border-slate-800 last:border-0
+                             hover:bg-slate-800/30 transition-colors"
+                >
+                  {/* Trip info */}
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-10 h-10 rounded-lg bg-slate-800
+                                    overflow-hidden flex-shrink-0">
+                      {trip.coverImageUrl ? (
+                        <img src={trip.coverImageUrl} alt={trip.title}
+                             className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center
+                                        justify-center text-lg">🗺️</div>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-white text-sm font-medium truncate">
+                        {trip.title}
+                      </p>
+                      <p className="text-slate-500 text-xs truncate">
+                        📍 {trip.city}, {trip.country}
+                        <span className="mx-1.5">·</span>
+                        {formatShortDate(trip.startDate)}
+                        <span className="mx-1.5">·</span>
+                        {trip.postCount ?? 0} posts
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-white text-sm font-medium truncate">
-                      {trip.title}
-                    </p>
-                    <p className="text-slate-500 text-xs truncate">
-                      📍 {trip.city}, {trip.country}
-                    </p>
+
+                  {/* Status toggle */}
+                  <div className="w-28 flex justify-center">
+                    <button
+                      onClick={() => handlePublishToggle(trip)}
+                      disabled={togglingId === trip.id}
+                      className={`text-xs px-2.5 py-1 rounded-full font-medium
+                                  transition-colors disabled:opacity-50 ${
+                        isPublished
+                          ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
+                          : 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
+                      }`}
+                    >
+                      {togglingId === trip.id
+                        ? '...'
+                        : isPublished ? 'Published' : 'Draft'
+                      }
+                    </button>
                   </div>
+
+                  {/* Actions */}
+                  <div className="w-24 flex items-center justify-end gap-1">
+                    {/* Edit */}
+                    <button
+                      onClick={() => { setEditTrip(trip); setShowModal(true) }}
+                      className="w-7 h-7 flex items-center justify-center
+                                 rounded-lg text-slate-400 hover:bg-slate-700
+                                 hover:text-white transition-colors"
+                      title="Edit"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none"
+                           stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2
+                                 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828
+                                 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+
+                    {/* View */}
+                    <Link
+                      to={`/trips/${trip.id}`} target="_blank"
+                      className="w-7 h-7 flex items-center justify-center
+                                 rounded-lg text-slate-400 hover:bg-slate-700
+                                 hover:text-white transition-colors"
+                      title="View"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none"
+                           stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2
+                                 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </Link>
+
+                    {/* Delete */}
+                    <button
+                      onClick={() => setDeleteTrip(trip)}
+                      className="w-7 h-7 flex items-center justify-center
+                                 rounded-lg text-slate-400 hover:bg-red-500/10
+                                 hover:text-red-400 transition-colors"
+                      title="Delete"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none"
+                           stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2
+                                 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1
+                                 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+
                 </div>
-
-                {/* Date */}
-                <div className="col-span-2 hidden sm:block">
-                  <p className="text-slate-400 text-xs">
-                    {formatShortDate(trip.startDate)}
-                  </p>
-                </div>
-
-                {/* Post count */}
-                <div className="col-span-2 hidden sm:block">
-                  <p className="text-slate-400 text-xs">
-                    {trip.postCount ?? 0} posts
-                  </p>
-                </div>
-
-                {/* Status toggle */}
-                <div className="col-span-2">
-                  <button
-                    onClick={() => handlePublishToggle(trip)}
-                    disabled={togglingId === trip.id}
-                    className={`text-xs px-2.5 py-1 rounded-full font-medium
-                      transition-colors disabled:opacity-50 ${
-                    trip.status === 'Published' || trip.status === 1
-                      ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
-                      : 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
-                  }`}
-                  >
-                    {togglingId === trip.id
-                      ? '...'
-                      : (trip.status === 1 || trip.status === 'Published')
-                        ? 'Published'
-                        : 'Draft'
-                    }
-                  </button>
-                </div>
-
-                {/* Actions */}
-                <div className="col-span-1 flex items-center gap-1">
-                  {/* Edit */}
-                  <button
-                    onClick={() => { setEditTrip(trip); setShowModal(true) }}
-                    className="w-7 h-7 flex items-center justify-center
-                               rounded-lg text-slate-400 hover:bg-slate-700
-                               hover:text-white transition-colors"
-                    title="Edit"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none"
-                         stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2
-                               2 0 002-2v-5m-1.414-9.414a2 2 0 112.828
-                               2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  </button>
-
-                  {/* View */}
-                  <Link
-                    to={`/trips/${trip.id}`}
-                    target="_blank"
-                    className="w-7 h-7 flex items-center justify-center
-                               rounded-lg text-slate-400 hover:bg-slate-700
-                               hover:text-white transition-colors"
-                    title="View"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none"
-                         stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2
-                               2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </Link>
-
-                  {/* Delete */}
-                  <button
-                    onClick={() => setDeleteTrip(trip)}
-                    className="w-7 h-7 flex items-center justify-center
-                               rounded-lg text-slate-400 hover:bg-red-500/10
-                               hover:text-red-400 transition-colors"
-                    title="Delete"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none"
-                         stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2
-                               2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1
-                               1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
-
-              </div>
-            ))
+              )
+            })
           )}
         </div>
 

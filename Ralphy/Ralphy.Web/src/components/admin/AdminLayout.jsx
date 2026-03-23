@@ -156,7 +156,7 @@ export default function AdminLayout({ children }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex">
+    <div className="min-h-screen bg-slate-950 flex overflow-x-hidden">
 
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col w-56 bg-slate-900
@@ -188,7 +188,7 @@ export default function AdminLayout({ children }) {
       )}
 
       {/* Main content */}
-      <div className="flex-1 lg:ml-56 flex flex-col min-h-screen">
+      <div className="flex-1 lg:ml-56 flex flex-col min-h-screen overflow-x-hidden">
 
         {/* Top bar */}
         <header className="bg-slate-900 border-b border-slate-800
@@ -222,7 +222,7 @@ export default function AdminLayout({ children }) {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-4 sm:p-6 bg-slate-950">
+        <main className="flex-1 p-4 sm:p-6 bg-slate-950 overflow-x-hidden">
           {children}
         </main>
 
