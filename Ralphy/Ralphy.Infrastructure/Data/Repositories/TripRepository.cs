@@ -29,5 +29,11 @@ namespace Ralphy.Infrastructure.Data.Repositories
                 .Where(t => t.UserId == userId)
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
+
+        public override async Task<IEnumerable<Trip>> GetAllAsync() =>
+            await _dbSet
+                .Include(t => t.Posts)
+                .OrderByDescending(t => t.StartDate)
+                .ToListAsync();
     }
 }

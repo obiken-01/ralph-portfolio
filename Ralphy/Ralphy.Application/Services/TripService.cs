@@ -54,6 +54,11 @@ namespace Ralphy.Application.Services
             trip.UserId = userId;
             trip.Status = PostStatus.Draft;
 
+            // ← ADD THESE: force UTC on dates
+            trip.StartDate = DateTime.SpecifyKind(trip.StartDate, DateTimeKind.Utc);
+            if (trip.EndDate.HasValue)
+                trip.EndDate = DateTime.SpecifyKind(trip.EndDate.Value, DateTimeKind.Utc);
+
             await _unitOfWork.Trips.AddAsync(trip);
             await _unitOfWork.SaveChangesAsync();
 
@@ -71,6 +76,11 @@ namespace Ralphy.Application.Services
 
             _mapper.Map(request, trip);
             trip.UpdatedAt = DateTime.UtcNow;
+
+            // ← ADD THESE: force UTC on dates
+            trip.StartDate = DateTime.SpecifyKind(trip.StartDate, DateTimeKind.Utc);
+            if (trip.EndDate.HasValue)
+                trip.EndDate = DateTime.SpecifyKind(trip.EndDate.Value, DateTimeKind.Utc);
 
             await _unitOfWork.Trips.UpdateAsync(trip);
             await _unitOfWork.SaveChangesAsync();

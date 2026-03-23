@@ -17,7 +17,7 @@ namespace Ralphy.Infrastructure.Data.Repositories
         public async Task<T?> GetByIdAsync(int id) =>
             await _dbSet.FindAsync(id);
 
-        public async Task<IEnumerable<T>> GetAllAsync() =>
+        public virtual async Task<IEnumerable<T>> GetAllAsync() =>
             await _dbSet.ToListAsync();
 
         public async Task<T> AddAsync(T entity)
