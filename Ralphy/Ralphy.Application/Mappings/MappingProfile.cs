@@ -73,7 +73,10 @@ namespace Ralphy.Application.Mappings
                 .ForMember(dest => dest.PostTags, opt => opt.Ignore())
                 .ForMember(dest => dest.Status, opt => opt.Ignore())
                 .ForMember(dest => dest.ViewCount, opt => opt.Ignore())
-                .ForMember(dest => dest.PublishedAt, opt => opt.Ignore());
+                .ForMember(dest => dest.PublishedAt, opt => opt.MapFrom(src =>
+                    src.PublishedAt.HasValue
+                        ? DateTime.SpecifyKind(src.PublishedAt.Value, DateTimeKind.Utc)
+                        : (DateTime?)null));
 
             CreateMap<Post, PostWithDetailsDto>()
                 .ForMember(dest => dest.Photos,

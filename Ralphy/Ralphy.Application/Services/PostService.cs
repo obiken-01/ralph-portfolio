@@ -148,7 +148,11 @@ namespace Ralphy.Application.Services
                     "You are not authorized to publish this post");
 
             post.Status = PostStatus.Published;
-            post.PublishedAt = DateTime.UtcNow;
+
+            // ← Only set PublishedAt if not already set (preserve custom date)
+            if (!post.PublishedAt.HasValue)
+                post.PublishedAt = DateTime.UtcNow;
+
             post.UpdatedAt = DateTime.UtcNow;
 
             await _unitOfWork.Posts.UpdateAsync(post);
