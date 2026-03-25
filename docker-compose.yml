@@ -23,6 +23,22 @@ services:
       seq:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - ralphy-network
+
+  web:
+    build:
+      context: ./Ralphy/Ralphy.Web
+      dockerfile: Dockerfile
+    image: ralphy-web
+    container_name: ralphy-web
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - ralphy-network
 
   db:
     image: postgres:16
@@ -41,6 +57,8 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    networks:
+      - ralphy-network
 
   seq:
     image: datalust/seq:latest
@@ -49,8 +67,8 @@ services:
       ACCEPT_EULA: Y
       SEQ_FIRSTRUN_NOAUTHENTICATION: true
     ports:
-      - "5441:80"      # Seq web UI → http://localhost:5441
-      - "5442:5341"    # Seq ingestion
+      - "5441:80"
+      - "5442:5341"
     volumes:
       - seqdata:/data
     healthcheck:
@@ -59,7 +77,13 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    networks:
+      - ralphy-network
 
 volumes:
   pgdata:
   seqdata:
+
+networks:
+  ralphy-network:
+    driver: bridge
