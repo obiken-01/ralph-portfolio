@@ -6,6 +6,7 @@ import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import AdminLayout from '../../components/admin/AdminLayout'
+import LocationPicker from '../../components/admin/LocationPicker'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
 
@@ -414,6 +415,10 @@ export default function PostEditorPage() {
   const [saving,  setSaving]  = useState(false)
   const [postId,  setPostId]  = useState(isEdit ? Number(id) : null)
 
+  const [locations,     setLocations]     = useState([])
+  const [showLocPicker, setShowLocPicker] = useState(false)
+  const [tripLocations, setTripLocations] = useState([])
+
   const [form, setForm] = useState({
     title:    '',
     tripId:   '',
@@ -438,6 +443,14 @@ export default function PostEditorPage() {
       },
     },
   })
+
+  // Fetch post locations
+  useEffect(() => {
+    if (!postId) return
+    api.get(`/locations/trip/${form.tripId}`)
+      .then((res) => setTripLocations(res.data.data ?? []))
+      .catch(console.error)
+  }, [postId, form.tripId])
 
   // Fetch trips for selector
   useEffect(() => {
@@ -468,6 +481,31 @@ export default function PostEditorPage() {
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
+  const handleAddLocation = async (locationData) => {
+    try {
+      await api.post('/locations', {
+        ...locationData,
+        tripId: Number(form.tripId),
+      })
+      const res = await api.get(`/locations/trip/${form.tripId}`)
+      setTripLocations(res.data.data ?? [])
+      setShowLocPicker(false)
+      toast.success('Location added!')
+    } catch {
+      toast.error('Failed to add location')
+    }
+  }
+  
+  const handleDeleteLocation = async (locId) => {
+    try {
+      await api.delete(`/locations/${locId}`)
+      setTripLocations((prev) => prev.filter((l) => l.id !== locId))
+      toast.success('Location removed')
+    } catch {
+      toast.error('Failed to delete location')
+    }
   }
 
   const handleSave = async (publish = false) => {
@@ -703,6 +741,71 @@ export default function PostEditorPage() {
                 Optional YouTube / Vimeo embed URL
               </p>
             </div>
+
+            {/* Locations */}
+            {postId && form.tripId && (
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-white font-semibold text-sm">Locations</h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowLocPicker(true)}
+                    className="text-xs text-blue-400 hover:text-blue-300
+                              transition-colors"
+                  >
+                    + Add pin
+                  </button>
+                </div>
+
+                {tripLocations.length === 0 ? (
+                  <p className="text-xs text-slate-500">
+                    No locations yet.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {tripLocations.map((loc) => (
+                      <div key={loc.id}
+                          className="flex items-center gap-2 bg-slate-800
+                                      rounded-lg px-3 py-2">
+                        <span className="text-sm">📍</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-xs font-medium truncate">
+                            {loc.placeName}
+                          </p>
+                          <p className="text-slate-500 text-xs font-mono">
+                            {loc.latitude.toFixed(4)}, {loc.longitude.toFixed(4)}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteLocation(loc.id)}
+                          className="text-slate-500 hover:text-red-400
+                                    transition-colors flex-shrink-0"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none"
+                              stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2
+                                    2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1
+                                    1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Location Picker Modal */}
+            {showLocPicker && (
+              <LocationPicker
+                existingLocations={tripLocations}
+                onSave={handleAddLocation}
+                onCancel={() => setShowLocPicker(false)}
+              />
+            )}
 
             {/* Post ID info */}
             {postId && (

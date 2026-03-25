@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AdminLayout from '../../components/admin/AdminLayout'
+import LocationPicker from '../../components/admin/LocationPicker'
 import api from '../../api/axios'
 import { formatShortDate } from '../../utils/helpers'
 import toast from 'react-hot-toast'
@@ -20,6 +21,37 @@ function TripModal({ trip, onClose, onSaved }) {
     coverImageUrl: trip?.coverImageUrl ?? '',
   })
   const [saving, setSaving] = useState(false)
+  const [locations,       setLocations]       = useState([])
+  const [showLocPicker,   setShowLocPicker]   = useState(false)
+  const [deletingLocId,   setDeletingLocId]   = useState(null)
+
+  const handleAddLocation = async (locationData) => {
+    try {
+      await api.post('/locations', {
+        ...locationData,
+        tripId: trip.id,
+      })
+      const res = await api.get(`/locations/trip/${trip.id}`)
+      setLocations(res.data.data ?? [])
+      setShowLocPicker(false)
+      toast.success('Location added!')
+    } catch (err) {
+      toast.error('Failed to add location')
+    }
+  }
+
+  const handleDeleteLocation = async (locId) => {
+    setDeletingLocId(locId)
+    try {
+      await api.delete(`/locations/${locId}`)
+      setLocations((prev) => prev.filter((l) => l.id !== locId))
+      toast.success('Location removed')
+    } catch {
+      toast.error('Failed to delete location')
+    } finally {
+      setDeletingLocId(null)
+    }
+  }
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -185,6 +217,80 @@ function TripModal({ trip, onClose, onSaved }) {
               />
             )}
           </div>
+
+          {/* Locations — only show when editing */}
+          {isEdit && (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-medium text-slate-300">
+                  Locations
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowLocPicker(true)}
+                  className="text-xs text-blue-400 hover:text-blue-300
+                            transition-colors flex items-center gap-1"
+                >
+                  + Add pin
+                </button>
+              </div>
+
+              {locations.length === 0 ? (
+                <p className="text-xs text-slate-500 py-2">
+                  No locations yet — add a pin to show on the map.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {locations.map((loc) => (
+                    <div key={loc.id}
+                        className="flex items-center gap-2 bg-slate-800
+                                    rounded-lg px-3 py-2">
+                      <span className="text-sm">📍</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-xs font-medium truncate">
+                          {loc.placeName}
+                        </p>
+                        <p className="text-slate-500 text-xs font-mono">
+                          {loc.latitude.toFixed(4)}, {loc.longitude.toFixed(4)}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteLocation(loc.id)}
+                        disabled={deletingLocId === loc.id}
+                        className="text-slate-500 hover:text-red-400
+                                  transition-colors flex-shrink-0"
+                      >
+                        {deletingLocId === loc.id ? (
+                          <div className="w-3 h-3 border border-slate-400
+                                          border-t-transparent rounded-full
+                                          animate-spin" />
+                        ) : (
+                          <svg className="w-3.5 h-3.5" fill="none"
+                              stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2
+                                    2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1
+                                    1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Location Picker Modal */}
+          {showLocPicker && (
+            <LocationPicker
+              existingLocations={locations}
+              onSave={handleAddLocation}
+              onCancel={() => setShowLocPicker(false)}
+            />
+          )}
 
           {/* Actions */}
           <div className="flex gap-3 pt-2">
