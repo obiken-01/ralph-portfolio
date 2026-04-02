@@ -20,6 +20,7 @@ namespace Ralphy.Infrastructure.Data
         public DbSet<PostTag> PostTags => Set<PostTag>();
         public DbSet<AboutProfile> AboutProfiles => Set<AboutProfile>();
         public DbSet<WorkExperience> WorkExperiences => Set<WorkExperience>();
+        public DbSet<Skill> Skills => Set<Skill>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -18,6 +18,7 @@ namespace Ralphy.Domain.Interfaces
 
         IAboutProfileRepository AboutProfiles { get; }
         IWorkExperienceRepository WorkExperiences { get; }
+        ISkillRepository Skills { get; }
 
         Task<int> SaveChangesAsync();
     }

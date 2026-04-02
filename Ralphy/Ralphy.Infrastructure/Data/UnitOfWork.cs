@@ -19,6 +19,7 @@ namespace Ralphy.Infrastructure.Data
         public IPostTagRepository PostTags { get; }
         public IAboutProfileRepository AboutProfiles { get; }
         public IWorkExperienceRepository WorkExperiences { get; }
+        public ISkillRepository Skills { get; }
 
         public UnitOfWork(AppDbContext context)
         {
@@ -34,6 +35,7 @@ namespace Ralphy.Infrastructure.Data
             PostTags = new PostTagRepository(context);
             AboutProfiles = new AboutProfileRepository(context);
             WorkExperiences = new WorkExperienceRepository(context);
+            Skills = new SkillRepository(context);
         }
 
         public async Task<int> SaveChangesAsync() =>
