@@ -19,6 +19,7 @@ namespace Ralphy.Domain.Interfaces
         IAboutProfileRepository AboutProfiles { get; }
         IWorkExperienceRepository WorkExperiences { get; }
         ISkillRepository Skills { get; }
+        IContactMessageRepository ContactMessages { get; }
 
         Task<int> SaveChangesAsync();
     }

@@ -21,6 +21,7 @@ namespace Ralphy.Infrastructure.Data
         public DbSet<AboutProfile> AboutProfiles => Set<AboutProfile>();
         public DbSet<WorkExperience> WorkExperiences => Set<WorkExperience>();
         public DbSet<Skill> Skills => Set<Skill>();
+        public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
