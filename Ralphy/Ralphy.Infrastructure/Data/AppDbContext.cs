@@ -19,6 +19,7 @@ namespace Ralphy.Infrastructure.Data
         public DbSet<Tag> Tags => Set<Tag>();
         public DbSet<PostTag> PostTags => Set<PostTag>();
         public DbSet<AboutProfile> AboutProfiles => Set<AboutProfile>();
+        public DbSet<WorkExperience> WorkExperiences => Set<WorkExperience>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

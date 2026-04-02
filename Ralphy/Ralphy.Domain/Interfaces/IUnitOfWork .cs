@@ -17,6 +17,7 @@ namespace Ralphy.Domain.Interfaces
         IPostTagRepository PostTags { get; }
 
         IAboutProfileRepository AboutProfiles { get; }
+        IWorkExperienceRepository WorkExperiences { get; }
 
         Task<int> SaveChangesAsync();
     }
