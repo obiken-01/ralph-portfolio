@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { getAboutProfile } from "../../api/about";
+import { getAboutProfile, sendContactMessage } from "../../api/about";
 
 const NAV_LINKS = [
   { label: "Trips", to: "/trips" },
@@ -168,7 +168,7 @@ export default function AboutPage() {
         <div>
           {loading
             ? <SkeletonBlock width={180} height={22} mb={6} />
-            : <h1 style={{ margin: 0, fontSize: 22, fontWeight: 500 }}>{profile?.displayName || "Ralph Alcaide"}</h1>
+            : <h1 style={{ margin: 0, fontSize: 22, fontWeight: 500 }}>{profile?.displayName || "Ralph Armand Alcaide"}</h1>
           }
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4 }}>
             {loading
@@ -395,13 +395,23 @@ function ContactForm() {
       setStatus("error");
       return;
     }
+  
     setSending(true);
-    // Step 8 — will wire to POST /api/contact here
-    await new Promise(r => setTimeout(r, 800));
-    setSending(false);
-    setStatus("success");
-    setFormData({ name: "", email: "", subject: "", message: "" });
-    setTimeout(() => setStatus(null), 4000);
+    try {
+      await sendContactMessage({
+        authorName: formData.name,
+        authorEmail: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+      });
+      setStatus("success");
+      setFormData({ name: "", email: "", subject: "", message: "" });
+      setTimeout(() => setStatus(null), 4000);
+    } catch {
+      setStatus("failed");
+    } finally {
+      setSending(false);
+    }
   };
 
   const inputStyle = {
@@ -434,6 +444,7 @@ function ContactForm() {
         </button>
         {status === "success" && <p style={{ margin: "10px 0 0", fontSize: 13, color: "var(--color-text-success)", textAlign: "center" }}>✓ Message sent!</p>}
         {status === "error" && <p style={{ margin: "10px 0 0", fontSize: 13, color: "var(--color-text-danger)", textAlign: "center" }}>Please fill in your name, email, and message.</p>}
+        {status === "failed" && <p style={{ margin: "10px 0 0", fontSize: 13, color: "var(--color-text-danger)", textAlign: "center" }}>Something went wrong. Please try again.</p>}
       </div>
     </section>
   );
