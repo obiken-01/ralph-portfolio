@@ -21,6 +21,7 @@ import DashboardPage   from './pages/admin/DashboardPage'
 import AdminTripsPage  from './pages/admin/AdminTripsPage'
 import AdminPostsPage  from './pages/admin/AdminPostsPage'
 import PostEditorPage  from './pages/admin/PostEditorPage'
+import AdminAboutPage from './pages/admin/AdminAboutPage'
 
 export default function App() {
   return (
@@ -70,6 +71,9 @@ export default function App() {
           }/>
           <Route path="/admin/posts/:id/edit" element={
             <ProtectedRoute><PostEditorPage /></ProtectedRoute>
+          }/>
+          <Route path="/admin/about" element={
+            <ProtectedRoute><AdminAboutPage /></ProtectedRoute>
           }/>
 
         </Routes>

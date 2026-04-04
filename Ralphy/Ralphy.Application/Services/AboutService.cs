@@ -1,4 +1,5 @@
-﻿using Ralphy.Application.DTOs.About;
+﻿using Microsoft.AspNetCore.Http;
+using Ralphy.Application.DTOs.About;
 using Ralphy.Application.Services.Interfaces;
 using Ralphy.Domain.Entities;
 using Ralphy.Domain.Interfaces;
@@ -8,10 +9,12 @@ namespace Ralphy.Application.Services
     public class AboutService : IAboutService
     {
         private readonly IUnitOfWork _uow;
+        private readonly ICloudinaryService _cloudinaryService;
 
-        public AboutService(IUnitOfWork uow)
+        public AboutService(IUnitOfWork uow, ICloudinaryService cloudinaryService)
         {
             _uow = uow;
+            _cloudinaryService = cloudinaryService;
         }
 
         public async Task<AboutProfileDto> GetProfileAsync()
@@ -154,6 +157,81 @@ namespace Ralphy.Application.Services
                 ?? throw new KeyNotFoundException($"Skill {id} not found");
 
             await _uow.Skills.DeleteAsync(entity);
+        }
+
+        public async Task UploadCvAsync(IFormFile file)
+        {
+            var result = await _cloudinaryService.UploadCvAsync(file);
+
+            var profile = await _uow.AboutProfiles.GetAsync();
+
+            if (profile == null)
+            {
+                await _uow.AboutProfiles.CreateAsync(new AboutProfile
+                {
+                    CvUrl = result.Url,
+                    CvPublicId = result.PublicId
+                });
+                return;
+            }
+
+            profile.CvUrl = result.Url;
+            profile.CvPublicId = result.PublicId;
+            await _uow.AboutProfiles.UpdateAsync(profile);
+        }
+
+        public async Task DeleteCvAsync()
+        {
+            var profile = await _uow.AboutProfiles.GetAsync();
+
+            if (profile == null || string.IsNullOrEmpty(profile.CvPublicId))
+                throw new KeyNotFoundException("No CV found to delete.");
+
+            await _cloudinaryService.DeleteCvAsync(profile.CvPublicId);
+
+            profile.CvUrl = null;
+            profile.CvPublicId = null;
+            await _uow.AboutProfiles.UpdateAsync(profile);
+        }
+
+        public async Task UploadProfileImageAsync(IFormFile file)
+        {
+            var result = await _cloudinaryService.UploadProfileImageAsync(file);
+            var profile = await _uow.AboutProfiles.GetAsync();
+
+            if (profile == null)
+            {
+                await _uow.AboutProfiles.CreateAsync(new AboutProfile
+                {
+                    ProfileImageUrl = result.Url,
+                    ProfileImagePublicId = result.PublicId
+                });
+                return;
+            }
+
+            profile.ProfileImageUrl = result.Url;
+            profile.ProfileImagePublicId = result.PublicId;
+            await _uow.AboutProfiles.UpdateAsync(profile);
+        }
+
+        public async Task UploadCoverImageAsync(IFormFile file)
+        {
+            var result = await _cloudinaryService.UploadCoverImageAsync(file);
+            var profile = await _uow.AboutProfiles.GetAsync();
+
+            if (profile == null)
+            {
+                await _uow.AboutProfiles.CreateAsync(new AboutProfile
+                {
+                    CoverImageUrl = result.Url,
+                    CoverImagePublicId = result.PublicId
+                });
+                return;
+            }
+
+            profile.CoverImageUrl = result.Url;
+            profile.CoverImagePublicId = result.PublicId;
+            await _uow.AboutProfiles.UpdateAsync(profile);
         }
 
         private static WorkExperienceDto MapWorkExperience(WorkExperience w) => new()

@@ -35,7 +35,7 @@ function TripModal({ trip, onClose, onSaved }) {
       setLocations(res.data.data ?? [])
       setShowLocPicker(false)
       toast.success('Location added!')
-    } catch (err) {
+    } catch {
       toast.error('Failed to add location')
     }
   }

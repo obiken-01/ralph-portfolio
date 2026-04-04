@@ -1,4 +1,5 @@
-﻿using Ralphy.Application.DTOs.About;
+﻿using Microsoft.AspNetCore.Http;
+using Ralphy.Application.DTOs.About;
 
 namespace Ralphy.Application.Services.Interfaces
 {
@@ -23,5 +24,13 @@ namespace Ralphy.Application.Services.Interfaces
         Task UpdateSkillAsync(int id, CreateSkillDto dto);
 
         Task DeleteSkillAsync(int id);
+
+        Task UploadCvAsync(IFormFile file);
+
+        Task DeleteCvAsync();
+
+        Task UploadProfileImageAsync(IFormFile file);
+
+        Task UploadCoverImageAsync(IFormFile file);
     }
 }

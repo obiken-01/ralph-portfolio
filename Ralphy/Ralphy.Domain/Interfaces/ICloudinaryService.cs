@@ -15,8 +15,18 @@ namespace Ralphy.Domain.Interfaces
             string folder,
             string? publicId = null);
 
+        Task<CloudinaryUploadResult> UploadCvAsync(IFormFile file);
+
         Task<bool> DeleteMediaAsync(string publicId, bool isVideo = false);
 
         Task DeleteManyAsync(IEnumerable<string> publicIds, bool isVideo = false);
+
+        Task DeleteCvAsync(string publicId);
+
+        Task<CloudinaryUploadResult> UploadProfileImageAsync(IFormFile file);
+
+        Task<CloudinaryUploadResult> UploadCoverImageAsync(IFormFile file);
+
+        Task DeleteImageAsync(string publicId);
     }
 }

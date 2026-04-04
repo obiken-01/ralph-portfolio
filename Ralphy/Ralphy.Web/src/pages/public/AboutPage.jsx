@@ -1,14 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
 import { getAboutProfile, sendContactMessage } from "../../api/about";
-
-const NAV_LINKS = [
-  { label: "Trips", to: "/trips" },
-  { label: "Posts", to: "/posts" },
-  { label: "Map", to: "/map" },
-  { label: "Timeline", to: "/timeline" },
-  { label: "About", to: "/about" },
-];
 
 const TOC = [
   { id: "about-me", label: "About Me" },
@@ -76,7 +67,6 @@ export default function AboutPage() {
   const [skillsVisible, setSkillsVisible] = useState(false);
   const skillsRef = useRef(null);
 
-  // Fetch profile
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -91,7 +81,6 @@ export default function AboutPage() {
     fetchProfile();
   }, []);
 
-  // Skill bar animation on scroll
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) setSkillsVisible(true); },
@@ -101,7 +90,6 @@ export default function AboutPage() {
     return () => observer.disconnect();
   }, []);
 
-  // TOC active section on scroll
   useEffect(() => {
     const handleScroll = () => {
       const sections = TOC.map((t) => ({ id: t.id, el: document.getElementById(t.id) }));
@@ -131,60 +119,136 @@ export default function AboutPage() {
   return (
     <div style={{ fontFamily: "sans-serif", minHeight: "100vh", background: "var(--color-background-tertiary)" }}>
 
-      {/* pulse keyframes */}
       <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
 
-      {/* Hero cover */}
-      <div style={{ position: "relative", height: 200, overflow: "hidden", background: "#0d1117" }}>
-        {profile?.coverImageUrl
-          ? <img src={profile.coverImageUrl} alt="Cover" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.7 }} />
-          : <div style={{ position: "absolute", inset: 0, backgroundImage: `repeating-linear-gradient(0deg,rgba(255,255,255,0.015) 0px,rgba(255,255,255,0.015) 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,rgba(255,255,255,0.015) 0px,rgba(255,255,255,0.015) 1px,transparent 1px,transparent 40px)` }} />
-        }
+      {/* ── Hero banner ── */}
+      <div style={{
+        position: "relative",
+        height: 260,
+        overflow: "hidden",
+        background: "#0d1117",
+      }}>
 
-        {/* Avatar */}
+        {/* Subtle grid texture */}
         <div style={{
-          position: "absolute", bottom: -28, left: 40,
-          width: 72, height: 72, borderRadius: "50%",
-          border: "3px solid var(--color-background-tertiary)",
-          overflow: "hidden",
-          background: "linear-gradient(135deg, #4fa3e3 0%, #185fa5 100%)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 22, fontWeight: 600, color: "#fff",
+          position: "absolute", inset: 0,
+          backgroundImage: `repeating-linear-gradient(0deg,rgba(255,255,255,0.02) 0px,rgba(255,255,255,0.02) 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,rgba(255,255,255,0.02) 0px,rgba(255,255,255,0.02) 1px,transparent 1px,transparent 40px)`
+        }} />
+
+        {/* Profile photo — right side, contained, anchored to bottom */}
+        {profile?.profileImageUrl && (
+          <div style={{
+            position: "absolute",
+            right: 0, bottom: 0,
+            height: "100%",
+            width: 260,
+          }}>
+            <img
+              src={profile.profileImageUrl}
+              alt={profile.displayName}
+              style={{
+                height: "100%",
+                width: "100%",
+                objectFit: "contain",
+                objectPosition: "bottom right",
+              }}
+            />
+            {/* Right edge fade into dark background */}
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "linear-gradient(to left, #0d1117 0%, transparent 30%)"
+            }} />
+            {/* Bottom fade */}
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "linear-gradient(to top, #0d1117 0%, transparent 15%)"
+            }} />
+          </div>
+        )}
+
+        {/* Left side — name + headline */}
+        <div style={{
+          position: "absolute",
+          left: 48, top: 0, bottom: 0,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          maxWidth: "60%",
+          zIndex: 1,
         }}>
-          {profile?.profileImageUrl
-            ? <img src={profile.profileImageUrl} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            : (profile?.displayName?.slice(0, 2).toUpperCase() ?? "RA")
-          }
+          {loading ? (
+            <>
+              <SkeletonBlock width={220} height={30} mb={10} />
+              <SkeletonBlock width={160} height={13} mb={0} />
+            </>
+          ) : (
+            <>
+              <h1 style={{
+                margin: 0,
+                fontSize: 30,
+                fontWeight: 700,
+                color: "#fff",
+                lineHeight: 1.2,
+                letterSpacing: "-0.01em",
+              }}>
+                {profile?.displayName || "Ralph Alcaide"}
+              </h1>
+              {profile?.headline && (
+                <p style={{
+                  margin: "8px 0 0",
+                  fontSize: 13,
+                  color: "rgba(255,255,255,0.55)",
+                  fontFamily: "monospace",
+                  letterSpacing: "0.02em",
+                }}>
+                  {profile.headline}
+                </p>
+              )}
+            </>
+          )}
         </div>
+
       </div>
 
-      {/* Profile header */}
+      {/* Profile sub-header */}
       <div style={{
-        background: "var(--color-background-primary)",
-        borderBottom: "0.5px solid var(--color-border-tertiary)",
-        padding: "0 40px 16px", paddingTop: 36,
-        display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12,
+        background: "#0d1117",
+        borderBottom: "1px solid rgba(255,255,255,0.08)",
+        padding: "10px 48px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: 12,
       }}>
-        <div>
-          {loading
-            ? <SkeletonBlock width={180} height={22} mb={6} />
-            : <h1 style={{ margin: 0, fontSize: 22, fontWeight: 500 }}>{profile?.displayName || "Ralph Armand Alcaide"}</h1>
-          }
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4 }}>
-            {loading
-              ? <SkeletonBlock width={120} height={14} mb={0} />
-              : <span style={{ fontSize: 13, color: "var(--color-text-secondary)", fontFamily: "monospace" }}>{profile?.headline || ""}</span>
-            }
-          </div>
-        </div>
+        <span style={{
+          fontSize: 12,
+          color: "rgba(255,255,255,0.35)",
+          fontFamily: "monospace",
+          letterSpacing: "0.04em",
+        }}>
+          @lakbayOksi
+        </span>
         <div style={{ display: "flex", gap: 8 }}>
-          <a href="#contact" style={{ fontSize: 13, padding: "7px 16px", borderRadius: 6, background: "#185fa5", color: "#fff", textDecoration: "none", fontWeight: 500 }}>
+          <a
+            href="#contact"
+            style={{
+              fontSize: 13, padding: "6px 16px", borderRadius: 6,
+              background: "#185fa5", color: "#fff",
+              textDecoration: "none", fontWeight: 500,
+            }}
+          >
             Contact me
           </a>
           {profile?.cvUrl && (
             <button
               onClick={() => window.open(profile.cvUrl, "_blank")}
-              style={{ fontSize: 13, padding: "7px 16px", borderRadius: 6, border: "0.5px solid var(--color-border-primary)", background: "transparent", color: "var(--color-text-primary)", cursor: "pointer" }}
+              style={{
+                fontSize: 13, padding: "6px 16px", borderRadius: 6,
+                border: "0.5px solid rgba(255,255,255,0.2)",
+                background: "transparent", color: "rgba(255,255,255,0.7)",
+                cursor: "pointer",
+              }}
             >
               Download CV
             </button>
@@ -198,10 +262,7 @@ export default function AboutPage() {
         display: "grid", gridTemplateColumns: "1fr 260px", gap: "2rem", alignItems: "start",
       }}>
 
-        {/* Left: content */}
         <div>
-
-          {/* Error state */}
           {error && (
             <div style={{ padding: "1rem", borderRadius: 8, background: "var(--color-background-danger)", color: "var(--color-text-danger)", marginBottom: "1.5rem", fontSize: 14 }}>
               {error}
@@ -299,15 +360,12 @@ export default function AboutPage() {
             </div>
           </section>
 
-          {/* Contact Form */}
           <ContactForm />
-
         </div>
 
         {/* Right: sidebar */}
         <div style={{ position: "sticky", top: 68, display: "flex", flexDirection: "column", gap: 16 }}>
 
-          {/* TOC */}
           <SidebarCard title="On this page">
             {TOC.map(item => (
               <a key={item.id} href={`#${item.id}`} style={{
@@ -322,7 +380,6 @@ export default function AboutPage() {
             ))}
           </SidebarCard>
 
-          {/* Socials */}
           {socials.length > 0 && (
             <SidebarCard title="Find me online">
               {socials.map(s => (
@@ -337,7 +394,6 @@ export default function AboutPage() {
             </SidebarCard>
           )}
 
-          {/* CV */}
           {profile?.cvUrl && (
             <SidebarCard title="Resume / CV">
               <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 6, border: "0.5px solid var(--color-border-secondary)", marginBottom: 10 }}>
@@ -358,8 +414,6 @@ export default function AboutPage() {
     </div>
   );
 }
-
-// ── Small reusable components ──────────────────────────────
 
 function SectionHeader({ label }) {
   return (
@@ -395,7 +449,7 @@ function ContactForm() {
       setStatus("error");
       return;
     }
-  
+
     setSending(true);
     try {
       await sendContactMessage({

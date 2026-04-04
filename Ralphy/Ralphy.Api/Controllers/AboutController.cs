@@ -78,5 +78,58 @@ namespace Ralphy.Api.Controllers
             await _aboutService.DeleteSkillAsync(id);
             return NoContent();
         }
+
+        [HttpPost("cv")]
+        [Authorize]
+        public async Task<IActionResult> UploadCv(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("No file provided.");
+
+            if (!file.ContentType.Equals("application/pdf", StringComparison.OrdinalIgnoreCase))
+                return BadRequest("Only PDF files are allowed.");
+
+            if (file.Length > 10 * 1024 * 1024)
+                return BadRequest("File size must be under 10MB.");
+
+            await _aboutService.UploadCvAsync(file);
+            return NoContent();
+        }
+
+        [HttpDelete("cv")]
+        [Authorize]
+        public async Task<IActionResult> DeleteCv()
+        {
+            await _aboutService.DeleteCvAsync();
+            return NoContent();
+        }
+
+        [HttpPost("profile-image")]
+        [Authorize]
+        public async Task<IActionResult> UploadProfileImage(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("No file provided.");
+
+            if (file.Length > 10 * 1024 * 1024)
+                return BadRequest("File size must be under 10MB.");
+
+            await _aboutService.UploadProfileImageAsync(file);
+            return NoContent();
+        }
+
+        [HttpPost("cover-image")]
+        [Authorize]
+        public async Task<IActionResult> UploadCoverImage(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("No file provided.");
+
+            if (file.Length > 10 * 1024 * 1024)
+                return BadRequest("File size must be under 10MB.");
+
+            await _aboutService.UploadCoverImageAsync(file);
+            return NoContent();
+        }
     }
 }
