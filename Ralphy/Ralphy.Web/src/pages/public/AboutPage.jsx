@@ -71,7 +71,7 @@ export default function AboutPage() {
     const fetchProfile = async () => {
       try {
         const res = await getAboutProfile();
-        setProfile(res.data);
+        setProfile(res.data.data);
       } catch {
         setError("Failed to load profile.");
       } finally {

@@ -2,6 +2,7 @@ import api from './axios'
 
 export const getAboutProfile = () => api.get('/about')
 export const sendContactMessage = (data) => api.post('/contact', data)
+export const getContactMessages = () => api.get('/contact/messages')
 
 export const uploadCv = (formData) =>
     api.post('/about/cv', formData, {

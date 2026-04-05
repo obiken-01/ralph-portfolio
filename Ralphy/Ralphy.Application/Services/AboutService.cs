@@ -54,10 +54,10 @@ namespace Ralphy.Application.Services
                     DisplayName = dto.DisplayName,
                     Headline = dto.Headline,
                     Bio = dto.Bio,
-                    InstagramUrl = dto.InstagramUrl,
-                    LinkedInUrl = dto.LinkedInUrl,
-                    GitHubUrl = dto.GitHubUrl,
-                    YouTubeUrl = dto.YouTubeUrl
+                    InstagramUrl = string.IsNullOrEmpty(dto.InstagramUrl) ? null : dto.InstagramUrl,
+                    LinkedInUrl = string.IsNullOrEmpty(dto.LinkedInUrl) ? null : dto.LinkedInUrl,
+                    GitHubUrl = string.IsNullOrEmpty(dto.GitHubUrl) ? null : dto.GitHubUrl,
+                    YouTubeUrl = string.IsNullOrEmpty(dto.YouTubeUrl) ? null : dto.YouTubeUrl,
                 });
                 return;
             }
@@ -65,10 +65,10 @@ namespace Ralphy.Application.Services
             profile.DisplayName = dto.DisplayName;
             profile.Headline = dto.Headline;
             profile.Bio = dto.Bio;
-            profile.InstagramUrl = dto.InstagramUrl;
-            profile.LinkedInUrl = dto.LinkedInUrl;
-            profile.GitHubUrl = dto.GitHubUrl;
-            profile.YouTubeUrl = dto.YouTubeUrl;
+            profile.InstagramUrl = string.IsNullOrEmpty(dto.InstagramUrl) ? null : dto.InstagramUrl;
+            profile.LinkedInUrl = string.IsNullOrEmpty(dto.LinkedInUrl) ? null : dto.LinkedInUrl;
+            profile.GitHubUrl = string.IsNullOrEmpty(dto.GitHubUrl) ? null : dto.GitHubUrl;
+            profile.YouTubeUrl = string.IsNullOrEmpty(dto.YouTubeUrl) ? null : dto.YouTubeUrl;
 
             await _uow.AboutProfiles.UpdateAsync(profile);
         }

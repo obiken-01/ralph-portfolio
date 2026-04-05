@@ -432,7 +432,7 @@ export default function AdminAboutPage() {
         api.get('/contact/messages'),
       ])
 
-      const p = profileRes.data
+      const p = profileRes.data.data
       setProfile(p)
       setWorkExps(p.workExperiences ?? [])
       setSkills(p.skills ?? [])
@@ -445,7 +445,7 @@ export default function AdminAboutPage() {
         gitHubUrl:    p.gitHubUrl    ?? '',
         youTubeUrl:   p.youTubeUrl   ?? '',
       })
-      setMessages(messagesRes.data ?? [])
+      setMessages(messagesRes.data.data ?? [])
     } catch (err) {
       console.error(err)
     } finally {
