@@ -17,6 +17,10 @@ namespace Ralphy.Infrastructure.Data
         public IRefreshTokenRepository RefreshTokens { get; }
         public ITagRepository Tags { get; }
         public IPostTagRepository PostTags { get; }
+        public IAboutProfileRepository AboutProfiles { get; }
+        public IWorkExperienceRepository WorkExperiences { get; }
+        public ISkillRepository Skills { get; }
+        public IContactMessageRepository ContactMessages { get; }
 
         public UnitOfWork(AppDbContext context)
         {
@@ -30,6 +34,10 @@ namespace Ralphy.Infrastructure.Data
             RefreshTokens = new RefreshTokenRepository(context);
             Tags = new TagRepository(context);
             PostTags = new PostTagRepository(context);
+            AboutProfiles = new AboutProfileRepository(context);
+            WorkExperiences = new WorkExperienceRepository(context);
+            Skills = new SkillRepository(context);
+            ContactMessages = new ContactMessageRepository(context);
         }
 
         public async Task<int> SaveChangesAsync() =>

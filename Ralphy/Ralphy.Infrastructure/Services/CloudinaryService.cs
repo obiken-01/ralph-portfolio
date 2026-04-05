@@ -115,6 +115,27 @@ namespace Ralphy.Infrastructure.Services
             };
         }
 
+        public async Task<CloudinaryUploadResult> UploadCvAsync(IFormFile file)
+        {
+            using var stream = file.OpenReadStream();
+            var uploadParams = new RawUploadParams
+            {
+                File = new FileDescription(file.FileName, stream),
+                Folder = "ralphy/cv",
+                PublicId = "ralph-alcaide-cv",
+                Overwrite = true,
+                AccessMode = "public"
+            };
+
+            var result = await _cloudinary.UploadAsync(uploadParams);
+
+            return new CloudinaryUploadResult
+            {
+                Url = result.SecureUrl.ToString(),
+                PublicId = result.PublicId
+            };
+        }
+
         public async Task<bool> DeleteMediaAsync(
             string publicId, bool isVideo = false)
         {
@@ -168,6 +189,62 @@ namespace Ralphy.Infrastructure.Services
                         "Failed to delete media from Cloudinary: {PublicId}", publicId);
                 }
             }
+        }
+
+        public async Task DeleteCvAsync(string publicId)
+        {
+            var deleteParams = new DeletionParams(publicId)
+            {
+                ResourceType = ResourceType.Raw
+            };
+            await _cloudinary.DestroyAsync(deleteParams);
+        }
+
+        public async Task<CloudinaryUploadResult> UploadProfileImageAsync(IFormFile file)
+        {
+            using var stream = file.OpenReadStream();
+            var uploadParams = new ImageUploadParams
+            {
+                File = new FileDescription(file.FileName, stream),
+                Folder = "ralphy/profile",
+                PublicId = "ralph-alcaide-profile",
+                Overwrite = true,
+                AccessMode = "public"
+            };
+            var result = await _cloudinary.UploadAsync(uploadParams);
+            return new CloudinaryUploadResult
+            {
+                Url = result.SecureUrl.ToString(),
+                PublicId = result.PublicId
+            };
+        }
+
+        public async Task<CloudinaryUploadResult> UploadCoverImageAsync(IFormFile file)
+        {
+            using var stream = file.OpenReadStream();
+            var uploadParams = new ImageUploadParams
+            {
+                File = new FileDescription(file.FileName, stream),
+                Folder = "ralphy/cover",
+                PublicId = "ralph-alcaide-cover",
+                Overwrite = true,
+                AccessMode = "public"
+            };
+            var result = await _cloudinary.UploadAsync(uploadParams);
+            return new CloudinaryUploadResult
+            {
+                Url = result.SecureUrl.ToString(),
+                PublicId = result.PublicId
+            };
+        }
+
+        public async Task DeleteImageAsync(string publicId)
+        {
+            var deleteParams = new DeletionParams(publicId)
+            {
+                ResourceType = ResourceType.Image
+            };
+            await _cloudinary.DestroyAsync(deleteParams);
         }
 
         // ── Private Helpers ──────────────────────────────────────────

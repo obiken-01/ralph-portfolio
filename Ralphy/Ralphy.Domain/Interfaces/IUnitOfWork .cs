@@ -16,6 +16,11 @@ namespace Ralphy.Domain.Interfaces
         ITagRepository Tags { get; }
         IPostTagRepository PostTags { get; }
 
+        IAboutProfileRepository AboutProfiles { get; }
+        IWorkExperienceRepository WorkExperiences { get; }
+        ISkillRepository Skills { get; }
+        IContactMessageRepository ContactMessages { get; }
+
         Task<int> SaveChangesAsync();
     }
 }
