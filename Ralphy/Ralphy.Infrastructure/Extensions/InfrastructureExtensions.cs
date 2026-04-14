@@ -90,6 +90,15 @@ namespace Ralphy.Infrastructure.Extensions
             services.AddSingleton(new Cloudinary(cloudinaryAccount));
             services.AddScoped<ICloudinaryService, CloudinaryService>();
 
+            // Anthropic
+            services.Configure<AnthropicSettings>(
+                configuration.GetSection("Anthropic"));
+
+            services.AddHttpClient<IAnthropicService, AnthropicService>();
+
+            services.Configure<ShoppingListSettings>(
+                configuration.GetSection("ShoppingList"));
+
             return services;
         }
     }
