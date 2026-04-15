@@ -1,0 +1,59 @@
+name: CI — Build & Verify
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  # ── Backend Build ────────────────────────────────────────────
+  backend:
+    name: Backend (.NET 9)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore Ralphy/Ralphy.slnx
+
+      - name: Build
+        run: dotnet build Ralphy/Ralphy.slnx --no-restore --configuration Release
+
+      - name: Run tests
+        run: dotnet test Ralphy/Ralphy.slnx --no-build --configuration Release
+        continue-on-error: true  # Remove this line when you add real tests
+
+  # ── Frontend Build ───────────────────────────────────────────
+  frontend:
+    name: Frontend (React + Vite)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: Ralphy/Ralphy.Web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: Ralphy/Ralphy.Web
+
+      - name: Build
+        run: npm run build
+        working-directory: Ralphy/Ralphy.Web
+        env:
+          VITE_API_URL: https://ralphy-production.up.railway.app/api
