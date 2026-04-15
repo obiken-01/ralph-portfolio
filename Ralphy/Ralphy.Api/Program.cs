@@ -209,6 +209,27 @@ try
     {
         app.UseHttpsRedirection();
     }
+
+    // Handle OPTIONS preflight requests explicitly
+    app.Use(async (context, next) =>
+    {
+        if (context.Request.Method == "OPTIONS")
+        {
+            context.Response.Headers.Append("Access-Control-Allow-Origin",
+                context.Request.Headers["Origin"].ToString());
+            context.Response.Headers.Append("Access-Control-Allow-Methods",
+                "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+            context.Response.Headers.Append("Access-Control-Allow-Headers",
+                "Content-Type, Authorization, X-Api-Key");
+            context.Response.Headers.Append("Access-Control-Allow-Credentials",
+                "true");
+            context.Response.StatusCode = 200;
+            await context.Response.CompleteAsync();
+            return;
+        }
+        await next();
+    });
+
     app.UseCors("RalphyPolicy");
 
     app.UseRateLimiter();
