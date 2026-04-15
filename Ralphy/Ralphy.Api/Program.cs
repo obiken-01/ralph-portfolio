@@ -37,9 +37,21 @@ try
     });
 
     // CORS
+    // Support both appsettings.json array and Railway single env var
     var allowedOrigins = builder.Configuration
         .GetSection("Cors:AllowedOrigins")
-        .Get<string[]>() ?? Array.Empty<string>();
+        .Get<string[]>()
+        ?? Array.Empty<string>();
+
+    // Also check for a comma-separated env var (Railway-friendly)
+    var extraOrigins = builder.Configuration["Cors:ExtraAllowedOrigins"];
+    if (!string.IsNullOrEmpty(extraOrigins))
+    {
+        allowedOrigins = allowedOrigins
+            .Concat(extraOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(o => o.Trim()))
+            .ToArray();
+    }
 
     builder.Services.AddCors(options =>
     {
