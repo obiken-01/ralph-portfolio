@@ -1,10 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Ralphy.Application.Common;
 using Ralphy.Application.Extensions;
 using Ralphy.Infrastructure.Data;
 using Ralphy.Infrastructure.Extensions;
 using Serilog;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -47,6 +51,28 @@ try
                 .AllowAnyMethod()
                 .AllowCredentials();
         });
+    });
+
+    // Rate Limiting
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.AddFixedWindowLimiter("shopping-list", limiterOptions =>
+        {
+            limiterOptions.PermitLimit = 10;
+            limiterOptions.Window = TimeSpan.FromHours(1);
+            limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            limiterOptions.QueueLimit = 0;
+        });
+
+        options.RejectionStatusCode = 429;
+
+        options.OnRejected = async (context, cancellationToken) =>
+        {
+            context.HttpContext.Response.ContentType = "application/json";
+            await context.HttpContext.Response.WriteAsJsonAsync(
+                ApiResponse<string>.Fail(429, "Too many requests. Limit is 10 per hour."),
+                cancellationToken);
+        };
     });
 
     builder.Services.AddControllers()
@@ -178,6 +204,7 @@ try
 
     app.UseHttpsRedirection();
     app.UseCors("RalphyPolicy");
+    app.UseRateLimiter();
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
