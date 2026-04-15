@@ -223,6 +223,7 @@ try
                 "Content-Type, Authorization, X-Api-Key");
             context.Response.Headers.Append("Access-Control-Allow-Credentials",
                 "true");
+            context.Response.Headers.Append("Cache-Control", "no-store, no-cache");
             context.Response.StatusCode = 200;
             await context.Response.CompleteAsync();
             return;
