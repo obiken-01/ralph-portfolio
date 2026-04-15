@@ -205,8 +205,12 @@ try
         });
     }
 
-    app.UseHttpsRedirection();
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseHttpsRedirection();
+    }
     app.UseCors("RalphyPolicy");
+
     app.UseRateLimiter();
     app.UseAuthentication();
     app.UseAuthorization();
