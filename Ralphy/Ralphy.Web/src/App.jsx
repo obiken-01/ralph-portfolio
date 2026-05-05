@@ -22,6 +22,7 @@ import AdminTripsPage  from './pages/admin/AdminTripsPage'
 import AdminPostsPage  from './pages/admin/AdminPostsPage'
 import PostEditorPage  from './pages/admin/PostEditorPage'
 import AdminAboutPage from './pages/admin/AdminAboutPage'
+import AdminTimekeepingUsersPage from './pages/admin/AdminTimekeepingUsersPage'
 
 export default function App() {
   return (
@@ -74,6 +75,9 @@ export default function App() {
           }/>
           <Route path="/admin/about" element={
             <ProtectedRoute><AdminAboutPage /></ProtectedRoute>
+          }/>
+          <Route path="/admin/timekeeping-users" element={
+            <ProtectedRoute><AdminTimekeepingUsersPage /></ProtectedRoute>
           }/>
 
         </Routes>
