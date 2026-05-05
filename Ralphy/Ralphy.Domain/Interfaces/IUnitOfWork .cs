@@ -21,6 +21,10 @@ namespace Ralphy.Domain.Interfaces
         ISkillRepository Skills { get; }
         IContactMessageRepository ContactMessages { get; }
 
+        // Timekeeping repositories (v1.3)
+        ITimekeepingUserRepository TimekeepingUsers { get; }
+        ITimeLogRepository TimeLogs { get; }
+
         Task<int> SaveChangesAsync();
     }
 }
