@@ -56,7 +56,8 @@ namespace Ralphy.Application.Services
             {
                 TaskDescription = dto.TaskDescription,
                 LoggedAt = dto.LoggedAt,
-                TimekeepingUserId = user.Id
+                TimekeepingUserId = user.Id,
+                Duration = dto.Duration
             };
 
             await _uow.TimeLogs.AddAsync(log);
@@ -73,6 +74,7 @@ namespace Ralphy.Application.Services
                 ?? throw new KeyNotFoundException("Time log not found");
 
             log.TaskDescription = dto.TaskDescription;
+            log.Duration = dto.Duration;
             log.LoggedAt = dto.LoggedAt;
             log.UpdatedAt = DateTime.UtcNow;
 
@@ -106,13 +108,13 @@ namespace Ralphy.Application.Services
                 query.SortDir);
 
             var sb = new StringBuilder();
-            sb.AppendLine("LoggedAt,TaskDescription");
+            sb.AppendLine("LoggedAt,Duration (hrs),TaskDescription");
 
             foreach (var log in logs)
             {
                 var loggedAt = log.LoggedAt.ToString("yyyy-MM-dd HH:mm");
                 var description = log.TaskDescription.Replace("\"", "\"\"");
-                sb.AppendLine($"\"{loggedAt}\",\"{description}\"");
+                sb.AppendLine($"\"{loggedAt}\",\"{log.Duration}\",\"{description}\"");
             }
 
             return Encoding.UTF8.GetBytes(sb.ToString());

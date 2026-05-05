@@ -171,6 +171,10 @@ namespace Ralphy.Infrastructure.Data
 
                 entity.Property(t => t.TimekeepingUserId)
                     .IsRequired();
+
+                entity.Property(t => t.Duration)
+                    .IsRequired()
+                    .HasColumnType("numeric(5,2)");
             });
 
             // RefreshToken — add UserType column configuration

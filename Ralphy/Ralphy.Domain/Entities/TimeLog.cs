@@ -5,6 +5,7 @@
         public string TaskDescription { get; set; } = string.Empty;
         public DateTime LoggedAt { get; set; }
         public int TimekeepingUserId { get; set; }
+        public decimal Duration { get; set; }
 
         public TimekeepingUser TimekeepingUser { get; set; } = null!;
     }
