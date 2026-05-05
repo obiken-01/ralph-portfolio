@@ -132,6 +132,7 @@ namespace Ralphy.Application.Services
         {
             Id = log.Id,
             TaskDescription = log.TaskDescription,
+            Duration = log.Duration,
             LoggedAt = log.LoggedAt,
             CreatedAt = log.CreatedAt
         };
