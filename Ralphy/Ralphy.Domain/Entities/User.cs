@@ -7,6 +7,7 @@
         public string PasswordHash { get; set; } = string.Empty;
         public string? Bio { get; set; }
         public string? ProfileImageUrl { get; set; }
+        public Guid PublicId { get; set; }
 
         // Navigation properties
         public ICollection<Trip> Trips { get; set; } = new List<Trip>();

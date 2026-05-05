@@ -6,6 +6,8 @@ namespace Ralphy.Domain.Interfaces
     {
         string GenerateAccessToken(User user);
 
+        string GenerateAccessToken(int userId, string email, string username);
+
         string GenerateRefreshToken();
 
         int GetUserIdFromToken(string token);

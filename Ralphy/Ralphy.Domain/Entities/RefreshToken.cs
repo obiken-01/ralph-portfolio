@@ -1,4 +1,6 @@
-﻿namespace Ralphy.Domain.Entities
+﻿using Ralphy.Domain.Enums;
+
+namespace Ralphy.Domain.Entities
 {
     public class RefreshToken : BaseEntity
     {
@@ -9,6 +11,7 @@
         public bool IsExpired => DateTime.UtcNow >= ExpiresAt;
         public bool IsRevoked => RevokedAt != null;
         public bool IsActive => !IsRevoked && !IsExpired;
+        public UserType UserType { get; set; } = UserType.Ralphy;
 
         // Foreign key
         public int UserId { get; set; }

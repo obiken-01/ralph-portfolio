@@ -30,6 +30,9 @@ namespace Ralphy.Application.Extensions
             services.AddScoped<IAboutService, AboutService>();
             services.AddScoped<IContactService, ContactService>();
             services.AddScoped<IShoppingListService, ShoppingListService>();
+            services.AddScoped<ITimekeepingAuthService, TimekeepingAuthService>();
+            services.AddScoped<ITimekeepingUserService, TimekeepingUserService>();
+            services.AddScoped<ITimeLogService, TimeLogService>();
 
             return services;
         }

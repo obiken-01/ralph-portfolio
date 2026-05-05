@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Ralphy.Domain.Entities;
+using Ralphy.Domain.Enums;
 
 namespace Ralphy.Infrastructure.Data
 {
@@ -22,6 +23,8 @@ namespace Ralphy.Infrastructure.Data
         public DbSet<WorkExperience> WorkExperiences => Set<WorkExperience>();
         public DbSet<Skill> Skills => Set<Skill>();
         public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
+        public DbSet<TimekeepingUser> TimekeepingUsers { get; set; }
+        public DbSet<TimeLog> TimeLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -110,6 +113,88 @@ namespace Ralphy.Infrastructure.Data
             modelBuilder.Entity<Photo>()
                 .Property(p => p.Source)
                 .HasConversion<string>();
+
+            // TimekeepingUser
+            modelBuilder.Entity<TimekeepingUser>(entity =>
+            {
+                entity.ToTable("TimekeepingUsers");
+
+                entity.HasKey(u => u.Id);
+
+                entity.Property(u => u.PublicId)
+                    .IsRequired()
+                    .HasDefaultValueSql("gen_random_uuid()");
+
+                entity.HasIndex(u => u.PublicId)
+                    .IsUnique();
+
+                entity.Property(u => u.Username)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.HasIndex(u => u.Username)
+                    .IsUnique();
+
+                entity.Property(u => u.Email)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                entity.HasIndex(u => u.Email)
+                    .IsUnique();
+
+                entity.Property(u => u.PasswordHash)
+                    .IsRequired();
+
+                entity.Property(u => u.IsActive)
+                    .IsRequired()
+                    .HasDefaultValue(true);
+
+                entity.HasMany(u => u.TimeLogs)
+                    .WithOne(t => t.TimekeepingUser)
+                    .HasForeignKey(t => t.TimekeepingUserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // TimeLog
+            modelBuilder.Entity<TimeLog>(entity =>
+            {
+                entity.ToTable("TimeLogs");
+
+                entity.HasKey(t => t.Id);
+
+                entity.Property(t => t.TaskDescription)
+                    .IsRequired()
+                    .HasMaxLength(500);
+
+                entity.Property(t => t.LoggedAt)
+                    .IsRequired();
+
+                entity.Property(t => t.TimekeepingUserId)
+                    .IsRequired();
+
+                entity.Property(t => t.Duration)
+                    .IsRequired()
+                    .HasColumnType("numeric(5,2)");
+            });
+
+            // RefreshToken — add UserType column configuration
+            modelBuilder.Entity<RefreshToken>(entity =>
+            {
+                entity.Property(r => r.UserType)
+                    .IsRequired()
+                    .HasDefaultValue(UserType.Ralphy);
+            });
+
+            // User — add PublicId column configuration
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.Property(u => u.PublicId)
+                    .IsRequired()
+                    .HasDefaultValueSql("gen_random_uuid()");
+
+                entity.HasIndex(u => u.PublicId)
+                    .IsUnique();
+            });
         }
     }
 }
