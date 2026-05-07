@@ -2,8 +2,8 @@
 {
     public class TimeLogQueryDto
     {
-        public DateTime? From { get; set; }
-        public DateTime? To { get; set; }
+        public DateOnly? From { get; set; }
+        public DateOnly? To { get; set; }
         public string? Search { get; set; }
         public string SortBy { get; set; } = "loggedAt";
         public string SortDir { get; set; } = "desc";

@@ -19,8 +19,8 @@ namespace Ralphy.Infrastructure.Data.Repositories
 
         public async Task<(IEnumerable<TimeLog> Items, int TotalCount)> GetFilteredAsync(
             int timekeepingUserId,
-            DateTime? from,
-            DateTime? to,
+            DateOnly? from,
+            DateOnly? to,
             string? search,
             string sortBy,
             string sortDir,
@@ -42,8 +42,8 @@ namespace Ralphy.Infrastructure.Data.Repositories
 
         public async Task<IEnumerable<TimeLog>> GetForExportAsync(
             int timekeepingUserId,
-            DateTime? from,
-            DateTime? to,
+            DateOnly? from,
+            DateOnly? to,
             string? search,
             string sortBy,
             string sortDir)
@@ -67,18 +67,18 @@ namespace Ralphy.Infrastructure.Data.Repositories
 
         private IQueryable<TimeLog> BuildQuery(
             int timekeepingUserId,
-            DateTime? from,
-            DateTime? to,
+            DateOnly? from,
+            DateOnly? to,
             string? search)
         {
             var query = _context.TimeLogs
                 .Where(t => t.TimekeepingUserId == timekeepingUserId);
 
             if (from.HasValue)
-                query = query.Where(t => t.LoggedAt >= from.Value);
+                query = query.Where(t => t.LoggedAt.Date >= from.Value.ToDateTime(TimeOnly.MinValue).Date);
 
             if (to.HasValue)
-                query = query.Where(t => t.LoggedAt <= to.Value);
+                query = query.Where(t => t.LoggedAt.Date <= to.Value.ToDateTime(TimeOnly.MaxValue).Date);
 
             if (!string.IsNullOrWhiteSpace(search))
                 query = query.Where(t => t.TaskDescription.ToLower().Contains(search.ToLower()));
