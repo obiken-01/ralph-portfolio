@@ -12,7 +12,6 @@ namespace Ralphy.Infrastructure.Data.Repositories
 
         public async Task<RefreshToken?> GetByTokenAsync(string token) =>
             await _dbSet
-                .Include(rt => rt.User)
                 .FirstOrDefaultAsync(rt => rt.Token == token);
 
         public async Task<IEnumerable<RefreshToken>> GetActiveTokensByUserIdAsync(int userId) =>
