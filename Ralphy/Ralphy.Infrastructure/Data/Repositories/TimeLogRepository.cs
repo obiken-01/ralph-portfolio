@@ -75,10 +75,10 @@ namespace Ralphy.Infrastructure.Data.Repositories
                 .Where(t => t.TimekeepingUserId == timekeepingUserId);
 
             if (from.HasValue)
-                query = query.Where(t => t.LoggedAt.Date >= from.Value.ToDateTime(TimeOnly.MinValue).Date);
+                query = query.Where(t => t.LoggedAt >= from.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));
 
             if (to.HasValue)
-                query = query.Where(t => t.LoggedAt.Date <= to.Value.ToDateTime(TimeOnly.MaxValue).Date);
+                query = query.Where(t => t.LoggedAt <= to.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc));
 
             if (!string.IsNullOrWhiteSpace(search))
                 query = query.Where(t => t.TaskDescription.ToLower().Contains(search.ToLower()));
