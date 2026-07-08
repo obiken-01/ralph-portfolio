@@ -1,6 +1,7 @@
 # Ralphy — API Reference
 
-Base URL (production): `https://ralphy-production.up.railway.app/api`
+Base URL (production): `https://ralph-portfolio-production.up.railway.app/api`
+(Note: `ralph-portfolio-production.up.railway.app` is the **API**; `ralphy-production.up.railway.app` serves the **web app**.)
 Base URL (local): `http://localhost:5000/api`
 
 All responses use the envelope:

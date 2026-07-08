@@ -16,6 +16,7 @@ namespace Ralphy.Infrastructure.Data.Repositories
 
         public async Task<IEnumerable<Post>> GetAllPublishedAsync() =>
             await _dbSet
+                .Include(p => p.Photos)
                 .Where(p => p.Status == PostStatus.Published)
                 .OrderByDescending(p => p.PublishedAt)
                 .ToListAsync();
@@ -31,8 +32,10 @@ namespace Ralphy.Infrastructure.Data.Repositories
 
         public async Task<IEnumerable<Post>> GetByTripIdAsync(int tripId) =>
             await _dbSet
-                .Where(p => p.TripId == tripId)
-                .OrderByDescending(p => p.CreatedAt)
+                .Include(p => p.Photos)
+                .Where(p => p.TripId == tripId
+                    && p.Status == PostStatus.Published)
+                .OrderByDescending(p => p.PublishedAt)
                 .ToListAsync();
 
         public async Task IncrementViewCountAsync(int postId)

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { getAboutProfile, sendContactMessage } from "../../api/about";
+import Seo, { SITE_URL } from "../../components/common/Seo";
 
 const TOC = [
   { id: "about-me", label: "About Me" },
@@ -118,6 +119,30 @@ export default function AboutPage() {
 
   return (
     <div style={{ fontFamily: "sans-serif", minHeight: "100vh", background: "var(--color-background-tertiary)" }}>
+
+      <Seo
+        title="About Ralph Alcaide"
+        description={profile?.headline ||
+          "Ralph Alcaide (@lakbayOksi) — developer and traveler from Occidental Mindoro, Philippines. Bio, work experience, tech skills and contact."}
+        image={profile?.profileImageUrl}
+        type="profile"
+        path="/about"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "Person",
+          name: profile?.displayName || "Ralph Alcaide",
+          alternateName: "lakbayOksi",
+          description: profile?.headline,
+          image: profile?.profileImageUrl,
+          url: `${SITE_URL}/about`,
+          sameAs: [
+            profile?.instagramUrl,
+            profile?.youTubeUrl,
+            profile?.gitHubUrl,
+            profile?.linkedInUrl,
+          ].filter(Boolean),
+        }}
+      />
 
       <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
 

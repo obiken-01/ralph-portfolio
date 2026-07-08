@@ -114,14 +114,14 @@ export default function Footer() {
   }, [])
 
   return (
-    <footer className="bg-slate-900 text-slate-400 mt-auto">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <footer className="bg-slate-950 text-slate-400 mt-auto">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
 
           {/* Brand */}
           <div>
-            <p className="text-white text-lg font-bold mb-1">
-              Ralphy<span className="text-blue-400">.</span>
+            <p className="text-white font-display text-xl font-bold mb-2">
+              Ralphy<span className="text-teal-400">.</span>
             </p>
             <p className="text-sm text-slate-400 leading-relaxed">
               A personal travel blog by Ralph Alcaide.<br />
@@ -140,7 +140,7 @@ export default function Footer() {
                 <li key={link.to}>
                   <Link
                     to={link.to}
-                    className="text-sm text-slate-400 hover:text-blue-400
+                    className="text-sm text-slate-400 hover:text-teal-400
                                transition-colors duration-200"
                   >
                     {link.label}
@@ -161,7 +161,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-sm text-slate-400
-                             hover:text-blue-400 transition-colors duration-200 w-fit"
+                             hover:text-teal-400 transition-colors duration-200 w-fit"
                 >
                   {ICONS[s.label] ?? null}
                   {s.label}

@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import api from '../../api/axios'
+import Seo, { breadcrumbLd } from '../../components/common/Seo'
 
 // ── Fix Leaflet default marker icons (Vite issue) ───────────────
 delete L.Icon.Default.prototype._getIconUrl
@@ -13,8 +14,8 @@ L.Icon.Default.mergeOptions({
   shadowUrl:     'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 })
 
-// ── Custom blue pin icon ────────────────────────────────────────
-const createPinIcon = (color = '#2563eb') => L.divIcon({
+// ── Custom pin icon ─────────────────────────────────────────────
+const createPinIcon = (color = '#0f766e') => L.divIcon({
   className: '',
   html: `
     <div style="
@@ -56,26 +57,26 @@ function FitBounds({ locations }) {
 function LocationCard({ location, trip, onHover }) {
   return (
     <div
-      className="p-4 border-b border-slate-100 last:border-0 hover:bg-blue-50
+      className="p-4 border-b border-slate-100 last:border-0 hover:bg-teal-50/60
                  transition-colors cursor-pointer group"
       onMouseEnter={() => onHover(location)}
       onMouseLeave={() => onHover(null)}
     >
       <div className="flex items-start gap-3">
-        <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center
+        <div className="w-7 h-7 rounded-full bg-teal-50 flex items-center
                         justify-center flex-shrink-0 mt-0.5">
-          <span className="text-xs">📍</span>
+          <span className="text-xs" aria-hidden="true">📍</span>
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-slate-800
-                        group-hover:text-blue-600 transition-colors">
+                        group-hover:text-teal-700 transition-colors">
             {location.placeName}
           </p>
           {trip && (
             <Link
               to={`/trips/${trip.id}`}
               onClick={(e) => e.stopPropagation()}
-              className="text-xs text-blue-500 hover:underline"
+              className="text-xs text-teal-600 hover:underline"
             >
               {trip.title}
             </Link>
@@ -85,9 +86,6 @@ function LocationCard({ location, trip, onHover }) {
               {location.description}
             </p>
           )}
-          <p className="text-xs text-slate-300 mt-0.5 font-mono">
-            {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
-          </p>
         </div>
       </div>
     </div>
@@ -139,21 +137,35 @@ export default function MapPage() {
   const defaultZoom   = 6
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen">
+      <Seo
+        title="Travel Map"
+        description="Interactive map of every place Ralph has visited across
+          Occidental Mindoro and the Philippines — beaches, peaks and
+          hidden trails."
+        path="/map"
+        jsonLd={breadcrumbLd([
+          { name: 'Home', path: '/' },
+          { name: 'Map', path: '/map' },
+        ])}
+      />
 
       {/* Page header */}
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <p className="text-blue-600 text-xs font-semibold uppercase
-                        tracking-widest mb-1">
-            Where I've Been
+      <header className="bg-white border-b border-slate-900/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+          <p className="text-teal-700 text-xs font-semibold uppercase
+                        tracking-[0.2em] mb-2">
+            Where I've been
           </p>
-          <h1 className="text-3xl font-bold text-slate-900">Travel Map</h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <h1 className="font-display text-4xl sm:text-5xl font-semibold
+                         text-slate-900">
+            Travel Map
+          </h1>
+          <p className="text-slate-500 text-sm mt-3">
             Every place I've visited, pinned on the map.
           </p>
         </div>
-      </div>
+      </header>
 
       {/* Map + Sidebar layout */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -161,12 +173,12 @@ export default function MapPage() {
 
           {/* Map */}
           <div className="lg:col-span-2">
-            <div className="rounded-xl overflow-hidden border border-slate-200
+            <div className="rounded-2xl overflow-hidden ring-1 ring-slate-900/5
                             shadow-sm" style={{ height: '560px' }}>
               {loading ? (
                 <div className="w-full h-full bg-slate-100 flex items-center
                                 justify-center">
-                  <div className="w-8 h-8 border-4 border-blue-600
+                  <div className="w-8 h-8 border-4 border-teal-600
                                   border-t-transparent rounded-full
                                   animate-spin" />
                 </div>
@@ -196,7 +208,7 @@ export default function MapPage() {
                       <Marker
                         key={location.id}
                         position={[location.latitude, location.longitude]}
-                        icon={createPinIcon(isHovered ? '#f59e0b' : '#2563eb')}
+                        icon={createPinIcon(isHovered ? '#f59e0b' : '#0f766e')}
                       >
                         <Popup>
                           <div className="min-w-[160px]">
@@ -212,7 +224,7 @@ export default function MapPage() {
                             {trip && (
                               <Link
                                 to={`/trips/${trip.id}`}
-                                className="text-xs text-blue-600 font-medium
+                                className="text-xs text-teal-700 font-medium
                                            hover:underline"
                               >
                                 📍 {trip.title} →
@@ -231,7 +243,7 @@ export default function MapPage() {
             {/* Map legend */}
             <div className="flex items-center gap-4 mt-3 px-1">
               <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-blue-600" />
+                <div className="w-3 h-3 rounded-full bg-teal-600" />
                 <span className="text-xs text-slate-500">Location pin</span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -246,7 +258,7 @@ export default function MapPage() {
 
           {/* Sidebar — location list */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl border border-slate-200
+            <div className="bg-white rounded-2xl ring-1 ring-slate-900/5
                             overflow-hidden shadow-sm">
 
               {/* Search */}
@@ -254,21 +266,23 @@ export default function MapPage() {
                 <div className="relative">
                   <svg className="absolute left-3 top-1/2 -translate-y-1/2
                                   w-4 h-4 text-slate-400"
-                       fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                       aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round"
                           strokeWidth={2}
                           d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                   <input
-                    type="text"
+                    type="search"
                     placeholder="Search locations..."
+                    aria-label="Search locations"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="w-full pl-9 pr-4 py-2 bg-slate-50 border
-                               border-slate-200 rounded-lg text-sm
+                               border-slate-200 rounded-full text-sm
                                text-slate-700 placeholder-slate-400
                                focus:outline-none focus:ring-2
-                               focus:ring-blue-500 transition"
+                               focus:ring-teal-500 transition"
                   />
                 </div>
               </div>
@@ -290,7 +304,7 @@ export default function MapPage() {
                   </div>
                 ) : filtered.length === 0 ? (
                   <div className="p-8 text-center">
-                    <span className="text-3xl block mb-2">📍</span>
+                    <span className="text-3xl block mb-2" aria-hidden="true">📍</span>
                     <p className="text-slate-400 text-sm">
                       {search ? 'No locations found.' : 'No locations yet.'}
                     </p>

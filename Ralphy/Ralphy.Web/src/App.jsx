@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { useEffect } from 'react'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from './context/AuthProvider'
 import ProtectedRoute from './routes/ProtectedRoute'
@@ -24,9 +25,19 @@ import PostEditorPage  from './pages/admin/PostEditorPage'
 import AdminAboutPage from './pages/admin/AdminAboutPage'
 import AdminTimekeepingUsersPage from './pages/admin/AdminTimekeepingUsersPage'
 
+// Scroll to top on route change (SPA navigations keep scroll otherwise)
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [pathname])
+  return null
+}
+
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <AuthProvider>
         <Toaster position="top-right" />
         <Routes>

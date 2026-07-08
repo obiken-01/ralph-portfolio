@@ -4,8 +4,8 @@
 
 | Piece | Where | Notes |
 |---|---|---|
-| Ralphy API | **Railway** ([project](https://railway.com/project/58762467-92f4-4a74-bb35-eb3904391b1c)) | `Ralphy/Ralphy.Api/Dockerfile`; public URL `https://ralphy-production.up.railway.app` |
-| Ralphy Web | **Railway** (same project) | `Ralphy/Ralphy.Web/Dockerfile` — Vite build baked with build-arg `VITE_API_URL`, served by nginx |
+| Ralphy API | **Railway** ([project](https://railway.com/project/58762467-92f4-4a74-bb35-eb3904391b1c)) | `Ralphy/Ralphy.Api/Dockerfile`; public URL `https://ralph-portfolio-production.up.railway.app` |
+| Ralphy Web | **Railway** (same project) | `Ralphy/Ralphy.Web/Dockerfile` — Vite build baked with build-arg `VITE_API_URL`, served by nginx; public URL `https://ralphy-production.up.railway.app` |
 | PostgreSQL 16 | Railway | Connection string via `ConnectionStrings__Default` |
 | Media | Cloudinary | Account credentials via env |
 | php-currency-converter-app | **Netlify** ([site](https://app.netlify.com/projects/zippy-mousse-7dfbd1/overview)) | Separate repo/frontend; calls `POST /api/shopping-list/parse` with `X-Api-Key`. Its Netlify origin must be present in `Cors:AllowedOrigins`. |
