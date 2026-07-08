@@ -98,10 +98,14 @@ export default function Lightbox({ photos, index, onClose, onNavigate }) {
         />
         <figcaption className="mt-3 flex items-center justify-center gap-2
                                text-center text-sm text-white/80">
-          <span aria-hidden="true">
-            {photo.source === 1 ? '🚁' : '📱'}
-          </span>
-          {photo.caption || (photo.source === 1 ? 'Drone shot' : 'Phone shot')}
+          {photo.source !== undefined && (
+            <span aria-hidden="true">
+              {photo.source === 1 ? '🚁' : '📱'}
+            </span>
+          )}
+          {photo.caption ||
+            (photo.source === 1 ? 'Drone shot'
+              : photo.source === 0 ? 'Phone shot' : '')}
         </figcaption>
       </figure>
     </div>

@@ -1,137 +1,551 @@
-import { useState, useEffect, useRef } from "react";
-import { getAboutProfile, sendContactMessage } from "../../api/about";
-import Seo, { SITE_URL } from "../../components/common/Seo";
+import { useState, useEffect, useRef } from 'react'
+import { getAboutProfile, sendContactMessage } from '../../api/about'
+import Seo, { SITE_URL } from '../../components/common/Seo'
+import Lightbox from '../../components/public/Lightbox'
+import { cldImage } from '../../utils/cloudinary'
 
 const TOC = [
-  { id: "about-me", label: "About Me" },
-  { id: "work-experience", label: "Work Experience" },
-  { id: "tech-skills", label: "Tech Skills" },
-  { id: "contact", label: "Contact" },
-];
+  { id: 'about-me',        label: 'About me'        },
+  { id: 'work-experience', label: 'Work experience' },
+  { id: 'tech-skills',     label: 'Tech skills'     },
+  { id: 'contact',         label: 'Contact'         },
+]
 
-function SkillBar({ name, pct, color, animated }) {
+const SOCIAL_META = [
+  { key: 'instagramUrl', label: 'Instagram', color: 'bg-pink-500'   },
+  { key: 'youTubeUrl',   label: 'YouTube',   color: 'bg-red-500'    },
+  { key: 'gitHubUrl',    label: 'GitHub',    color: 'bg-slate-800'  },
+  { key: 'linkedInUrl',  label: 'LinkedIn',  color: 'bg-sky-600'    },
+]
+
+// ── Section header ──────────────────────────────────────────────
+function SectionHeader({ id, label }) {
   return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-        <span style={{ fontSize: 13, color: "var(--color-text-secondary)", fontFamily: "monospace" }}>{name}</span>
-        <span style={{ fontSize: 12, color: "var(--color-text-tertiary)", fontFamily: "monospace" }}>{pct}%</span>
+    <h2 id={id}
+        className="mb-6 flex scroll-mt-24 items-center gap-3 font-display
+                   text-2xl font-semibold text-slate-900">
+      <span className="inline-block h-px w-8 bg-teal-600" aria-hidden="true" />
+      {label}
+    </h2>
+  )
+}
+
+function SkeletonBlock({ className = '' }) {
+  return <div className={`animate-pulse rounded bg-slate-200 ${className}`} />
+}
+
+// ── Hero: intro + framed ID photo ───────────────────────────────
+function Hero({ profile, loading, onViewPhoto }) {
+  const socials = profile
+    ? SOCIAL_META
+        .map((s) => ({ ...s, href: profile[s.key] }))
+        .filter((s) => s.href)
+    : []
+
+  return (
+    <header className="border-b border-slate-900/5 bg-white">
+      <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14
+                      sm:px-6 lg:grid-cols-5 lg:gap-14 lg:px-8 lg:py-20">
+
+        {/* Intro */}
+        <div className="order-2 lg:order-1 lg:col-span-3">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em]
+                        text-teal-700">
+            About me
+          </p>
+
+          {loading ? (
+            <>
+              <SkeletonBlock className="mb-4 h-12 w-3/4" />
+              <SkeletonBlock className="mb-2 h-4 w-1/2" />
+            </>
+          ) : (
+            <>
+              <h1 className="font-display text-4xl font-semibold leading-tight
+                             text-slate-900 sm:text-5xl">
+                {profile?.displayName || 'Ralph Alcaide'}
+              </h1>
+              {profile?.headline && (
+                <p className="mt-4 max-w-xl text-base leading-relaxed
+                              text-slate-500 sm:text-lg">
+                  {profile.headline}
+                </p>
+              )}
+            </>
+          )}
+
+          <p className="mt-4 inline-flex items-center gap-2 rounded-full
+                        bg-stone-100 px-3.5 py-1.5 text-xs font-medium
+                        text-slate-600 ring-1 ring-slate-900/5">
+            📍 Occidental Mindoro, Philippines
+            <span className="text-slate-300" aria-hidden="true">·</span>
+            @lakbayOksi
+          </p>
+
+          {/* CTAs */}
+          <div className="mt-8 flex flex-wrap gap-3">
+            <a
+              href="#contact"
+              className="rounded-full bg-teal-600 px-7 py-3 text-sm
+                         font-semibold text-white transition-colors
+                         hover:bg-teal-500"
+            >
+              Contact me
+            </a>
+            {profile?.cvUrl && (
+              <a
+                href={profile.cvUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full border border-slate-200 px-7 py-3
+                           text-sm font-semibold text-slate-700
+                           transition-colors hover:border-teal-600
+                           hover:text-teal-700"
+              >
+                Download CV ↓
+              </a>
+            )}
+          </div>
+
+          {/* Socials */}
+          {socials.length > 0 && (
+            <ul className="mt-8 flex flex-wrap gap-x-5 gap-y-2"
+                aria-label="Social profiles">
+              {socials.map((s) => (
+                <li key={s.label}>
+                  <a
+                    href={s.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group inline-flex items-center gap-2 text-sm
+                               font-medium text-slate-500 transition-colors
+                               hover:text-teal-700"
+                  >
+                    <span className={`h-2.5 w-2.5 rounded-full ${s.color}
+                                      transition-transform
+                                      group-hover:scale-125`}
+                          aria-hidden="true" />
+                    {s.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Framed ID photo */}
+        <div className="order-1 flex justify-center lg:order-2 lg:col-span-2">
+          {loading ? (
+            <SkeletonBlock className="aspect-[4/5] w-64 rounded-2xl sm:w-72" />
+          ) : profile?.profileImageUrl ? (
+            <div className="relative">
+              {/* Decorative blobs behind the frame */}
+              <div className="absolute -left-6 -top-6 h-28 w-28 rounded-full
+                              bg-amber-200/60 blur-2xl"
+                   aria-hidden="true" />
+              <div className="absolute -bottom-8 -right-6 h-32 w-32
+                              rounded-full bg-teal-200/60 blur-2xl"
+                   aria-hidden="true" />
+
+              <button
+                onClick={onViewPhoto}
+                aria-label="View photo full screen"
+                className="group relative block rotate-2 cursor-zoom-in
+                           rounded-2xl bg-white p-3 pb-12 shadow-xl
+                           shadow-slate-900/10 ring-1 ring-slate-900/5
+                           transition-transform duration-300
+                           hover:rotate-0 hover:scale-[1.02]
+                           focus:outline-none focus:ring-2
+                           focus:ring-teal-500"
+              >
+                <img
+                  src={cldImage(profile.profileImageUrl, 600)}
+                  alt={`Portrait of ${profile.displayName || 'Ralph Alcaide'}`}
+                  className="aspect-[4/5] w-60 rounded-lg bg-stone-100
+                             object-cover object-top sm:w-72"
+                />
+                {/* Polaroid caption */}
+                <span className="absolute inset-x-0 bottom-4 text-center
+                                 font-display text-sm italic text-slate-500">
+                  {profile.displayName || 'Ralph Alcaide'}
+                </span>
+                {/* Zoom hint */}
+                <span className="absolute right-5 top-5 flex h-9 w-9
+                                 items-center justify-center rounded-full
+                                 bg-slate-950/50 text-white opacity-0
+                                 backdrop-blur-sm transition-opacity
+                                 group-hover:opacity-100"
+                      aria-hidden="true">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor"
+                       viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 21l-4.35-4.35M11 8v6m-3-3h6m5 0a8 8 0
+                             11-16 0 8 8 0 0116 0z" />
+                  </svg>
+                </span>
+              </button>
+            </div>
+          ) : (
+            <div className="flex aspect-[4/5] w-64 items-center justify-center
+                            rounded-2xl bg-stone-100 ring-1 ring-slate-900/5">
+              <span className="text-6xl" aria-hidden="true">👋</span>
+            </div>
+          )}
+        </div>
+
       </div>
-      <div style={{ height: 5, background: "var(--color-border-tertiary)", borderRadius: 3, overflow: "hidden" }}>
-        <div style={{
-          height: "100%",
-          width: animated ? `${pct}%` : "0%",
-          background: color,
-          borderRadius: 3,
-          transition: "width 1s cubic-bezier(0.4, 0, 0.2, 1)",
-        }} />
+    </header>
+  )
+}
+
+// ── Work experience timeline ────────────────────────────────────
+function WorkExperience({ profile, loading }) {
+  return (
+    <section aria-labelledby="work-experience" className="mb-14">
+      <SectionHeader id="work-experience" label="Work experience" />
+
+      <div className="relative">
+        <div className="absolute bottom-4 left-[9px] top-4 w-px bg-slate-200"
+             aria-hidden="true" />
+
+        {loading ? (
+          [...Array(3)].map((_, i) => (
+            <div key={i} className="mb-4 flex gap-5">
+              <div className="mt-5 h-5 w-5 flex-shrink-0 rounded-full
+                              bg-slate-200" />
+              <div className="flex-1 rounded-2xl bg-white p-5 ring-1
+                              ring-slate-900/5">
+                <SkeletonBlock className="mb-2 h-4 w-3/5" />
+                <SkeletonBlock className="h-3 w-2/5" />
+              </div>
+            </div>
+          ))
+        ) : profile?.workExperiences?.length > 0 ? (
+          profile.workExperiences.map((job, i) => (
+            <div key={job.id} className="relative mb-4 flex gap-5">
+              <span
+                className={`z-10 mt-5 h-5 w-5 flex-shrink-0 rounded-full
+                            border-2 border-teal-600 ${
+                  i === 0 ? 'bg-teal-600' : 'bg-white'
+                }`}
+                aria-hidden="true"
+              />
+              <div className="flex-1 rounded-2xl border-l-4 border-l-teal-600
+                              bg-white p-5 ring-1 ring-slate-900/5">
+                <div className="flex flex-wrap items-start justify-between
+                                gap-2">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900">
+                      {job.role}
+                    </h3>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {job.company}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-stone-100 px-2.5 py-1
+                                   text-xs font-medium text-slate-500">
+                    {job.period}
+                  </span>
+                </div>
+                {job.description && (
+                  <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                    {job.description}
+                  </p>
+                )}
+                {job.tags?.length > 0 && (
+                  <ul className="mt-3 flex flex-wrap gap-1.5">
+                    {job.tags.map((t) => (
+                      <li key={t}
+                          className="rounded-full bg-teal-50 px-2.5 py-0.5
+                                     text-xs font-medium text-teal-700
+                                     ring-1 ring-teal-100">
+                        {t}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="pl-10 text-sm text-slate-400">
+            No work experience added yet.
+          </p>
+        )}
+      </div>
+    </section>
+  )
+}
+
+// ── Skill bar ───────────────────────────────────────────────────
+function SkillBar({ name, pct, colorClass, animated }) {
+  return (
+    <div className="mb-4">
+      <div className="mb-1.5 flex items-center justify-between">
+        <span className="text-sm font-medium text-slate-700">{name}</span>
+        <span className="text-xs text-slate-400">{pct}%</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-stone-100">
+        <div
+          className={`h-full rounded-full ${colorClass}
+                      transition-[width] duration-1000 ease-out`}
+          style={{ width: animated ? `${pct}%` : '0%' }}
+        />
       </div>
     </div>
-  );
+  )
 }
 
-function Tag({ label }) {
+// ── Tech skills ─────────────────────────────────────────────────
+function TechSkills({ profile, loading, skillsRef, animated }) {
+  const backend  = profile?.skills?.filter((s) => s.category === 'Backend')  ?? []
+  const frontend = profile?.skills?.filter((s) => s.category === 'Frontend') ?? []
+  const tools    = profile?.skills?.filter((s) => s.category === 'Tool')     ?? []
+
   return (
-    <span style={{
-      display: "inline-block",
-      fontSize: 11,
-      padding: "2px 8px",
-      borderRadius: 4,
-      border: "0.5px solid var(--color-border-secondary)",
-      color: "var(--color-text-secondary)",
-      marginRight: 4,
-      marginTop: 4,
-      fontFamily: "monospace",
-    }}>
-      {label}
-    </span>
-  );
+    <section aria-labelledby="tech-skills" className="mb-14" ref={skillsRef}>
+      <SectionHeader id="tech-skills" label="Tech skills" />
+
+      <div className="rounded-2xl bg-white p-6 ring-1 ring-slate-900/5 sm:p-8">
+        {loading ? (
+          <SkeletonBlock className="h-24 w-full" />
+        ) : backend.length > 0 || frontend.length > 0 ? (
+          <>
+            <div className="grid gap-x-10 gap-y-6 sm:grid-cols-2">
+              {backend.length > 0 && (
+                <div>
+                  <h3 className="mb-4 text-xs font-semibold uppercase
+                                 tracking-[0.18em] text-slate-400">
+                    Backend
+                  </h3>
+                  {backend.map((s) => (
+                    <SkillBar key={s.id} name={s.name} pct={s.percentage}
+                              colorClass="bg-teal-600" animated={animated} />
+                  ))}
+                </div>
+              )}
+              {frontend.length > 0 && (
+                <div>
+                  <h3 className="mb-4 text-xs font-semibold uppercase
+                                 tracking-[0.18em] text-slate-400">
+                    Frontend
+                  </h3>
+                  {frontend.map((s) => (
+                    <SkillBar key={s.id} name={s.name} pct={s.percentage}
+                              colorClass="bg-amber-400" animated={animated} />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {tools.length > 0 && (
+              <div className="mt-6 flex flex-wrap items-center gap-2 border-t
+                              border-slate-100 pt-5">
+                <span className="mr-1 text-xs font-semibold uppercase
+                                 tracking-[0.18em] text-slate-400">
+                  Tools
+                </span>
+                {tools.map((t) => (
+                  <span key={t.id}
+                        className="rounded-full bg-stone-100 px-3 py-1 text-xs
+                                   font-medium text-slate-600 ring-1
+                                   ring-slate-900/5">
+                    {t.name}
+                  </span>
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <p className="text-sm text-slate-400">No skills added yet.</p>
+        )}
+      </div>
+    </section>
+  )
 }
 
-function SkeletonBlock({ width = "100%", height = 16, mb = 8 }) {
+// ── Contact form ────────────────────────────────────────────────
+function ContactForm() {
+  const [formData, setFormData] = useState({
+    name: '', email: '', subject: '', message: ''
+  })
+  const [status, setStatus] = useState(null)
+  const [sending, setSending] = useState(false)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setSending(true)
+    setStatus(null)
+    try {
+      await sendContactMessage({
+        authorName: formData.name,
+        authorEmail: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+      })
+      setStatus('success')
+      setFormData({ name: '', email: '', subject: '', message: '' })
+      setTimeout(() => setStatus(null), 5000)
+    } catch {
+      setStatus('failed')
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const inputClass =
+    `w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm
+     text-slate-700 placeholder-slate-400 transition focus:border-transparent
+     focus:outline-none focus:ring-2 focus:ring-teal-500`
+
   return (
-    <div style={{
-      width,
-      height,
-      marginBottom: mb,
-      borderRadius: 4,
-      background: "var(--color-border-tertiary)",
-      animation: "pulse 1.5s ease-in-out infinite",
-    }} />
-  );
+    <section aria-labelledby="contact" className="mb-6">
+      <SectionHeader id="contact" label="Contact" />
+
+      <form onSubmit={handleSubmit}
+            className="rounded-2xl bg-white p-6 ring-1 ring-slate-900/5 sm:p-8">
+        <p className="mb-5 text-sm text-slate-500">
+          Got a project, a collab idea, or just want to say hi? Drop me a
+          message — I read everything.
+        </p>
+        <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <input
+            placeholder="Your name"
+            aria-label="Your name"
+            required
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            className={inputClass}
+          />
+          <input
+            type="email"
+            placeholder="Your email"
+            aria-label="Your email"
+            required
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            className={inputClass}
+          />
+        </div>
+        <input
+          placeholder="Subject (optional)"
+          aria-label="Subject"
+          value={formData.subject}
+          onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+          className={`${inputClass} mb-3`}
+        />
+        <textarea
+          placeholder="Your message..."
+          aria-label="Message"
+          required
+          rows={5}
+          value={formData.message}
+          onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+          className={`${inputClass} resize-y`}
+        />
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <div aria-live="polite">
+            {status === 'success' && (
+              <p className="text-sm font-medium text-emerald-600">
+                ✓ Message sent — thank you!
+              </p>
+            )}
+            {status === 'failed' && (
+              <p className="text-sm font-medium text-red-600">
+                Something went wrong. Please try again.
+              </p>
+            )}
+          </div>
+          <button
+            type="submit"
+            disabled={sending}
+            className="flex items-center gap-2 rounded-full bg-teal-600 px-7
+                       py-2.5 text-sm font-semibold text-white
+                       transition-colors hover:bg-teal-500
+                       disabled:bg-teal-400"
+          >
+            {sending ? (
+              <>
+                <span className="h-3.5 w-3.5 animate-spin rounded-full
+                                 border-2 border-white border-t-transparent" />
+                Sending...
+              </>
+            ) : 'Send message'}
+          </button>
+        </div>
+      </form>
+    </section>
+  )
 }
 
+// ── Main Page ───────────────────────────────────────────────────
 export default function AboutPage() {
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [activeSection, setActiveSection] = useState("about-me");
-  const [skillsVisible, setSkillsVisible] = useState(false);
-  const skillsRef = useRef(null);
+  const [profile, setProfile] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [activeSection, setActiveSection] = useState('about-me')
+  const [skillsVisible, setSkillsVisible] = useState(false)
+  const [photoOpen, setPhotoOpen] = useState(false)
+  const skillsRef = useRef(null)
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await getAboutProfile();
-        setProfile(res.data.data);
+        const res = await getAboutProfile()
+        setProfile(res.data.data)
       } catch {
-        setError("Failed to load profile.");
+        setError('Failed to load profile.')
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-    fetchProfile();
-  }, []);
+    }
+    fetchProfile()
+  }, [])
 
+  // Animate skill bars when scrolled into view
   useEffect(() => {
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setSkillsVisible(true); },
+      ([entry]) => { if (entry.isIntersecting) setSkillsVisible(true) },
       { threshold: 0.2 }
-    );
-    if (skillsRef.current) observer.observe(skillsRef.current);
-    return () => observer.disconnect();
-  }, []);
+    )
+    if (skillsRef.current) observer.observe(skillsRef.current)
+    return () => observer.disconnect()
+  }, [loading])
 
+  // Scroll-spy for the TOC
   useEffect(() => {
     const handleScroll = () => {
-      const sections = TOC.map((t) => ({ id: t.id, el: document.getElementById(t.id) }));
+      const sections = TOC.map((t) => ({
+        id: t.id,
+        el: document.getElementById(t.id),
+      }))
       for (let i = sections.length - 1; i >= 0; i--) {
-        const el = sections[i].el;
-        if (el && el.getBoundingClientRect().top <= 120) {
-          setActiveSection(sections[i].id);
-          break;
+        const el = sections[i].el
+        if (el && el.getBoundingClientRect().top <= 130) {
+          setActiveSection(sections[i].id)
+          break
         }
       }
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const backendSkills = profile?.skills?.filter(s => s.category === "Backend") ?? [];
-  const frontendSkills = profile?.skills?.filter(s => s.category === "Frontend") ?? [];
-  const tools = profile?.skills?.filter(s => s.category === "Tool") ?? [];
-
-  const socials = profile ? [
-    { label: "Instagram", color: "#E1306C", href: profile.instagramUrl },
-    { label: "LinkedIn",  color: "#0A66C2", href: profile.linkedInUrl },
-    { label: "GitHub",    color: "#24292E", href: profile.gitHubUrl },
-    { label: "YouTube",   color: "#FF0000", href: profile.youTubeUrl },
-  ].filter(s => s.href) : [];
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   return (
-    <div style={{ fontFamily: "sans-serif", minHeight: "100vh", background: "var(--color-background-tertiary)" }}>
-
+    <div className="min-h-screen">
       <Seo
         title="About Ralph Alcaide"
         description={profile?.headline ||
-          "Ralph Alcaide (@lakbayOksi) — developer and traveler from Occidental Mindoro, Philippines. Bio, work experience, tech skills and contact."}
+          'Ralph Alcaide (@lakbayOksi) — developer and traveler from Occidental Mindoro, Philippines. Bio, work experience, tech skills and contact.'}
         image={profile?.profileImageUrl}
         type="profile"
         path="/about"
         jsonLd={{
-          "@context": "https://schema.org",
-          "@type": "Person",
-          name: profile?.displayName || "Ralph Alcaide",
-          alternateName: "lakbayOksi",
+          '@context': 'https://schema.org',
+          '@type': 'Person',
+          name: profile?.displayName || 'Ralph Alcaide',
+          alternateName: 'lakbayOksi',
           description: profile?.headline,
           image: profile?.profileImageUrl,
           url: `${SITE_URL}/about`,
@@ -144,387 +558,135 @@ export default function AboutPage() {
         }}
       />
 
-      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
+      <Hero
+        profile={profile}
+        loading={loading}
+        onViewPhoto={() => setPhotoOpen(true)}
+      />
 
-      {/* ── Hero banner ── */}
-      <div style={{
-        position: "relative",
-        height: 260,
-        overflow: "hidden",
-        background: "#0d1117",
-      }}>
-
-        {/* Subtle grid texture */}
-        <div style={{
-          position: "absolute", inset: 0,
-          backgroundImage: `repeating-linear-gradient(0deg,rgba(255,255,255,0.02) 0px,rgba(255,255,255,0.02) 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,rgba(255,255,255,0.02) 0px,rgba(255,255,255,0.02) 1px,transparent 1px,transparent 40px)`
-        }} />
-
-        {/* Profile photo — right side, contained, anchored to bottom */}
-        {profile?.profileImageUrl && (
-          <div style={{
-            position: "absolute",
-            right: 0, bottom: 0,
-            height: "100%",
-            width: 260,
-          }}>
-            <img
-              src={profile.profileImageUrl}
-              alt={profile.displayName}
-              style={{
-                height: "100%",
-                width: "100%",
-                objectFit: "contain",
-                objectPosition: "bottom right",
-              }}
-            />
-            {/* Right edge fade into dark background */}
-            <div style={{
-              position: "absolute", inset: 0,
-              background: "linear-gradient(to left, #0d1117 0%, transparent 30%)"
-            }} />
-            {/* Bottom fade */}
-            <div style={{
-              position: "absolute", inset: 0,
-              background: "linear-gradient(to top, #0d1117 0%, transparent 15%)"
-            }} />
-          </div>
-        )}
-
-        {/* Left side — name + headline */}
-        <div style={{
-          position: "absolute",
-          left: 48, top: 0, bottom: 0,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          maxWidth: "60%",
-          zIndex: 1,
-        }}>
-          {loading ? (
-            <>
-              <SkeletonBlock width={220} height={30} mb={10} />
-              <SkeletonBlock width={160} height={13} mb={0} />
-            </>
-          ) : (
-            <>
-              <h1 style={{
-                margin: 0,
-                fontSize: 30,
-                fontWeight: 700,
-                color: "#fff",
-                lineHeight: 1.2,
-                letterSpacing: "-0.01em",
-              }}>
-                {profile?.displayName || "Ralph Alcaide"}
-              </h1>
-              {profile?.headline && (
-                <p style={{
-                  margin: "8px 0 0",
-                  fontSize: 13,
-                  color: "rgba(255,255,255,0.55)",
-                  fontFamily: "monospace",
-                  letterSpacing: "0.02em",
-                }}>
-                  {profile.headline}
-                </p>
-              )}
-            </>
-          )}
-        </div>
-
-      </div>
-
-      {/* Profile sub-header */}
-      <div style={{
-        background: "#0d1117",
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
-        padding: "10px 48px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        flexWrap: "wrap",
-        gap: 12,
-      }}>
-        <span style={{
-          fontSize: 12,
-          color: "rgba(255,255,255,0.35)",
-          fontFamily: "monospace",
-          letterSpacing: "0.04em",
-        }}>
-          @lakbayOksi
-        </span>
-        <div style={{ display: "flex", gap: 8 }}>
-          <a
-            href="#contact"
-            style={{
-              fontSize: 13, padding: "6px 16px", borderRadius: 6,
-              background: "#185fa5", color: "#fff",
-              textDecoration: "none", fontWeight: 500,
-            }}
-          >
-            Contact me
-          </a>
-          {profile?.cvUrl && (
-            <button
-              onClick={() => window.open(profile.cvUrl, "_blank")}
-              style={{
-                fontSize: 13, padding: "6px 16px", borderRadius: 6,
-                border: "0.5px solid rgba(255,255,255,0.2)",
-                background: "transparent", color: "rgba(255,255,255,0.7)",
-                cursor: "pointer",
-              }}
-            >
-              Download CV
-            </button>
-          )}
-        </div>
-      </div>
+      {/* Full-screen ID photo viewer */}
+      {photoOpen && profile?.profileImageUrl && (
+        <Lightbox
+          photos={[{
+            url: profile.profileImageUrl,
+            caption: profile.displayName || 'Ralph Alcaide',
+          }]}
+          index={0}
+          onClose={() => setPhotoOpen(false)}
+          onNavigate={() => {}}
+        />
+      )}
 
       {/* Main layout */}
-      <div style={{
-        maxWidth: 1100, margin: "0 auto", padding: "2rem 1.5rem",
-        display: "grid", gridTemplateColumns: "1fr 260px", gap: "2rem", alignItems: "start",
-      }}>
+      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6
+                      lg:grid-cols-[1fr_240px] lg:px-8">
 
-        <div>
+        <div className="min-w-0">
           {error && (
-            <div style={{ padding: "1rem", borderRadius: 8, background: "var(--color-background-danger)", color: "var(--color-text-danger)", marginBottom: "1.5rem", fontSize: 14 }}>
+            <div className="mb-8 rounded-2xl bg-red-50 p-4 text-sm
+                            text-red-600 ring-1 ring-red-100">
               {error}
             </div>
           )}
 
-          {/* About Me */}
-          <section id="about-me" style={{ marginBottom: "2.5rem" }}>
-            <SectionHeader label="About Me" />
-            <div style={{ background: "var(--color-background-primary)", borderRadius: 12, border: "0.5px solid var(--color-border-tertiary)", padding: "1.5rem" }}>
-              {loading
-                ? <><SkeletonBlock height={14} /><SkeletonBlock height={14} width="90%" /><SkeletonBlock height={14} width="80%" /></>
-                : <p style={{ margin: 0, fontSize: 15, lineHeight: 1.8, color: "var(--color-text-secondary)", fontWeight: 300 }}>
-                    {profile?.bio || "No bio yet."}
-                  </p>
-              }
+          {/* About me */}
+          <section aria-labelledby="about-me" className="mb-14">
+            <SectionHeader id="about-me" label="About me" />
+            <div className="rounded-2xl bg-white p-6 ring-1 ring-slate-900/5
+                            sm:p-8">
+              {loading ? (
+                <>
+                  <SkeletonBlock className="mb-3 h-4 w-full" />
+                  <SkeletonBlock className="mb-3 h-4 w-11/12" />
+                  <SkeletonBlock className="h-4 w-4/5" />
+                </>
+              ) : (
+                <p className="text-[15px] leading-8 text-slate-600">
+                  {profile?.bio || 'No bio yet.'}
+                </p>
+              )}
             </div>
           </section>
 
-          {/* Work Experience */}
-          <section id="work-experience" style={{ marginBottom: "2.5rem" }}>
-            <SectionHeader label="Work Experience" />
-            <div style={{ position: "relative" }}>
-              <div style={{ position: "absolute", left: 10, top: 14, bottom: 14, width: 1.5, background: "var(--color-border-tertiary)" }} />
-              {loading
-                ? [1,2,3].map(i => (
-                    <div key={i} style={{ display: "flex", gap: 20, marginBottom: 16 }}>
-                      <div style={{ width: 20, height: 20, borderRadius: "50%", border: "2px solid var(--color-border-secondary)", background: "var(--color-background-primary)", flexShrink: 0, marginTop: 16 }} />
-                      <div style={{ flex: 1, background: "var(--color-background-primary)", borderRadius: 12, border: "0.5px solid var(--color-border-tertiary)", padding: "14px 16px" }}>
-                        <SkeletonBlock width="60%" height={14} mb={6} />
-                        <SkeletonBlock width="40%" height={12} />
-                      </div>
-                    </div>
-                  ))
-                : profile?.workExperiences?.length > 0
-                  ? profile.workExperiences.map((job, i) => (
-                      <div key={job.id} style={{ display: "flex", gap: 20, marginBottom: 16, position: "relative" }}>
-                        <div style={{
-                          width: 20, height: 20, borderRadius: "50%",
-                          border: "2px solid #185fa5",
-                          background: i === 0 ? "#185fa5" : "var(--color-background-primary)",
-                          flexShrink: 0, marginTop: 16, zIndex: 1,
-                        }} />
-                        <div style={{ flex: 1, background: "var(--color-background-primary)", borderRadius: 12, border: "0.5px solid var(--color-border-tertiary)", borderLeft: "2px solid #185fa5", padding: "14px 16px" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 4 }}>
-                            <div>
-                              <p style={{ margin: 0, fontSize: 14, fontWeight: 500 }}>{job.role}</p>
-                              <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--color-text-secondary)" }}>{job.company}</p>
-                            </div>
-                            <span style={{ fontSize: 12, color: "var(--color-text-tertiary)", fontFamily: "monospace" }}>{job.period}</span>
-                          </div>
-                          {job.description && (
-                            <p style={{ margin: "8px 0 8px", fontSize: 13, lineHeight: 1.6, color: "var(--color-text-secondary)", fontWeight: 300 }}>{job.description}</p>
-                          )}
-                          <div>{job.tags?.map(t => <Tag key={t} label={t} />)}</div>
-                        </div>
-                      </div>
-                    ))
-                  : <p style={{ fontSize: 14, color: "var(--color-text-tertiary)", paddingLeft: 32 }}>No work experience added yet.</p>
-              }
-            </div>
-          </section>
-
-          {/* Tech Skills */}
-          <section id="tech-skills" style={{ marginBottom: "2.5rem" }} ref={skillsRef}>
-            <SectionHeader label="Tech Skills" />
-            <div style={{ background: "var(--color-background-primary)", borderRadius: 12, border: "0.5px solid var(--color-border-tertiary)", padding: "1.5rem" }}>
-              {loading
-                ? <SkeletonBlock height={80} />
-                : (backendSkills.length > 0 || frontendSkills.length > 0)
-                  ? <>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem 2rem" }}>
-                        {backendSkills.length > 0 && (
-                          <div>
-                            <p style={{ margin: "0 0 14px", fontSize: 12, fontFamily: "monospace", letterSpacing: "0.1em", color: "var(--color-text-secondary)", textTransform: "uppercase" }}>Backend</p>
-                            {backendSkills.map(s => <SkillBar key={s.id} name={s.name} pct={s.percentage} color="#185fa5" animated={skillsVisible} />)}
-                          </div>
-                        )}
-                        {frontendSkills.length > 0 && (
-                          <div>
-                            <p style={{ margin: "0 0 14px", fontSize: 12, fontFamily: "monospace", letterSpacing: "0.1em", color: "var(--color-text-secondary)", textTransform: "uppercase" }}>Frontend</p>
-                            {frontendSkills.map(s => <SkillBar key={s.id} name={s.name} pct={s.percentage} color="#1d9e75" animated={skillsVisible} />)}
-                          </div>
-                        )}
-                      </div>
-                      {tools.length > 0 && (
-                        <div style={{ marginTop: "1.25rem", paddingTop: "1rem", borderTop: "0.5px solid var(--color-border-tertiary)", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                          <span style={{ fontSize: 12, color: "var(--color-text-tertiary)", fontFamily: "monospace", marginRight: 4 }}>Tools:</span>
-                          {tools.map(t => <Tag key={t.id} label={t.name} />)}
-                        </div>
-                      )}
-                    </>
-                  : <p style={{ fontSize: 14, color: "var(--color-text-tertiary)" }}>No skills added yet.</p>
-              }
-            </div>
-          </section>
-
+          <WorkExperience profile={profile} loading={loading} />
+          <TechSkills
+            profile={profile}
+            loading={loading}
+            skillsRef={skillsRef}
+            animated={skillsVisible}
+          />
           <ContactForm />
         </div>
 
-        {/* Right: sidebar */}
-        <div style={{ position: "sticky", top: 68, display: "flex", flexDirection: "column", gap: 16 }}>
+        {/* Sticky sidebar */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-24 space-y-5">
 
-          <SidebarCard title="On this page">
-            {TOC.map(item => (
-              <a key={item.id} href={`#${item.id}`} style={{
-                display: "flex", alignItems: "center", gap: 8, padding: "5px 0",
-                textDecoration: "none", fontSize: 13,
-                color: activeSection === item.id ? "#4fa3e3" : "var(--color-text-secondary)",
-                transition: "color 0.15s",
-              }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: activeSection === item.id ? "#4fa3e3" : "var(--color-border-primary)", flexShrink: 0 }} />
-                {item.label}
-              </a>
-            ))}
-          </SidebarCard>
+            <nav aria-label="On this page"
+                 className="rounded-2xl bg-white p-5 ring-1 ring-slate-900/5">
+              <p className="mb-3 text-xs font-semibold uppercase
+                            tracking-[0.18em] text-slate-400">
+                On this page
+              </p>
+              <ul className="space-y-1">
+                {TOC.map((item) => (
+                  <li key={item.id}>
+                    <a
+                      href={`#${item.id}`}
+                      className={`flex items-center gap-2.5 rounded-lg px-2
+                                  py-1.5 text-sm transition-colors ${
+                        activeSection === item.id
+                          ? 'bg-teal-50 font-semibold text-teal-700'
+                          : 'text-slate-500 hover:text-teal-700'
+                      }`}
+                    >
+                      <span className={`h-1.5 w-1.5 rounded-full ${
+                        activeSection === item.id
+                          ? 'bg-teal-600'
+                          : 'bg-slate-300'
+                      }`} aria-hidden="true" />
+                      {item.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
 
-          {socials.length > 0 && (
-            <SidebarCard title="Find me online">
-              {socials.map(s => (
-                <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" style={{
-                  display: "flex", alignItems: "center", gap: 10, padding: "6px 0",
-                  textDecoration: "none", fontSize: 13, color: "var(--color-text-secondary)",
-                }}>
-                  <span style={{ width: 10, height: 10, borderRadius: 2, background: s.color, flexShrink: 0 }} />
-                  {s.label}
+            {profile?.cvUrl && (
+              <div className="rounded-2xl bg-white p-5 ring-1
+                              ring-slate-900/5">
+                <p className="mb-3 text-xs font-semibold uppercase
+                              tracking-[0.18em] text-slate-400">
+                  Resume / CV
+                </p>
+                <div className="mb-3 flex items-center gap-2.5 rounded-xl
+                                bg-stone-50 px-3 py-2.5 ring-1
+                                ring-slate-900/5">
+                  <span className="rounded bg-red-500 px-1.5 py-0.5 text-[10px]
+                                   font-bold text-white">
+                    PDF
+                  </span>
+                  <span className="truncate text-xs text-slate-600">
+                    ralph-alcaide-cv.pdf
+                  </span>
+                </div>
+                <a
+                  href={profile.cvUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block rounded-full bg-teal-600 py-2.5 text-center
+                             text-xs font-semibold text-white
+                             transition-colors hover:bg-teal-500"
+                >
+                  Download CV
                 </a>
-              ))}
-            </SidebarCard>
-          )}
-
-          {profile?.cvUrl && (
-            <SidebarCard title="Resume / CV">
-              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 6, border: "0.5px solid var(--color-border-secondary)", marginBottom: 10 }}>
-                <span style={{ fontSize: 10, fontFamily: "monospace", padding: "2px 5px", borderRadius: 3, background: "#c0392b", color: "#fff", fontWeight: 500 }}>PDF</span>
-                <span style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>ralph-alcaide-cv.pdf</span>
               </div>
-              <button
-                onClick={() => window.open(profile.cvUrl, "_blank")}
-                style={{ width: "100%", padding: "8px 0", borderRadius: 6, background: "#185fa5", color: "#fff", border: "none", fontSize: 12, fontFamily: "monospace", cursor: "pointer" }}
-              >
-                Download CV
-              </button>
-            </SidebarCard>
-          )}
+            )}
 
-        </div>
+          </div>
+        </aside>
+
       </div>
     </div>
-  );
-}
-
-function SectionHeader({ label }) {
-  return (
-    <h2 style={{
-      fontSize: 13, fontFamily: "monospace", letterSpacing: "0.12em",
-      color: "#4fa3e3", textTransform: "uppercase", marginBottom: 16,
-      display: "flex", alignItems: "center", gap: 8,
-    }}>
-      <span style={{ display: "inline-block", width: 18, height: 1.5, background: "#4fa3e3" }} />
-      {label}
-    </h2>
-  );
-}
-
-function SidebarCard({ title, children }) {
-  return (
-    <div style={{ background: "var(--color-background-primary)", borderRadius: 12, border: "0.5px solid var(--color-border-tertiary)", padding: "14px 16px" }}>
-      <p style={{ margin: "0 0 10px", fontSize: 11, fontFamily: "monospace", letterSpacing: "0.1em", color: "var(--color-text-tertiary)", textTransform: "uppercase" }}>
-        {title}
-      </p>
-      {children}
-    </div>
-  );
-}
-
-function ContactForm() {
-  const [formData, setFormData] = useState({ name: "", email: "", subject: "", message: "" });
-  const [status, setStatus] = useState(null);
-  const [sending, setSending] = useState(false);
-
-  const handleSubmit = async () => {
-    if (!formData.name || !formData.email || !formData.message) {
-      setStatus("error");
-      return;
-    }
-
-    setSending(true);
-    try {
-      await sendContactMessage({
-        authorName: formData.name,
-        authorEmail: formData.email,
-        subject: formData.subject,
-        message: formData.message,
-      });
-      setStatus("success");
-      setFormData({ name: "", email: "", subject: "", message: "" });
-      setTimeout(() => setStatus(null), 4000);
-    } catch {
-      setStatus("failed");
-    } finally {
-      setSending(false);
-    }
-  };
-
-  const inputStyle = {
-    fontSize: 14, padding: "9px 12px", borderRadius: 6,
-    border: "0.5px solid var(--color-border-secondary)",
-    background: "var(--color-background-secondary)",
-    color: "var(--color-text-primary)", outline: "none",
-    width: "100%", boxSizing: "border-box",
-  };
-
-  return (
-    <section id="contact" style={{ marginBottom: "2rem" }}>
-      <SectionHeader label="Contact" />
-      <div style={{ background: "var(--color-background-primary)", borderRadius: 12, border: "0.5px solid var(--color-border-tertiary)", padding: "1.5rem" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-          <input placeholder="Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} style={inputStyle} />
-          <input placeholder="Email" type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} style={inputStyle} />
-        </div>
-        <input placeholder="Subject" value={formData.subject} onChange={e => setFormData({...formData, subject: e.target.value})} style={{ ...inputStyle, display: "block", marginBottom: 12 }} />
-        <textarea placeholder="Message..." rows={5} value={formData.message} onChange={e => setFormData({...formData, message: e.target.value})}
-          style={{ ...inputStyle, resize: "vertical", display: "block", marginBottom: 12, fontFamily: "sans-serif" }}
-        />
-        <button onClick={handleSubmit} disabled={sending} style={{
-          width: "100%", padding: "10px 0", borderRadius: 6,
-          background: sending ? "#0c4478" : "#185fa5",
-          color: "#fff", border: "none", fontSize: 14, fontWeight: 500,
-          cursor: sending ? "not-allowed" : "pointer", fontFamily: "monospace", letterSpacing: "0.04em",
-        }}>
-          {sending ? "Sending..." : "Send Message"}
-        </button>
-        {status === "success" && <p style={{ margin: "10px 0 0", fontSize: 13, color: "var(--color-text-success)", textAlign: "center" }}>✓ Message sent!</p>}
-        {status === "error" && <p style={{ margin: "10px 0 0", fontSize: 13, color: "var(--color-text-danger)", textAlign: "center" }}>Please fill in your name, email, and message.</p>}
-        {status === "failed" && <p style={{ margin: "10px 0 0", fontSize: 13, color: "var(--color-text-danger)", textAlign: "center" }}>Something went wrong. Please try again.</p>}
-      </div>
-    </section>
-  );
+  )
 }
