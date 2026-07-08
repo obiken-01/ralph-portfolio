@@ -51,7 +51,7 @@ function TripCard({ trip, date }) {
   return (
     <Link
       to={`/trips/${trip.id}`}
-      className="group block ml-16 sm:ml-20"
+      className="group block ml-5 sm:ml-8"
     >
       <div className="bg-white rounded-2xl ring-1 ring-slate-900/5
                       border-l-4 border-l-teal-600 overflow-hidden
@@ -60,7 +60,7 @@ function TripCard({ trip, date }) {
         <div className="flex gap-0">
 
           {/* Cover thumbnail */}
-          <div className="w-24 sm:w-32 flex-shrink-0 bg-slate-100
+          <div className="w-20 sm:w-32 flex-shrink-0 bg-slate-100
                           relative overflow-hidden">
             {trip.coverImageUrl ? (
               <img
@@ -81,7 +81,8 @@ function TripCard({ trip, date }) {
 
           {/* Content */}
           <div className="flex-1 p-4 min-w-0">
-            <div className="flex items-start justify-between gap-2 mb-1">
+            <div className="flex flex-wrap items-start justify-between
+                            gap-x-2 gap-y-1 mb-1">
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full
                                bg-teal-50 text-teal-700 ring-1 ring-teal-100">
                 Trip
@@ -114,7 +115,7 @@ function PostCard({ post, date }) {
   return (
     <Link
       to={`/trips/${post.tripId}/posts/${post.id}`}
-      className="group block ml-16 sm:ml-20"
+      className="group block ml-5 sm:ml-8"
     >
       <div className="bg-white rounded-2xl ring-1 ring-slate-900/5
                       border-l-4 border-l-amber-400 overflow-hidden
@@ -124,7 +125,7 @@ function PostCard({ post, date }) {
 
           {/* Thumbnail */}
           {post.thumbnailUrl && (
-            <div className="w-24 sm:w-32 flex-shrink-0 bg-slate-100
+            <div className="w-20 sm:w-32 flex-shrink-0 bg-slate-100
                             relative overflow-hidden">
               <img
                 src={cldImage(post.thumbnailUrl, 300)}
@@ -137,7 +138,8 @@ function PostCard({ post, date }) {
           )}
 
           <div className="flex-1 p-4 min-w-0">
-            <div className="flex items-start justify-between gap-2 mb-1.5">
+            <div className="flex flex-wrap items-start justify-between
+                            gap-x-2 gap-y-1 mb-1.5">
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full
                                bg-amber-50 text-amber-700 ring-1
                                ring-amber-100">
@@ -181,7 +183,7 @@ function TimelineItem({ item }) {
     <div className="relative flex items-start gap-0 mb-5">
 
       {/* Date column */}
-      <div className="w-16 sm:w-20 flex-shrink-0 pt-3 text-right pr-3">
+      <div className="w-12 sm:w-20 flex-shrink-0 pt-3 text-right pr-2 sm:pr-3">
         <p className="text-xs font-semibold text-slate-500 uppercase
                       leading-tight">
           {new Date(date).toLocaleDateString('en-US', { month: 'short' })}
@@ -193,7 +195,7 @@ function TimelineItem({ item }) {
       </div>
 
       {/* Dot on spine */}
-      <div className="absolute left-[52px] sm:left-[68px] top-4 z-10">
+      <div className="absolute left-[38px] sm:left-[68px] top-4 z-10">
         <div className={`w-3 h-3 rounded-full border-2 border-white
                          shadow-sm ${
           isTrip ? 'bg-teal-600' : 'bg-amber-400'
@@ -324,7 +326,7 @@ export default function TimelinePage() {
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
               <div key={i}
-                   className="ml-20 bg-white rounded-2xl ring-1
+                   className="ml-16 sm:ml-24 bg-white rounded-2xl ring-1
                               ring-slate-900/5 p-4 animate-pulse">
                 <div className="h-4 bg-slate-200 rounded w-1/4 mb-2" />
                 <div className="h-4 bg-slate-200 rounded w-3/4 mb-2" />
@@ -347,7 +349,7 @@ export default function TimelinePage() {
 
               {/* Vertical spine */}
               <div className="relative">
-                <div className="absolute left-[59px] sm:left-[75px] top-0
+                <div className="absolute left-[44px] sm:left-[74px] top-0
                                 bottom-0 w-px bg-slate-200" />
 
                 {items.map((item, idx) => (

@@ -121,7 +121,7 @@ export default function TripsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full rounded-full border border-slate-200 bg-white
-                         py-2.5 pl-10 pr-4 text-sm text-slate-700
+                         py-2.5 pl-10 pr-4 text-base sm:text-sm text-slate-700
                          placeholder-slate-400 transition focus:border-transparent
                          focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
@@ -132,8 +132,9 @@ export default function TripsPage() {
             aria-label="Filter by country"
             onChange={(e) => setCountry(e.target.value)}
             className="cursor-pointer rounded-full border border-slate-200
-                       bg-white px-4 py-2.5 text-sm text-slate-700 transition
-                       focus:outline-none focus:ring-2 focus:ring-teal-500"
+                       bg-white px-4 py-2.5 text-base sm:text-sm text-slate-700
+                       transition focus:outline-none focus:ring-2
+                       focus:ring-teal-500"
           >
             {countries.map((c) => (
               <option key={c} value={c}>{c}</option>
@@ -145,8 +146,9 @@ export default function TripsPage() {
             aria-label="Sort trips"
             onChange={(e) => setSort(e.target.value)}
             className="cursor-pointer rounded-full border border-slate-200
-                       bg-white px-4 py-2.5 text-sm text-slate-700 transition
-                       focus:outline-none focus:ring-2 focus:ring-teal-500"
+                       bg-white px-4 py-2.5 text-base sm:text-sm text-slate-700
+                       transition focus:outline-none focus:ring-2
+                       focus:ring-teal-500"
           >
             <option value="newest">Newest first</option>
             <option value="oldest">Oldest first</option>

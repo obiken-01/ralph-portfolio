@@ -395,9 +395,10 @@ function ContactForm() {
   }
 
   const inputClass =
-    `w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm
-     text-slate-700 placeholder-slate-400 transition focus:border-transparent
-     focus:outline-none focus:ring-2 focus:ring-teal-500`
+    `w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-base
+     sm:text-sm text-slate-700 placeholder-slate-400 transition
+     focus:border-transparent focus:outline-none focus:ring-2
+     focus:ring-teal-500`
 
   return (
     <section aria-labelledby="contact" className="mb-6">
