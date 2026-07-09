@@ -31,6 +31,18 @@ const processQueue = (error, token = null) => {
   failedQueue = []
 }
 
+// Only the admin area requires a session — a stale/expired token
+// found while browsing the public site must never hijack navigation
+// away from whatever page the visitor is actually looking at.
+const isAdminRoute = () => window.location.pathname.startsWith('/admin')
+
+const clearSessionAndRedirectIfAdmin = () => {
+  localStorage.clear()
+  if (isAdminRoute()) {
+    window.location.href = '/login'
+  }
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -55,8 +67,7 @@ api.interceptors.response.use(
 
       if (!refreshToken) {
         isRefreshing = false
-        localStorage.clear()
-        window.location.href = '/login'
+        clearSessionAndRedirectIfAdmin()
         return Promise.reject(error)
       }
 
@@ -79,8 +90,7 @@ api.interceptors.response.use(
         return api(originalRequest)
       } catch (refreshError) {
         processQueue(refreshError, null)
-        localStorage.clear()
-        window.location.href = '/login'
+        clearSessionAndRedirectIfAdmin()
         return Promise.reject(refreshError)
       } finally {
         isRefreshing = false
