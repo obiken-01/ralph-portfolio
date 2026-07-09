@@ -2,7 +2,20 @@
 @plugin "@tailwindcss/typography";
 @import 'leaflet/dist/leaflet.css';
 
-/* TipTap editor styles */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply antialiased text-slate-800 bg-stone-50;
+}
+
+/* ── TipTap editor styles (admin) ───────────────────────────── */
 .tiptap p.is-editor-empty:first-child::before {
   color: #64748b;
   content: attr(data-placeholder);

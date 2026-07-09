@@ -49,7 +49,15 @@ namespace Ralphy.Application.Mappings
                 .ForMember(dest => dest.Locations, opt => opt.MapFrom(src => src.Locations));
 
             // Post mappings
-            CreateMap<Post, PostDto>();
+            CreateMap<Post, PostDto>()
+                .ForMember(dest => dest.ThumbnailUrl,
+                    opt => opt.MapFrom(src => src.Photos
+                        .Where(p => p.Type == Domain.Enums.MediaType.Image)
+                        .Select(p => p.Url)
+                        .FirstOrDefault()))
+                .ForMember(dest => dest.PhotoCount,
+                    opt => opt.MapFrom(src => src.Photos
+                        .Count(p => p.Type == Domain.Enums.MediaType.Image)));
             CreateMap<CreatePostDto, Post>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())

@@ -2,9 +2,40 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ralphy-web</title>
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <meta name="theme-color" content="#0f172a" />
+
+    <title>Ralphy — Travel Stories from Occidental Mindoro</title>
+    <meta
+      name="description"
+      content="Travel blog and vlog by Ralph Alcaide (@lakbayOksi). Adventures across Occidental Mindoro and the Philippines, captured by drone and phone."
+    />
+
+    <!-- Default social tags (per-page tags are set by the app; JS-less
+         scrapers fall back to these) -->
+    <meta property="og:site_name" content="Ralphy" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Ralphy — Travel Stories from Occidental Mindoro" />
+    <meta
+      property="og:description"
+      content="Travel blog and vlog by Ralph Alcaide (@lakbayOksi). Adventures across Occidental Mindoro and the Philippines, captured by drone and phone."
+    />
+    <meta property="og:image" content="/hero.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Speed up first API call + Cloudinary media -->
+    <link rel="preconnect" href="https://res.cloudinary.com" />
+    <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+    <link rel="preconnect" href="https://ralph-portfolio-production.up.railway.app" />
+
+    <!-- Fonts: Fraunces (display) + Inter (UI/body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <div id="root"></div>

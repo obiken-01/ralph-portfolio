@@ -13,5 +13,7 @@ namespace Ralphy.Application.DTOs.Posts
         public DateTime? PublishedAt { get; set; }
         public int TripId { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string? ThumbnailUrl { get; set; }
+        public int PhotoCount { get; set; }
     }
 }
