@@ -1,5 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Ralphy.Domain.Entities;
+using Ralphy.Domain.Enums;
 using Ralphy.Domain.Interfaces.Repositories;
 
 namespace Ralphy.Infrastructure.Data.Repositories
@@ -17,6 +18,24 @@ namespace Ralphy.Infrastructure.Data.Repositories
                 .Where(p => p.PostId == postId)
                 .OrderBy(p => p.SortOrder)
                 .ThenBy(p => p.Id)
+                .ToListAsync();
+
+        /// <summary>
+        /// A random sample of images from published posts, for the home page.
+        ///
+        /// Ordering happens in the database rather than by pulling every row
+        /// and shuffling in memory — the library only holds a few hundred
+        /// photos today, but a feed that degrades as it grows is not worth
+        /// shipping.
+        /// </summary>
+        public async Task<IEnumerable<Photo>> GetRandomPublishedAsync(int count) =>
+            await _dbSet
+                .Include(p => p.Post)
+                    .ThenInclude(post => post.Location)
+                .Where(p => p.Type == MediaType.Image
+                    && p.Post.Status == PostStatus.Published)
+                .OrderBy(_ => EF.Functions.Random())
+                .Take(count)
                 .ToListAsync();
     }
 }

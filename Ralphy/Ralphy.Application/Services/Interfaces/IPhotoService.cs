@@ -14,6 +14,9 @@ namespace Ralphy.Application.Services.Interfaces
 
         Task<IEnumerable<PhotoDto>> GetByPostIdAsync(int postId);
 
+        /// <summary>A random sample of published images, for the home page.</summary>
+        Task<IEnumerable<FeaturedPhotoDto>> GetRandomAsync(int count);
+
         Task<PhotoDto> UpdateAsync(int id, UpdatePhotoDto request, int userId);
 
         Task ReorderAsync(int postId, ReorderPhotosDto request, int userId);

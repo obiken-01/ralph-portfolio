@@ -28,6 +28,19 @@ namespace Ralphy.Api.Controllers
         }
 
         /// <summary>
+        /// A random sample of published photographs. Drives the home page
+        /// slideshow, which draws from the whole library rather than from post
+        /// cover images.
+        /// </summary>
+        [HttpGet("random")]
+        [ResponseCache(Duration = 60)]
+        public async Task<IActionResult> GetRandom([FromQuery] int count = 10)
+        {
+            var photos = await _photoService.GetRandomAsync(count);
+            return Ok(ApiResponse<IEnumerable<FeaturedPhotoDto>>.Ok(photos));
+        }
+
+        /// <summary>
         /// The EXIF fields are optional. The browser reads them off the original
         /// before compression strips them and posts them alongside the file, so
         /// the geotag and capture date survive the canvas round-trip.

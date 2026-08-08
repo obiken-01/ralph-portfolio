@@ -8,64 +8,87 @@ import Lightbox from '../../components/public/Lightbox'
 import TagChips from '../../components/public/TagChips'
 
 // ── Breadcrumb ──────────────────────────────────────────────────
-function Breadcrumb({ postTitle }) {
+function Breadcrumb({ postTitle, onDark = false }) {
+  // Over a photograph the links need to be near-white with a shadow; over the
+  // page ground they need to be grey. Same markup, two grounds.
+  const base = onDark ? 'text-white/70' : 'text-slate-400'
+  const link = onDark
+    ? 'text-white/85 hover:text-white drop-shadow'
+    : 'text-slate-500 hover:text-teal-700'
+  const current = onDark ? 'text-white/70 drop-shadow' : 'text-slate-600'
+
   return (
     <nav aria-label="Breadcrumb"
-         className="mb-8 flex flex-wrap items-center gap-1.5 text-xs
-                    text-slate-400">
-      <Link to="/" className="transition-colors hover:text-teal-700">Home</Link>
+         className={`flex flex-wrap items-center gap-1.5 text-xs ${base}`}>
+      <Link to="/" className={`transition-colors ${link}`}>Home</Link>
       <span aria-hidden="true">/</span>
-      <Link to="/posts" className="transition-colors hover:text-teal-700">
-        Photos
-      </Link>
+      <Link to="/posts" className={`transition-colors ${link}`}>Photos</Link>
       <span aria-hidden="true">/</span>
-      <span className="max-w-[180px] truncate text-slate-600">{postTitle}</span>
+      <span className={`max-w-[180px] truncate ${current}`}>{postTitle}</span>
     </nav>
   )
 }
 
 // ── Photo Gallery ───────────────────────────────────────────────
-function PhotoGallery({ photos }) {
+/**
+ * Full bleed, one photograph per band, edge to edge.
+ *
+ * Nothing is cropped: the wrapper is given the photo's real aspect ratio so
+ * the browser reserves exactly the right box before the image decodes, and a
+ * tall portrait is capped at the viewport height rather than running off the
+ * bottom of the screen.
+ */
+function PhotoGallery({ photos, lead }) {
   const [lightboxIndex, setLightboxIndex] = useState(null)
 
   if (!photos?.length) return null
 
+  const rest = lead ? photos.slice(1) : photos
+  const offset = lead ? 1 : 0
+
   return (
-    <section aria-labelledby="gallery-heading">
+    <section aria-labelledby="gallery-heading" className="flex flex-col gap-1">
       <h2 id="gallery-heading" className="sr-only">Photo gallery</h2>
 
-      {/* Masonry columns preserve each photo's own aspect ratio */}
-      <div className="columns-1 gap-3 sm:columns-2 [&>*]:mb-3">
-        {photos.map((photo, i) => (
-          <button
-            key={photo.id}
-            onClick={() => setLightboxIndex(i)}
-            className="group relative block w-full overflow-hidden rounded-xl
-                       bg-slate-100 focus:outline-none focus:ring-2
-                       focus:ring-teal-500"
-            aria-label={photo.caption || `Open photo ${i + 1}`}
-          >
-            <img
-              src={cldImage(photo.url, 1000)}
-              alt={photo.caption || ''}
-              loading={i < 2 ? 'eager' : 'lazy'}
-              decoding="async"
-              width={photo.width || undefined}
-              height={photo.height || undefined}
-              className="w-full transition-transform duration-500
-                         group-hover:scale-[1.02]"
-            />
+      {rest.map((photo, i) => {
+        const index = i + offset
+        const aspect = photo.width > 0 && photo.height > 0
+          ? photo.width / photo.height
+          : null
+
+        return (
+          <figure key={photo.id} className="m-0">
+            <button
+              onClick={() => setLightboxIndex(index)}
+              className="group relative block w-full overflow-hidden
+                         bg-slate-100 focus:outline-none focus-visible:ring-2
+                         focus-visible:ring-inset focus-visible:ring-teal-500"
+              aria-label={photo.caption || `Open photo ${index + 1} full screen`}
+              // Portraits would otherwise be taller than the screen at full
+              // width, so nothing but the middle of the photo is ever visible.
+              style={aspect ? { aspectRatio: aspect, maxHeight: '88vh' } : undefined}
+            >
+              <img
+                src={cldImage(photo.url, 2000)}
+                alt={photo.caption || ''}
+                loading={index < 2 ? 'eager' : 'lazy'}
+                fetchPriority={index === 0 ? 'high' : 'auto'}
+                decoding="async"
+                width={photo.width || undefined}
+                height={photo.height || undefined}
+                className="h-full w-full object-contain"
+              />
+            </button>
+
             {photo.caption && (
-              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t
-                               from-black/70 to-transparent p-3 pt-10
-                               text-left text-xs text-white opacity-0
-                               transition-opacity group-hover:opacity-100">
+              <figcaption className="mx-auto max-w-3xl px-4 pb-2 pt-3 text-sm
+                                     text-slate-500 sm:px-6">
                 {photo.caption}
-              </span>
+              </figcaption>
             )}
-          </button>
-        ))}
-      </div>
+          </figure>
+        )
+      })}
 
       {lightboxIndex !== null && (
         <Lightbox
@@ -76,6 +99,84 @@ function PhotoGallery({ photos }) {
         />
       )}
     </section>
+  )
+}
+
+// ── Full-bleed hero ─────────────────────────────────────────────
+/** The lead photograph with the title set over it. */
+function Hero({ post, photo, date, photoCount }) {
+  const aspect = photo?.width > 0 && photo?.height > 0
+    ? photo.width / photo.height
+    : 3 / 2
+
+  if (!photo) {
+    return (
+      <header className="mx-auto max-w-3xl px-4 pb-8 pt-14 text-center sm:px-6">
+        {post.locationName && !post.locationIsPlaceholder && (
+          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em]
+                        text-teal-700">
+            {post.locationName}
+          </p>
+        )}
+        <h1 className="font-display text-3xl font-semibold leading-tight
+                       text-slate-900 sm:text-5xl">
+          {post.title}
+        </h1>
+        {date && (
+          <p className="mt-5 text-sm text-slate-400">
+            <time dateTime={date}>{formatDate(date)}</time>
+          </p>
+        )}
+      </header>
+    )
+  }
+
+  return (
+    <header className="relative bg-slate-950">
+      <div
+        className="relative w-full"
+        style={{ aspectRatio: aspect, maxHeight: '80vh' }}
+      >
+        <img
+          src={cldImage(photo.url, 2000)}
+          alt={photo.caption || post.title}
+          fetchPriority="high"
+          decoding="async"
+          width={photo.width || undefined}
+          height={photo.height || undefined}
+          className="h-full w-full object-cover"
+        />
+
+        {/* The scrim is anchored to the text, not the whole frame, so a bright
+            photo keeps its brightness everywhere the title isn't. */}
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t
+                        from-slate-950/85 via-slate-950/35 to-transparent
+                        px-4 pb-8 pt-24 sm:px-6 sm:pb-12">
+          <div className="mx-auto max-w-5xl">
+            <p className="mb-2 flex flex-wrap items-center gap-x-2 text-xs
+                          font-semibold uppercase tracking-[0.18em]
+                          text-white/75">
+              {post.locationName && !post.locationIsPlaceholder && (
+                <span>{post.locationName}</span>
+              )}
+              {post.locationName && !post.locationIsPlaceholder && date && (
+                <span aria-hidden="true">·</span>
+              )}
+              {date && <time dateTime={date}>{formatDate(date)}</time>}
+            </p>
+            <h1 className="font-display text-3xl font-semibold leading-tight
+                           text-white drop-shadow-sm sm:text-5xl">
+              {post.title}
+            </h1>
+            {photoCount > 0 && (
+              <p className="mt-3 text-xs text-white/60">
+                {photoCount} {photoCount === 1 ? 'photograph' : 'photographs'}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
   )
 }
 
@@ -392,7 +493,7 @@ export default function PostDetailPage() {
       || post.title
 
   return (
-    <div className="min-h-screen">
+    <div className="relative min-h-screen">
       <Seo
         title={post.title}
         description={description}
@@ -411,58 +512,45 @@ export default function PostDetailPage() {
         }}
       />
 
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        <Breadcrumb postTitle={post.title} />
+      {/* Breadcrumb floats over the hero so the photograph starts at the very
+          top of the page rather than below a bar of chrome. */}
+      <div className="absolute inset-x-0 top-0 z-10 mx-auto max-w-5xl px-4
+                      pt-4 sm:px-6">
+        <Breadcrumb postTitle={post.title} onDark={!!cover} />
+      </div>
 
-        <article>
-          <header className="mb-8 text-center">
-            {post.locationName && !post.locationIsPlaceholder && (
-              <p className="mb-4 text-xs font-semibold uppercase
-                            tracking-[0.2em] text-teal-700">
-                {post.locationName}
-              </p>
-            )}
-            <h1 className="font-display text-3xl font-semibold leading-tight
-                           text-slate-900 sm:text-5xl">
-              {post.title}
-            </h1>
-            <p className="mt-5 text-sm text-slate-400">
-              {date && (
-                <time dateTime={date}>{formatDate(date)}</time>
-              )}
-              {photos.length > 0 && (
-                <>
-                  <span className="mx-2" aria-hidden="true">·</span>
-                  {photos.length} {photos.length === 1 ? 'photo' : 'photos'}
-                </>
-              )}
-              {post.viewCount > 0 && (
-                <>
-                  <span className="mx-2" aria-hidden="true">·</span>
-                  {post.viewCount} views
-                </>
-              )}
-            </p>
+      <article>
+        <Hero post={post} photo={cover} date={date} photoCount={photos.length} />
 
-            {post.tags?.length > 0 && (
-              <TagChips tags={post.tags} className="mt-4 justify-center" />
-            )}
-          </header>
+        {/* Photos lead. Words, if there are any, come after. */}
+        <PhotoGallery photos={photos} lead={!!cover} />
 
-          {/* Photos lead. Words, if there are any, come after. */}
-          <PhotoGallery photos={photos} />
-
+        <div className="mx-auto max-w-3xl px-4 sm:px-6">
           {post.content && (
             <div
-              className="prose prose-slate prose-lg mx-auto mt-12 max-w-3xl
+              className="prose prose-slate prose-lg mt-12
                          prose-headings:font-display
                          prose-headings:font-semibold
                          prose-a:text-teal-700 prose-img:rounded-2xl"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
           )}
-        </article>
 
+          <div className="mt-12 flex flex-wrap items-center justify-between
+                          gap-4 border-t border-slate-200 pt-6">
+            {post.tags?.length > 0
+              ? <TagChips tags={post.tags} />
+              : <span />}
+            {post.viewCount > 0 && (
+              <span className="text-xs text-slate-400">
+                {post.viewCount} views
+              </span>
+            )}
+          </div>
+        </div>
+      </article>
+
+      <div className="mx-auto max-w-3xl px-4 pb-8 sm:px-6">
         <VideoGallery videos={videos} />
 
         <LocationCard post={post} />

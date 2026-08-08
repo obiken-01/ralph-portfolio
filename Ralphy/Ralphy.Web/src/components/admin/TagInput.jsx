@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import api from '../../api/axios'
 
 /** Stored lowercase and trimmed, so the chip shown matches what gets saved. */
-export const normalizeTag = (value) =>
+const normalizeTag = (value) =>
   value.toLowerCase().trim().replace(/^#/, '').replace(/\s+/g, '-')
 
 /**

@@ -1,12 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../../api/axios'
 import Seo, { SITE_URL, AUTHOR_LD } from '../../components/common/Seo'
-import PostCard, { PostCardSkeleton } from '../../components/public/PostCard'
+import PostCard from '../../components/public/PostCard'
+import JustifiedGrid from '../../components/public/JustifiedGrid'
+import HeroSlideshow from '../../components/public/HeroSlideshow'
 import { TagFilterBar } from '../../components/public/TagChips'
+import { postAspect } from '../../utils/justify'
 
 // ── Hero ────────────────────────────────────────────────────────
-function Hero({ posts, tags }) {
+function Hero({ posts, tags, featured }) {
   const photos = posts
     ? posts.reduce((sum, p) => sum + (p.photoCount ?? 0), 0)
     : null
@@ -22,20 +25,8 @@ function Hero({ posts, tags }) {
   ]
 
   return (
-    <section className="relative flex min-h-[92vh] flex-col overflow-hidden
-                        bg-slate-950">
-      <img
-        src="/hero.jpg"
-        alt="Aerial drone view of Occidental Mindoro"
-        fetchPriority="high"
-        className="absolute inset-0 h-full w-full object-cover opacity-60"
-      />
-      <div className="absolute inset-0 bg-gradient-to-b
-                      from-slate-950/60 via-slate-950/20 to-slate-950" />
-
-      {/* Content */}
-      <div className="relative z-10 mx-auto flex max-w-3xl flex-1 flex-col
-                      items-center justify-center px-4 text-center">
+    <HeroSlideshow photos={featured} footer={<HeroStats stats={stats} />}>
+      <>
         <p className="mb-6 inline-flex items-center gap-2 rounded-full
                       border border-white/20 bg-white/10 px-4 py-1.5
                       backdrop-blur-sm">
@@ -76,26 +67,28 @@ function Hero({ posts, tags }) {
             View the map
           </Link>
         </div>
-      </div>
+      </>
+    </HeroSlideshow>
+  )
+}
 
-      {/* Stats strip inside the hero */}
-      <div className="relative z-10 border-t border-white/10">
-        <dl className="mx-auto grid max-w-4xl grid-cols-2 divide-x
-                       divide-white/10 sm:grid-cols-4">
-          {stats.map(({ label, value }) => (
-            <div key={label} className="py-6 text-center">
-              <dd className="font-display text-3xl font-semibold text-white">
-                {value}
-              </dd>
-              <dt className="mt-1 text-[11px] font-medium uppercase
-                             tracking-[0.2em] text-slate-400">
-                {label}
-              </dt>
-            </div>
-          ))}
-        </dl>
-      </div>
-    </section>
+/** The counts strip that sits under the masthead, spanning the full width. */
+function HeroStats({ stats }) {
+  return (
+    <dl className="mx-auto grid max-w-4xl grid-cols-2 divide-x divide-white/10
+                   sm:grid-cols-4">
+      {stats.map(({ label, value }) => (
+        <div key={label} className="py-6 text-center">
+          <dd className="font-display text-3xl font-semibold text-white">
+            {value}
+          </dd>
+          <dt className="mt-1 text-[11px] font-medium uppercase
+                         tracking-[0.2em] text-slate-400">
+            {label}
+          </dt>
+        </div>
+      ))}
+    </dl>
   )
 }
 
@@ -128,9 +121,14 @@ function SectionHeader({ eyebrow, title, to, linkLabel }) {
 
 // ── Latest photos ───────────────────────────────────────────────
 function LatestPhotos({ posts, tags, loading }) {
+  const renderItem = useCallback(
+    (post, { width }) => <PostCard post={post} width={width} />,
+    []
+  )
+
   return (
     <section className="py-20" aria-labelledby="latest-photos">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[100rem] px-4 sm:px-6 lg:px-8">
         <SectionHeader
           eyebrow="Latest adventures"
           title="Recent photos"
@@ -145,19 +143,25 @@ function LatestPhotos({ posts, tags, loading }) {
         )}
 
         {loading ? (
-          <div className="columns-1 gap-6 sm:columns-2 lg:columns-3">
-            {[...Array(6)].map((_, i) => <PostCardSkeleton key={i} />)}
+          <div className="flex gap-1.5" style={{ height: 260 }}>
+            {[1.5, 0.7, 1.6, 1.2].map((aspect, i) => (
+              <div
+                key={i}
+                className="animate-pulse rounded-sm bg-slate-200"
+                style={{ flexGrow: aspect, flexBasis: 0 }}
+              />
+            ))}
           </div>
         ) : posts.length === 0 ? (
           <p className="py-14 text-center text-sm text-slate-400">
             Nothing here yet — check back soon!
           </p>
         ) : (
-          <div className="columns-1 gap-6 sm:columns-2 lg:columns-3">
-            {posts.slice(0, 6).map((post) => (
-              <PostCard key={post.id} post={post} />
-            ))}
-          </div>
+          <JustifiedGrid
+            items={posts.slice(0, 9)}
+            aspectOf={postAspect}
+            renderItem={renderItem}
+          />
         )}
       </div>
     </section>
@@ -208,38 +212,6 @@ function MapBanner() {
   )
 }
 
-// ── Recent posts ────────────────────────────────────────────────
-function RecentPosts({ posts, loading }) {
-  return (
-    <section className="py-20" aria-labelledby="recent-posts">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <SectionHeader
-          eyebrow="From the journal"
-          title="On the timeline"
-          to="/timeline"
-          linkLabel="Full timeline"
-        />
-
-        {loading ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {[...Array(3)].map((_, i) => <PostCardSkeleton key={i} />)}
-          </div>
-        ) : posts.length === 0 ? (
-          <p className="py-14 text-center text-sm text-slate-400">
-            Nothing on the timeline yet — check back soon!
-          </p>
-        ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {posts.slice(0, 3).map((post) => (
-              <PostCard key={post.id} post={post} />
-            ))}
-          </div>
-        )}
-      </div>
-    </section>
-  )
-}
-
 // ── Follow CTA ──────────────────────────────────────────────────
 function FollowCta() {
   return (
@@ -284,17 +256,22 @@ function FollowCta() {
 export default function HomePage() {
   const [posts, setPosts] = useState([])
   const [tags, setTags] = useState([])
+  const [featured, setFeatured] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [postsRes, tagsRes] = await Promise.all([
+        const [postsRes, tagsRes, featuredRes] = await Promise.all([
           api.get('/posts'),
           api.get('/tags'),
+          // Any published photo will do — the slideshow is about the
+          // photographs, not about which post they belong to.
+          api.get('/photos/random', { params: { count: 10 } }),
         ])
         setPosts(postsRes.data.data ?? [])
         setTags(tagsRes.data.data ?? [])
+        setFeatured(featuredRes.data.data ?? [])
       } catch (err) {
         console.error('Failed to fetch home data:', err)
       } finally {
@@ -320,10 +297,13 @@ export default function HomePage() {
           author: AUTHOR_LD,
         }}
       />
-      <Hero posts={loading ? null : posts} tags={loading ? null : tags} />
+      <Hero
+        posts={loading ? null : posts}
+        tags={loading ? null : tags}
+        featured={featured}
+      />
       <LatestPhotos posts={posts} tags={tags} loading={loading} />
       <MapBanner />
-      <RecentPosts posts={posts} loading={loading} />
       <FollowCta />
     </>
   )

@@ -80,6 +80,16 @@ namespace Ralphy.Application.Services
                 photos.Where(p => p.Type == MediaType.Image));
         }
 
+        public async Task<IEnumerable<FeaturedPhotoDto>> GetRandomAsync(int count)
+        {
+            // Clamped rather than trusted: an unbounded count on a public,
+            // unauthenticated endpoint is a free way to dump the library.
+            var take = Math.Clamp(count, 1, 30);
+
+            var photos = await _unitOfWork.Photos.GetRandomPublishedAsync(take);
+            return _mapper.Map<IEnumerable<FeaturedPhotoDto>>(photos);
+        }
+
         public async Task<PhotoDto> UpdateAsync(
             int id, UpdatePhotoDto request, int userId)
         {
