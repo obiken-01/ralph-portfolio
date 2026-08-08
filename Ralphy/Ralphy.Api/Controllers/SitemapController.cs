@@ -15,6 +15,12 @@ namespace Ralphy.Api.Controllers
         private static readonly XNamespace Ns =
             "http://www.sitemaps.org/schemas/sitemap/0.9";
 
+        // Google Images is the realistic organic channel for a photography
+        // site, and it only picks images up from a sitemap if they are
+        // declared in this namespace.
+        private static readonly XNamespace ImageNs =
+            "http://www.google.com/schemas/sitemap-image/1.1";
+
         public SitemapController(
             IPostService postService,
             ITagService tagService,
@@ -48,7 +54,10 @@ namespace Ralphy.Api.Controllers
             // nginx; they are deliberately no longer advertised here.
             urls.AddRange(posts.Select(p =>
                 UrlElement($"{siteUrl}/posts/{p.Id}",
-                    p.PublishedAt ?? p.CreatedAt, "monthly", "0.7")));
+                    p.PublishedAt ?? p.CreatedAt, "monthly", "0.7",
+                    imageUrl: p.ThumbnailUrl,
+                    imageTitle: p.Title,
+                    imageCaption: BuildCaption(p.LocationName, p.LocationIsPlaceholder))));
 
             urls.AddRange(tags.Select(t =>
                 UrlElement($"{siteUrl}/tags/{Uri.EscapeDataString(t.Name)}",
@@ -56,7 +65,9 @@ namespace Ralphy.Api.Controllers
 
             var doc = new XDocument(
                 new XDeclaration("1.0", "utf-8", null),
-                new XElement(Ns + "urlset", urls));
+                new XElement(Ns + "urlset",
+                    new XAttribute(XNamespace.Xmlns + "image", ImageNs),
+                    urls));
 
             var xml = new StringBuilder()
                 .AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>")
@@ -66,8 +77,20 @@ namespace Ralphy.Api.Controllers
             return Content(xml, "application/xml", Encoding.UTF8);
         }
 
+        /// <summary>A place name, when the post has a real one to give.</summary>
+        private static string? BuildCaption(string? locationName, bool isPlaceholder)
+            => isPlaceholder || string.IsNullOrWhiteSpace(locationName)
+                ? null
+                : $"Photographed at {locationName}, Occidental Mindoro, Philippines";
+
         private static XElement UrlElement(
-            string loc, DateTime? lastMod, string changeFreq, string priority)
+            string loc,
+            DateTime? lastMod,
+            string changeFreq,
+            string priority,
+            string? imageUrl = null,
+            string? imageTitle = null,
+            string? imageCaption = null)
         {
             var element = new XElement(Ns + "url",
                 new XElement(Ns + "loc", loc));
@@ -78,6 +101,20 @@ namespace Ralphy.Api.Controllers
 
             element.Add(new XElement(Ns + "changefreq", changeFreq));
             element.Add(new XElement(Ns + "priority", priority));
+
+            if (!string.IsNullOrWhiteSpace(imageUrl))
+            {
+                var image = new XElement(ImageNs + "image",
+                    new XElement(ImageNs + "loc", imageUrl));
+
+                if (!string.IsNullOrWhiteSpace(imageTitle))
+                    image.Add(new XElement(ImageNs + "title", imageTitle));
+
+                if (!string.IsNullOrWhiteSpace(imageCaption))
+                    image.Add(new XElement(ImageNs + "caption", imageCaption));
+
+                element.Add(image);
+            }
 
             return element;
         }

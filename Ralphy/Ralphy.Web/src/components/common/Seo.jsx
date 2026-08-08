@@ -1,10 +1,13 @@
+import { useEffect } from 'react'
 import { cldImage } from '../../utils/cloudinary'
 
 const SITE_NAME = 'Ralphy'
-const DEFAULT_TITLE = 'Ralphy — Travel Stories from Occidental Mindoro'
+const DEFAULT_TITLE =
+  'Ralphy — Travel Photography from Occidental Mindoro, Philippines'
 const DEFAULT_DESCRIPTION =
-  'Travel blog and vlog by Ralph Alcaide (@lakbayOksi). Adventures across ' +
-  'Occidental Mindoro and the Philippines, captured by drone and phone.'
+  'Ralphy is the travel photo journal of Ralph Alcaide (@lakbayOksi) — drone ' +
+  'and phone photography from Mamburao, Paluan, Sablayan and across ' +
+  'Occidental Mindoro, Philippines.'
 
 export const SITE_URL = (
   import.meta.env.VITE_SITE_URL || window.location.origin
@@ -24,6 +27,16 @@ export default function Seo({
   path,
   jsonLd,
 }) {
+  // index.html ships the same og:* tags as a fallback for scrapers that don't
+  // run JS. They sit earlier in the document, so a scraper reading the first
+  // match would show the home page for every shared link. Drop them once the
+  // app is running and the per-page tags below are the only ones left.
+  useEffect(() => {
+    document
+      .querySelectorAll('meta[data-default-seo]')
+      .forEach((tag) => tag.remove())
+  }, [])
+
   const fullTitle = title ? `${title} · ${SITE_NAME}` : DEFAULT_TITLE
   const url = `${SITE_URL}${path ?? window.location.pathname}`
   const ogImage = image ? cldImage(image, 1200) : `${SITE_URL}/hero.jpg`
@@ -75,4 +88,11 @@ export const AUTHOR_LD = {
   name: 'Ralph Alcaide',
   alternateName: 'lakbayOksi',
   url: `${SITE_URL}/about`,
+  // sameAs is how a search engine learns that this site, the Instagram
+  // account and the YouTube channel are one entity. Those accounts already
+  // have an audience; this site does not yet.
+  sameAs: [
+    'https://instagram.com/lakbayOksi',
+    'https://www.youtube.com/@Lakbay_Oksi',
+  ],
 }
