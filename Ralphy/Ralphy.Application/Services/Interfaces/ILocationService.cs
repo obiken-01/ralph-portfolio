@@ -1,4 +1,4 @@
-﻿using Ralphy.Application.DTOs.Locations;
+using Ralphy.Application.DTOs.Locations;
 
 namespace Ralphy.Application.Services.Interfaces
 {
@@ -6,12 +6,15 @@ namespace Ralphy.Application.Services.Interfaces
     {
         Task<IEnumerable<LocationDto>> GetAllAsync();
 
-        Task<IEnumerable<LocationDto>> GetByTripIdAsync(int tripId);
+        /// <summary>Places with published posts, placeholder excluded.</summary>
+        Task<IEnumerable<LocationDto>> GetPublicAsync();
 
-        Task<LocationDto> CreateAsync(CreateLocationDto request, int userId);
+        Task<LocationDto> GetByIdAsync(int id);
 
-        Task<LocationDto> UpdateAsync(int id, CreateLocationDto request, int userId);
+        Task<LocationDto> CreateAsync(CreateLocationDto request);
 
-        Task DeleteAsync(int id, int userId);
+        Task<LocationDto> UpdateAsync(int id, CreateLocationDto request);
+
+        Task DeleteAsync(int id);
     }
 }

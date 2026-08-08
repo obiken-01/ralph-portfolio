@@ -17,10 +17,27 @@ namespace Ralphy.Application.Services
             _mapper = mapper;
         }
 
+        /// <summary>
+        /// Every tag, including ones with no published posts — the admin tag
+        /// picker still wants to offer those while drafting.
+        /// </summary>
         public async Task<IEnumerable<TagDto>> GetAllAsync()
         {
             var tags = await _unitOfWork.Tags.GetAllAsync();
             return _mapper.Map<IEnumerable<TagDto>>(tags);
+        }
+
+        /// <summary>
+        /// Tags with at least one published post, most-used first. A chip with
+        /// nothing behind it is a dead link.
+        /// </summary>
+        public async Task<IEnumerable<TagDto>> GetPublishedAsync()
+        {
+            var tags = await _unitOfWork.Tags.GetPublishedAsync();
+            return _mapper.Map<IEnumerable<TagDto>>(tags)
+                .OrderByDescending(t => t.PostCount)
+                .ThenBy(t => t.Name)
+                .ToList();
         }
 
         public async Task<TagDto> CreateAsync(CreateTagDto request)
@@ -49,9 +66,7 @@ namespace Ralphy.Application.Services
             if (post == null)
                 throw new KeyNotFoundException($"Post with ID {postId} not found");
 
-            // Verify ownership through trip
-            var trip = await _unitOfWork.Trips.GetByIdAsync(post.TripId);
-            if (trip == null || trip.UserId != userId)
+            if (post.UserId != userId)
                 throw new UnauthorizedAccessException(
                     "You are not authorized to assign tags to this post");
 
@@ -89,8 +104,7 @@ namespace Ralphy.Application.Services
             if (post == null)
                 throw new KeyNotFoundException($"Post with ID {postId} not found");
 
-            var trip = await _unitOfWork.Trips.GetByIdAsync(post.TripId);
-            if (trip == null || trip.UserId != userId)
+            if (post.UserId != userId)
                 throw new UnauthorizedAccessException(
                     "You are not authorized to remove tags from this post");
 

@@ -36,9 +36,7 @@ namespace Ralphy.Application.Services
             if (post == null)
                 throw new KeyNotFoundException($"Post with ID {postId} not found");
 
-            // Verify ownership through trip
-            var trip = await _unitOfWork.Trips.GetByIdAsync(post.TripId);
-            if (trip == null || trip.UserId != userId)
+            if (post.UserId != userId)
                 throw new UnauthorizedAccessException(
                     "You are not authorized to upload videos to this post");
 
@@ -90,8 +88,7 @@ namespace Ralphy.Application.Services
             if (post == null)
                 throw new KeyNotFoundException("Associated post not found");
 
-            var trip = await _unitOfWork.Trips.GetByIdAsync(post.TripId);
-            if (trip == null || trip.UserId != userId)
+            if (post.UserId != userId)
                 throw new UnauthorizedAccessException(
                     "You are not authorized to delete this video");
 

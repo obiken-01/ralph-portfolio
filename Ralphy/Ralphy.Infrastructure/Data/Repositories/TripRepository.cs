@@ -21,7 +21,6 @@ namespace Ralphy.Infrastructure.Data.Repositories
         public async Task<Trip?> GetTripWithPostsAsync(int id) =>
             await _dbSet
                 .Include(t => t.Posts)
-                .Include(t => t.Locations)
                 .FirstOrDefaultAsync(t => t.Id == id);
 
         public async Task<IEnumerable<Trip>> GetByUserIdAsync(int userId) =>

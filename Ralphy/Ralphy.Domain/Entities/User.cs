@@ -12,6 +12,8 @@
         // Navigation properties
         public ICollection<Trip> Trips { get; set; } = new List<Trip>();
 
+        public ICollection<Post> Posts { get; set; } = new List<Post>();
+
         public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     }
 }

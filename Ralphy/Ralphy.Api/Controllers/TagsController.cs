@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Ralphy.Api.Helpers;
 using Ralphy.Application.Common;
+using Ralphy.Application.DTOs.Posts;
 using Ralphy.Application.DTOs.Tags;
 using Ralphy.Application.Services.Interfaces;
 
@@ -13,24 +14,44 @@ namespace Ralphy.Api.Controllers
     public class TagsController : ControllerBase
     {
         private readonly ITagService _tagService;
+        private readonly IPostService _postService;
         private readonly IValidator<CreateTagDto> _createValidator;
         private readonly ILogger<TagsController> _logger;
 
         public TagsController(
             ITagService tagService,
+            IPostService postService,
             IValidator<CreateTagDto> createValidator,
             ILogger<TagsController> logger)
         {
             _tagService = tagService;
+            _postService = postService;
             _createValidator = createValidator;
             _logger = logger;
         }
 
+        /// <summary>Public tag cloud — tags with no published posts left out.</summary>
         [HttpGet]
+        public async Task<IActionResult> GetPublished()
+        {
+            var tags = await _tagService.GetPublishedAsync();
+            return Ok(ApiResponse<IEnumerable<TagDto>>.Ok(tags));
+        }
+
+        /// <summary>Every tag, for the admin picker — unused ones included.</summary>
+        [Authorize]
+        [HttpGet("all")]
         public async Task<IActionResult> GetAll()
         {
             var tags = await _tagService.GetAllAsync();
             return Ok(ApiResponse<IEnumerable<TagDto>>.Ok(tags));
+        }
+
+        [HttpGet("{name}/posts")]
+        public async Task<IActionResult> GetPostsByTag(string name)
+        {
+            var posts = await _postService.GetByTagAsync(name);
+            return Ok(ApiResponse<IEnumerable<PostDto>>.Ok(posts));
         }
 
         [Authorize]

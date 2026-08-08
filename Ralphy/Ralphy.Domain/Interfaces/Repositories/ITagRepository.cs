@@ -1,4 +1,4 @@
-﻿using Ralphy.Domain.Entities;
+using Ralphy.Domain.Entities;
 
 namespace Ralphy.Domain.Interfaces.Repositories
 {
@@ -6,7 +6,8 @@ namespace Ralphy.Domain.Interfaces.Repositories
     {
         Task<Tag?> GetByNameAsync(string name);
 
-        Task<IEnumerable<Tag>> GetAllAsync();
+        /// <summary>Tags with at least one published post.</summary>
+        Task<IEnumerable<Tag>> GetPublishedAsync();
 
         Task<bool> ExistsAsync(string name);
     }

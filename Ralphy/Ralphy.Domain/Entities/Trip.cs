@@ -20,7 +20,5 @@ namespace Ralphy.Domain.Entities
 
         // Navigation properties
         public ICollection<Post> Posts { get; set; } = new List<Post>();
-
-        public ICollection<Location> Locations { get; set; } = new List<Location>();
     }
 }

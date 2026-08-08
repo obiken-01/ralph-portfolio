@@ -52,18 +52,28 @@ namespace Ralphy.Infrastructure.Data
                 .HasForeignKey(t => t.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Trip relationships
+            // Deleting a user must not silently take their posts with it.
+            modelBuilder.Entity<User>()
+                .HasMany(u => u.Posts)
+                .WithOne(p => p.User)
+                .HasForeignKey(p => p.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Trip relationships — legacy, dropped once Trip is removed.
             modelBuilder.Entity<Trip>()
                 .HasMany(t => t.Posts)
                 .WithOne(p => p.Trip)
                 .HasForeignKey(p => p.TripId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.SetNull);
 
-            modelBuilder.Entity<Trip>()
-                .HasMany(t => t.Locations)
-                .WithOne(l => l.Trip)
-                .HasForeignKey(l => l.TripId)
-                .OnDelete(DeleteBehavior.Cascade);
+            // Location relationships
+            // Restrict, not Cascade: a Location is shared by many posts, so
+            // deleting a place must never cascade-delete everything pinned to it.
+            modelBuilder.Entity<Location>()
+                .HasMany(l => l.Posts)
+                .WithOne(p => p.Location)
+                .HasForeignKey(p => p.LocationId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Post relationships
             modelBuilder.Entity<Post>()
@@ -71,6 +81,10 @@ namespace Ralphy.Infrastructure.Data
                 .WithOne(ph => ph.Post)
                 .HasForeignKey(ph => ph.PostId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Gallery reads always sort on this pair.
+            modelBuilder.Entity<Photo>()
+                .HasIndex(p => new { p.PostId, p.SortOrder });
 
             modelBuilder.Entity<Post>()
                 .HasMany(p => p.Comments)

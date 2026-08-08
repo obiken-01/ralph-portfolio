@@ -29,10 +29,17 @@ namespace Ralphy.Api.Controllers
             _logger = logger;
         }
 
+        /// <summary>
+        /// The published feed. `?tag=` filters it, so the feed page needs one
+        /// code path rather than a separate one for the filtered case.
+        /// </summary>
         [HttpGet]
-        public async Task<IActionResult> GetAllPublished()
+        public async Task<IActionResult> GetAllPublished([FromQuery] string? tag = null)
         {
-            var posts = await _postService.GetAllPublishedAsync();
+            var posts = string.IsNullOrWhiteSpace(tag)
+                ? await _postService.GetAllPublishedAsync()
+                : await _postService.GetByTagAsync(tag);
+
             return Ok(ApiResponse<IEnumerable<PostDto>>.Ok(posts));
         }
 
@@ -42,6 +49,13 @@ namespace Ralphy.Api.Controllers
             await _postService.IncrementViewCountAsync(id);
             var post = await _postService.GetPostWithDetailsAsync(id);
             return Ok(ApiResponse<PostWithDetailsDto>.Ok(post!));
+        }
+
+        [HttpGet("location/{locationId}")]
+        public async Task<IActionResult> GetByLocationId(int locationId)
+        {
+            var posts = await _postService.GetByLocationIdAsync(locationId);
+            return Ok(ApiResponse<IEnumerable<PostDto>>.Ok(posts));
         }
 
         [HttpGet("trip/{tripId}")]

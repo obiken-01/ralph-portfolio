@@ -171,6 +171,9 @@ namespace Ralphy.Infrastructure.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
+                    b.Property<bool>("IsPlaceholder")
+                        .HasColumnType("boolean");
+
                     b.Property<double>("Latitude")
                         .HasColumnType("double precision");
 
@@ -181,15 +184,10 @@ namespace Ralphy.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("TripId")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("TripId");
 
                     b.ToTable("Locations");
                 });
@@ -208,6 +206,15 @@ namespace Ralphy.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("Height")
+                        .HasColumnType("integer");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("double precision");
+
                     b.Property<int>("PostId")
                         .HasColumnType("integer");
 
@@ -215,9 +222,15 @@ namespace Ralphy.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Source")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<DateTime?>("TakenAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -230,9 +243,12 @@ namespace Ralphy.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int?>("Width")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("PostId");
+                    b.HasIndex("PostId", "SortOrder");
 
                     b.ToTable("Photos");
                 });
@@ -246,11 +262,13 @@ namespace Ralphy.Infrastructure.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Content")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("LocationId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("PublishedAt")
                         .HasColumnType("timestamp with time zone");
@@ -259,15 +277,21 @@ namespace Ralphy.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("TakenAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("TripId")
+                    b.Property<int?>("TripId")
                         .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("VideoUrl")
                         .HasColumnType("text");
@@ -277,7 +301,11 @@ namespace Ralphy.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("LocationId");
+
                     b.HasIndex("TripId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Posts");
                 });
@@ -639,17 +667,6 @@ namespace Ralphy.Infrastructure.Migrations
                     b.Navigation("Post");
                 });
 
-            modelBuilder.Entity("Ralphy.Domain.Entities.Location", b =>
-                {
-                    b.HasOne("Ralphy.Domain.Entities.Trip", "Trip")
-                        .WithMany("Locations")
-                        .HasForeignKey("TripId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Trip");
-                });
-
             modelBuilder.Entity("Ralphy.Domain.Entities.Photo", b =>
                 {
                     b.HasOne("Ralphy.Domain.Entities.Post", "Post")
@@ -663,13 +680,28 @@ namespace Ralphy.Infrastructure.Migrations
 
             modelBuilder.Entity("Ralphy.Domain.Entities.Post", b =>
                 {
+                    b.HasOne("Ralphy.Domain.Entities.Location", "Location")
+                        .WithMany("Posts")
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Ralphy.Domain.Entities.Trip", "Trip")
                         .WithMany("Posts")
                         .HasForeignKey("TripId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Ralphy.Domain.Entities.User", "User")
+                        .WithMany("Posts")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Location");
+
                     b.Navigation("Trip");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Ralphy.Domain.Entities.PostTag", b =>
@@ -724,6 +756,11 @@ namespace Ralphy.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Ralphy.Domain.Entities.Location", b =>
+                {
+                    b.Navigation("Posts");
+                });
+
             modelBuilder.Entity("Ralphy.Domain.Entities.Post", b =>
                 {
                     b.Navigation("Comments");
@@ -745,13 +782,13 @@ namespace Ralphy.Infrastructure.Migrations
 
             modelBuilder.Entity("Ralphy.Domain.Entities.Trip", b =>
                 {
-                    b.Navigation("Locations");
-
                     b.Navigation("Posts");
                 });
 
             modelBuilder.Entity("Ralphy.Domain.Entities.User", b =>
                 {
+                    b.Navigation("Posts");
+
                     b.Navigation("RefreshTokens");
 
                     b.Navigation("Trips");

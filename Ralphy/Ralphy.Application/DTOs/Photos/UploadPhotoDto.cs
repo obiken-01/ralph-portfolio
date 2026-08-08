@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Ralphy.Domain.Enums;
 
 namespace Ralphy.Application.DTOs.Photos

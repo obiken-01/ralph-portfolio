@@ -3,4 +3,5 @@
   <Project Path="Ralphy.Application/Ralphy.Application.csproj" Id="78bd279c-9735-425b-b022-134b03aee4c8" />
   <Project Path="Ralphy.Domain/Ralphy.Domain.csproj" Id="cbad25f5-5dd0-42fb-8a45-04d4b687b7cb" />
   <Project Path="Ralphy.Infrastructure/Ralphy.Infrastructure.csproj" Id="d1e92e55-d9e4-47d1-b1ae-0d38d879f312" />
+  <Project Path="Ralphy.Tests/Ralphy.Tests.csproj" />
 </Solution>

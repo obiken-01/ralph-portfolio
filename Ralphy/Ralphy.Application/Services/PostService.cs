@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Ralphy.Application.DTOs.Posts;
 using Ralphy.Application.Services.Interfaces;
 using Ralphy.Domain.Entities;
@@ -14,7 +14,7 @@ namespace Ralphy.Application.Services
         private readonly ICloudinaryService _cloudinaryService;
 
         public PostService(
-            IUnitOfWork unitOfWork, 
+            IUnitOfWork unitOfWork,
             IMapper mapper,
             ICloudinaryService cloudinaryService)
         {
@@ -53,9 +53,31 @@ namespace Ralphy.Application.Services
             return _mapper.Map<PostWithDetailsDto>(post);
         }
 
+        public async Task<IEnumerable<PostDto>> GetByTagAsync(string tagName)
+        {
+            // An unknown tag and a tag with no posts look identical in the
+            // response, so distinguish them here.
+            var tag = await _unitOfWork.Tags.GetByNameAsync(tagName);
+            if (tag == null)
+                throw new KeyNotFoundException($"Tag '{tagName}' not found");
+
+            var posts = await _unitOfWork.Posts.GetByTagAsync(tagName);
+            return _mapper.Map<IEnumerable<PostDto>>(posts);
+        }
+
+        public async Task<IEnumerable<PostDto>> GetByLocationIdAsync(int locationId)
+        {
+            var location = await _unitOfWork.Locations.GetByIdAsync(locationId);
+            if (location == null)
+                throw new KeyNotFoundException(
+                    $"Location with ID {locationId} not found");
+
+            var posts = await _unitOfWork.Posts.GetByLocationIdAsync(locationId);
+            return _mapper.Map<IEnumerable<PostDto>>(posts);
+        }
+
         public async Task<IEnumerable<PostDto>> GetByTripIdAsync(int tripId)
         {
-            // Verify trip exists
             var trip = await _unitOfWork.Trips.GetByIdAsync(tripId);
             if (trip == null)
                 throw new KeyNotFoundException($"Trip with ID {tripId} not found");
@@ -66,16 +88,16 @@ namespace Ralphy.Application.Services
 
         public async Task<PostDto> CreateAsync(CreatePostDto request, int userId)
         {
-            // Verify trip exists and belongs to user
-            var trip = await _unitOfWork.Trips.GetByIdAsync(request.TripId);
-            if (trip == null)
-                throw new KeyNotFoundException($"Trip with ID {request.TripId} not found");
-
-            if (trip.UserId != userId)
-                throw new UnauthorizedAccessException(
-                    "You are not authorized to add posts to this trip");
+            // Nothing to authorize against on create — being authenticated is
+            // the authorization. Ownership is taken from the token, never from
+            // the request body.
+            var location = await _unitOfWork.Locations.GetByIdAsync(request.LocationId);
+            if (location == null)
+                throw new KeyNotFoundException(
+                    $"Location with ID {request.LocationId} not found");
 
             var post = _mapper.Map<Post>(request);
+            post.UserId = userId;
             post.Status = PostStatus.Draft;
 
             await _unitOfWork.Posts.AddAsync(post);
@@ -90,11 +112,18 @@ namespace Ralphy.Application.Services
             if (post == null)
                 throw new KeyNotFoundException($"Post with ID {id} not found");
 
-            // Verify ownership through trip
-            var trip = await _unitOfWork.Trips.GetByIdAsync(post.TripId);
-            if (trip == null || trip.UserId != userId)
+            if (post.UserId != userId)
                 throw new UnauthorizedAccessException(
                     "You are not authorized to update this post");
+
+            if (request.LocationId != post.LocationId)
+            {
+                var location = await _unitOfWork.Locations
+                    .GetByIdAsync(request.LocationId);
+                if (location == null)
+                    throw new KeyNotFoundException(
+                        $"Location with ID {request.LocationId} not found");
+            }
 
             _mapper.Map(request, post);
             post.UpdatedAt = DateTime.UtcNow;
@@ -111,8 +140,7 @@ namespace Ralphy.Application.Services
             if (post == null)
                 throw new KeyNotFoundException($"Post with ID {id} not found");
 
-            var trip = await _unitOfWork.Trips.GetByIdAsync(post.TripId);
-            if (trip == null || trip.UserId != userId)
+            if (post.UserId != userId)
                 throw new UnauthorizedAccessException(
                     "You are not authorized to delete this post");
 
@@ -142,8 +170,7 @@ namespace Ralphy.Application.Services
             if (post == null)
                 throw new KeyNotFoundException($"Post with ID {id} not found");
 
-            var trip = await _unitOfWork.Trips.GetByIdAsync(post.TripId);
-            if (trip == null || trip.UserId != userId)
+            if (post.UserId != userId)
                 throw new UnauthorizedAccessException(
                     "You are not authorized to publish this post");
 
@@ -165,8 +192,7 @@ namespace Ralphy.Application.Services
             if (post == null)
                 throw new KeyNotFoundException($"Post with ID {id} not found");
 
-            var trip = await _unitOfWork.Trips.GetByIdAsync(post.TripId);
-            if (trip == null || trip.UserId != userId)
+            if (post.UserId != userId)
                 throw new UnauthorizedAccessException(
                     "You are not authorized to unpublish this post");
 

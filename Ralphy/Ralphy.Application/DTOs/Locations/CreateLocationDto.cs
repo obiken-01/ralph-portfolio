@@ -1,4 +1,4 @@
-﻿namespace Ralphy.Application.DTOs.Locations
+namespace Ralphy.Application.DTOs.Locations
 {
     public class CreateLocationDto
     {
@@ -6,6 +6,5 @@
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public string? Description { get; set; }
-        public int TripId { get; set; }
     }
 }

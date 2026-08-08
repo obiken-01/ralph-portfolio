@@ -53,13 +53,12 @@ namespace Ralphy.Application.Services
             if (comment == null)
                 throw new KeyNotFoundException($"Comment with ID {id} not found");
 
-            // Verify ownership through post and trip
+            // Comments are moderated by whoever owns the post they sit on.
             var post = await _unitOfWork.Posts.GetByIdAsync(comment.PostId);
             if (post == null)
                 throw new KeyNotFoundException("Associated post not found");
 
-            var trip = await _unitOfWork.Trips.GetByIdAsync(post.TripId);
-            if (trip == null || trip.UserId != userId)
+            if (post.UserId != userId)
                 throw new UnauthorizedAccessException(
                     "You are not authorized to delete this comment");
 
