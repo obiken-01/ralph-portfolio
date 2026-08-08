@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 
 const navLinks = [
-  { to: '/trips',    label: 'Trips'    },
+  { to: '/posts',    label: 'Photos'   },
   { to: '/map',      label: 'Map'      },
   { to: '/timeline', label: 'Timeline' },
   { to: '/about',    label: 'About'    },

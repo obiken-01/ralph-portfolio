@@ -1,32 +1,23 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import api from '../../api/axios'
-import { formatDate, formatShortDate, stripHtml, readingTime } from '../../utils/helpers'
+import { formatDate, formatShortDate, stripHtml, truncateText } from '../../utils/helpers'
 import { cldImage, cldVideo, cldVideoPoster } from '../../utils/cloudinary'
 import Seo, { SITE_URL, AUTHOR_LD } from '../../components/common/Seo'
 import Lightbox from '../../components/public/Lightbox'
+import TagChips from '../../components/public/TagChips'
 
 // ── Breadcrumb ──────────────────────────────────────────────────
-function Breadcrumb({ trip, postTitle }) {
+function Breadcrumb({ postTitle }) {
   return (
     <nav aria-label="Breadcrumb"
          className="mb-8 flex flex-wrap items-center gap-1.5 text-xs
                     text-slate-400">
       <Link to="/" className="transition-colors hover:text-teal-700">Home</Link>
       <span aria-hidden="true">/</span>
-      <Link to="/trips" className="transition-colors hover:text-teal-700">
-        Trips
+      <Link to="/posts" className="transition-colors hover:text-teal-700">
+        Photos
       </Link>
-      {trip && (
-        <>
-          <span aria-hidden="true">/</span>
-          <Link to={`/trips/${trip.id}`}
-                className="max-w-[140px] truncate transition-colors
-                           hover:text-teal-700">
-            {trip.title}
-          </Link>
-        </>
-      )}
       <span aria-hidden="true">/</span>
       <span className="max-w-[180px] truncate text-slate-600">{postTitle}</span>
     </nav>
@@ -35,107 +26,50 @@ function Breadcrumb({ trip, postTitle }) {
 
 // ── Photo Gallery ───────────────────────────────────────────────
 function PhotoGallery({ photos }) {
-  const [activeTab, setActiveTab] = useState('all')
   const [lightboxIndex, setLightboxIndex] = useState(null)
 
   if (!photos?.length) return null
 
-  const filtered = photos.filter((p) => {
-    if (activeTab === 'drone') return p.source === 1
-    if (activeTab === 'phone') return p.source === 0
-    return true
-  })
-
-  const droneCount = photos.filter((p) => p.source === 1).length
-  const phoneCount = photos.filter((p) => p.source === 0).length
-
-  const tabs = [
-    { key: 'all',   label: `All (${photos.length})` },
-    ...(droneCount ? [{ key: 'drone', label: `🚁 Drone (${droneCount})` }] : []),
-    ...(phoneCount ? [{ key: 'phone', label: `📱 Phone (${phoneCount})` }] : []),
-  ]
-
   return (
-    <section aria-labelledby="gallery-heading" className="mt-14">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h2 id="gallery-heading"
-            className="font-display text-2xl font-semibold text-slate-900">
-          Photo gallery
-        </h2>
+    <section aria-labelledby="gallery-heading">
+      <h2 id="gallery-heading" className="sr-only">Photo gallery</h2>
 
-        {tabs.length > 1 && (
-          <div className="flex flex-wrap gap-2" role="tablist"
-               aria-label="Filter photos by source">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                role="tab"
-                aria-selected={activeTab === tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`rounded-full px-4 py-1.5 text-xs font-semibold
-                            transition-colors ${
-                  activeTab === tab.key
-                    ? 'bg-slate-900 text-white'
-                    : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:ring-teal-500'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {filtered.length === 0 ? (
-        <p className="py-8 text-center text-sm text-slate-400">
-          No photos for this filter.
-        </p>
-      ) : (
-        /* Masonry-style columns preserve each photo's aspect ratio */
-        <div className="columns-2 gap-3 sm:columns-3 [&>*]:mb-3">
-          {filtered.map((photo, i) => (
-            <button
-              key={photo.id}
-              onClick={() => setLightboxIndex(i)}
-              className="group relative block w-full overflow-hidden
-                         rounded-xl bg-slate-100 focus:outline-none
-                         focus:ring-2 focus:ring-teal-500"
-              aria-label={photo.caption || 'Open photo'}
-            >
-              <img
-                src={cldImage(photo.url, 700)}
-                alt={photo.caption ||
-                     (photo.source === 1 ? 'Drone photo' : 'Phone photo')}
-                loading="lazy"
-                decoding="async"
-                className="w-full transition-transform duration-500
-                           group-hover:scale-[1.03]"
-              />
-              <span
-                className={`absolute bottom-2 right-2 rounded-full px-2 py-0.5
-                            text-xs font-medium text-white backdrop-blur-sm ${
-                  photo.source === 1 ? 'bg-sky-600/80' : 'bg-emerald-600/80'
-                }`}
-                aria-hidden="true"
-              >
-                {photo.source === 1 ? '🚁' : '📱'}
+      {/* Masonry columns preserve each photo's own aspect ratio */}
+      <div className="columns-1 gap-3 sm:columns-2 [&>*]:mb-3">
+        {photos.map((photo, i) => (
+          <button
+            key={photo.id}
+            onClick={() => setLightboxIndex(i)}
+            className="group relative block w-full overflow-hidden rounded-xl
+                       bg-slate-100 focus:outline-none focus:ring-2
+                       focus:ring-teal-500"
+            aria-label={photo.caption || `Open photo ${i + 1}`}
+          >
+            <img
+              src={cldImage(photo.url, 1000)}
+              alt={photo.caption || ''}
+              loading={i < 2 ? 'eager' : 'lazy'}
+              decoding="async"
+              width={photo.width || undefined}
+              height={photo.height || undefined}
+              className="w-full transition-transform duration-500
+                         group-hover:scale-[1.02]"
+            />
+            {photo.caption && (
+              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t
+                               from-black/70 to-transparent p-3 pt-10
+                               text-left text-xs text-white opacity-0
+                               transition-opacity group-hover:opacity-100">
+                {photo.caption}
               </span>
-              {photo.caption && (
-                <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t
-                                 from-black/70 to-transparent p-2.5 pt-8
-                                 text-left text-xs text-white opacity-0
-                                 transition-opacity group-hover:opacity-100">
-                  {photo.caption}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
+            )}
+          </button>
+        ))}
+      </div>
 
       {lightboxIndex !== null && (
         <Lightbox
-          photos={filtered}
+          photos={photos}
           index={lightboxIndex}
           onClose={() => setLightboxIndex(null)}
           onNavigate={setLightboxIndex}
@@ -150,7 +84,7 @@ function VideoGallery({ videos }) {
   if (!videos?.length) return null
 
   return (
-    <section aria-labelledby="videos-heading" className="mt-14">
+    <section aria-labelledby="videos-heading" className="mt-12">
       <h2 id="videos-heading"
           className="mb-6 font-display text-2xl font-semibold text-slate-900">
         Videos
@@ -172,22 +106,11 @@ function VideoGallery({ videos }) {
               playsInline
               className="aspect-video w-full bg-slate-950 object-contain"
             />
-            <figcaption className="flex items-center justify-between gap-3
-                                   px-5 py-4">
-              <span className="flex-1 text-sm text-slate-600">
-                {video.caption || 'Trip footage'}
-              </span>
-              <span
-                className={`flex-shrink-0 rounded-full px-3 py-1 text-xs
-                            font-semibold ${
-                  video.source === 1
-                    ? 'bg-sky-50 text-sky-700 ring-1 ring-sky-100'
-                    : 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100'
-                }`}
-              >
-                {video.source === 1 ? '🚁 Drone' : '📱 Phone'}
-              </span>
-            </figcaption>
+            {video.caption && (
+              <figcaption className="px-5 py-4 text-sm text-slate-600">
+                {video.caption}
+              </figcaption>
+            )}
           </figure>
         ))}
       </div>
@@ -195,47 +118,39 @@ function VideoGallery({ videos }) {
   )
 }
 
-// ── Part of trip banner ─────────────────────────────────────────
-function TripBanner({ trip }) {
-  if (!trip) return null
+// ── Location card ───────────────────────────────────────────────
+function LocationCard({ post }) {
+  // A post still sitting on the placeholder is mid-cleanup — showing
+  // "West Philippine Sea" to a reader would be worse than showing nothing.
+  if (!post.locationName || post.locationIsPlaceholder) return null
 
   return (
     <Link
-      to={`/trips/${trip.id}`}
-      className="group mt-14 flex items-center gap-4 rounded-2xl bg-white
-                 p-5 ring-1 ring-slate-900/5 transition-shadow
-                 hover:shadow-lg"
+      to="/map"
+      className="group mt-12 flex items-center gap-4 rounded-2xl bg-white p-5
+                 ring-1 ring-slate-900/5 transition-shadow hover:shadow-lg"
     >
-      <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl
-                      bg-slate-100">
-        {trip.coverImageUrl ? (
-          <img src={cldImage(trip.coverImageUrl, 200)} alt=""
-               loading="lazy"
-               className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <span className="text-2xl" aria-hidden="true">🗺️</span>
-          </div>
-        )}
-      </div>
+      <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center
+                       rounded-xl bg-teal-50 text-xl" aria-hidden="true">
+        📍
+      </span>
       <div className="min-w-0 flex-1">
         <p className="text-xs font-semibold uppercase tracking-widest
                       text-teal-700">
-          Part of the trip
+          Shot at
         </p>
         <p className="mt-0.5 truncate font-display text-lg font-semibold
-                      text-slate-900 group-hover:text-teal-700
-                      transition-colors">
-          {trip.title}
+                      text-slate-900 transition-colors group-hover:text-teal-700">
+          {post.locationName}
         </p>
-        <p className="text-xs text-slate-400">
-          {trip.city}, {trip.country}
-        </p>
+        {post.latitude != null && post.longitude != null && (
+          <p className="font-mono text-xs text-slate-400">
+            {post.latitude.toFixed(4)}, {post.longitude.toFixed(4)}
+          </p>
+        )}
       </div>
       <span className="text-teal-700 transition-transform
-                       group-hover:translate-x-1" aria-hidden="true">
-        →
-      </span>
+                       group-hover:translate-x-1" aria-hidden="true">→</span>
     </Link>
   )
 }
@@ -243,12 +158,12 @@ function TripBanner({ trip }) {
 // ── Comments ────────────────────────────────────────────────────
 function Comments({ postId }) {
   const [comments, setComments] = useState([])
-  const [loading, setLoading]   = useState(true)
-  const [form, setForm]         = useState({
+  const [loading, setLoading] = useState(true)
+  const [form, setForm] = useState({
     authorName: '', authorEmail: '', content: ''
   })
   const [submitting, setSubmitting] = useState(false)
-  const [submitted, setSubmitted]   = useState(false)
+  const [submitted, setSubmitted] = useState(false)
 
   useEffect(() => {
     api.get(`/comments/post/${postId}`)
@@ -413,26 +328,24 @@ function Comments({ postId }) {
 
 // ── Main Page ───────────────────────────────────────────────────
 export default function PostDetailPage() {
-  const { tripId, postId } = useParams()
+  const { id } = useParams()
 
-  const [post, setPost]     = useState(null)
-  const [trip, setTrip]     = useState(null)
+  const [post, setPost] = useState(null)
   const [photos, setPhotos] = useState([])
   const [videos, setVideos] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState(null)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     const fetchAll = async () => {
+      setLoading(true)
       try {
-        const [postRes, tripRes, photosRes, videosRes] = await Promise.all([
-          api.get(`/posts/${postId}`),
-          api.get(`/trips/${tripId}`),
-          api.get(`/photos/post/${postId}`),
-          api.get(`/videos/post/${postId}`),
+        const [postRes, photosRes, videosRes] = await Promise.all([
+          api.get(`/posts/${id}`),
+          api.get(`/photos/post/${id}`),
+          api.get(`/videos/post/${id}`),
         ])
         setPost(postRes.data.data)
-        setTrip(tripRes.data.data)
         setPhotos(photosRes.data.data ?? [])
         setVideos(videosRes.data.data ?? [])
       } catch {
@@ -442,7 +355,7 @@ export default function PostDetailPage() {
       }
     }
     fetchAll()
-  }, [tripId, postId])
+  }, [id])
 
   if (loading) {
     return (
@@ -457,29 +370,35 @@ export default function PostDetailPage() {
     return (
       <div className="flex min-h-screen flex-col items-center
                       justify-center gap-4">
-        <span className="text-5xl" aria-hidden="true">✍️</span>
+        <span className="text-5xl" aria-hidden="true">📷</span>
         <h1 className="font-display text-xl font-bold text-slate-700">
           Post not found
         </h1>
-        <Link to="/trips" className="text-sm text-teal-700 hover:underline">
-          ← Back to Trips
+        <Link to="/posts" className="text-sm text-teal-700 hover:underline">
+          ← Back to Photos
         </Link>
       </div>
     )
   }
 
   const cover = photos[0]
-  const minutes = readingTime(post.content)
-  const description = stripHtml(post.content).slice(0, 160)
+  const date = post.takenAt ?? post.publishedAt
+
+  // With content optional, fall back to the place and the date rather than
+  // shipping an empty meta description.
+  const description = post.content
+    ? truncateText(stripHtml(post.content), 160)
+    : [post.locationName, date && formatDate(date)].filter(Boolean).join(' · ')
+      || post.title
 
   return (
     <div className="min-h-screen">
       <Seo
         title={post.title}
         description={description}
-        image={cover?.url ?? trip?.coverImageUrl}
+        image={cover?.url}
         type="article"
-        path={`/trips/${tripId}/posts/${post.id}`}
+        path={`/posts/${post.id}`}
         jsonLd={{
           '@context': 'https://schema.org',
           '@type': 'BlogPosting',
@@ -488,21 +407,19 @@ export default function PostDetailPage() {
           datePublished: post.publishedAt,
           author: AUTHOR_LD,
           image: photos.slice(0, 3).map((p) => p.url),
-          mainEntityOfPage:
-            `${SITE_URL}/trips/${tripId}/posts/${post.id}`,
+          mainEntityOfPage: `${SITE_URL}/posts/${post.id}`,
         }}
       />
 
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        <Breadcrumb trip={trip} postTitle={post.title} />
+        <Breadcrumb postTitle={post.title} />
 
         <article>
-          {/* Header */}
           <header className="mb-8 text-center">
-            {trip && (
+            {post.locationName && !post.locationIsPlaceholder && (
               <p className="mb-4 text-xs font-semibold uppercase
                             tracking-[0.2em] text-teal-700">
-                {trip.city}, {trip.country}
+                {post.locationName}
               </p>
             )}
             <h1 className="font-display text-3xl font-semibold leading-tight
@@ -510,11 +427,15 @@ export default function PostDetailPage() {
               {post.title}
             </h1>
             <p className="mt-5 text-sm text-slate-400">
-              <time dateTime={post.publishedAt}>
-                {formatDate(post.publishedAt)}
-              </time>
-              <span className="mx-2" aria-hidden="true">·</span>
-              {minutes} min read
+              {date && (
+                <time dateTime={date}>{formatDate(date)}</time>
+              )}
+              {photos.length > 0 && (
+                <>
+                  <span className="mx-2" aria-hidden="true">·</span>
+                  {photos.length} {photos.length === 1 ? 'photo' : 'photos'}
+                </>
+              )}
               {post.viewCount > 0 && (
                 <>
                   <span className="mx-2" aria-hidden="true">·</span>
@@ -523,55 +444,29 @@ export default function PostDetailPage() {
               )}
             </p>
 
-            {post.postTags?.length > 0 && (
-              <ul className="mt-4 flex flex-wrap justify-center gap-2">
-                {post.postTags.map((pt) => (
-                  <li key={pt.tagId}
-                      className="rounded-full bg-teal-50 px-3 py-1 text-xs
-                                 font-medium text-teal-700 ring-1
-                                 ring-teal-100">
-                    #{pt.tag?.name}
-                  </li>
-                ))}
-              </ul>
+            {post.tags?.length > 0 && (
+              <TagChips tags={post.tags} className="mt-4 justify-center" />
             )}
           </header>
 
-          {/* Cover image */}
-          {cover && (
-            <figure className="mb-10 overflow-hidden rounded-3xl">
-              <img
-                src={cldImage(cover.url, 1400)}
-                alt={cover.caption || post.title}
-                fetchPriority="high"
-                className="w-full object-cover"
-              />
-              {cover.caption && (
-                <figcaption className="mt-2 text-center text-xs
-                                       text-slate-400">
-                  {cover.caption}
-                </figcaption>
-              )}
-            </figure>
-          )}
+          {/* Photos lead. Words, if there are any, come after. */}
+          <PhotoGallery photos={photos} />
 
-          {/* Rich text content */}
-          <div
-            className="prose prose-slate prose-lg mx-auto max-w-3xl
-                       prose-headings:font-display
-                       prose-headings:font-semibold
-                       prose-a:text-teal-700 prose-img:rounded-2xl"
-            dangerouslySetInnerHTML={{ __html: post.content }}
-          />
+          {post.content && (
+            <div
+              className="prose prose-slate prose-lg mx-auto mt-12 max-w-3xl
+                         prose-headings:font-display
+                         prose-headings:font-semibold
+                         prose-a:text-teal-700 prose-img:rounded-2xl"
+              dangerouslySetInnerHTML={{ __html: post.content }}
+            />
+          )}
         </article>
 
-        {/* Galleries — skip cover photo in the grid when few photos */}
-        <PhotoGallery photos={photos} />
         <VideoGallery videos={videos} />
 
-        <TripBanner trip={trip} />
+        <LocationCard post={post} />
 
-        {/* Share */}
         <div className="mt-10 flex items-center justify-center gap-3">
           <span className="text-xs font-semibold uppercase tracking-widest
                            text-slate-400">
@@ -597,7 +492,7 @@ export default function PostDetailPage() {
           </a>
         </div>
 
-        <Comments postId={postId} />
+        <Comments postId={id} />
       </div>
     </div>
   )
