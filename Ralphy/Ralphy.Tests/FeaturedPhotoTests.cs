@@ -89,6 +89,8 @@ public class FeaturedPhotoTests
     {
         using var db = SeedLibrary(publishedPhotos: 1);
 
+        db.SimulateNewRequest();
+
         var photo = (await ServiceFactory.Photos(db).GetRandomAsync(1)).Single();
 
         photo.PostId.Should().BeGreaterThan(0);
@@ -103,6 +105,8 @@ public class FeaturedPhotoTests
         var placeholder = db.AddLocation("West Philippine Sea", isPlaceholder: true);
         var post = db.AddPost(status: PostStatus.Published, locationId: placeholder.Id);
         db.AddPhoto(post.Id);
+
+        db.SimulateNewRequest();
 
         var photo = (await ServiceFactory.Photos(db).GetRandomAsync(1)).Single();
 

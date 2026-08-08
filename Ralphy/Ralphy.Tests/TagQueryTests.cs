@@ -96,6 +96,7 @@ public class TagQueryTests
         var post = db.AddPost(status: PostStatus.Published);
         db.AddPhoto(post.Id);
         db.AddTag("paluan", post.Id);
+        db.SimulateNewRequest();
 
         var result = (await ServiceFactory.Posts(db).GetAllPublishedAsync())
             .Single();
@@ -112,6 +113,8 @@ public class TagQueryTests
         var post = db.AddPost(status: PostStatus.Draft);
         db.AddPhoto(post.Id, sortOrder: 1);
         db.AddPhoto(post.Id, sortOrder: 0);
+
+        db.SimulateNewRequest();
 
         var result = (await ServiceFactory.Posts(db).GetAllAsync()).Single();
 
