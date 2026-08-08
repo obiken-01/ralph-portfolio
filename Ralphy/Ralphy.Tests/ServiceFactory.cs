@@ -1,5 +1,6 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Ralphy.Application.Mappings;
 using Ralphy.Application.Services;
@@ -17,7 +18,9 @@ namespace Ralphy.Tests;
 public static class ServiceFactory
 {
     public static IMapper Mapper { get; } =
-        new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>())
+        new MapperConfiguration(
+                cfg => cfg.AddProfile<MappingProfile>(),
+                NullLoggerFactory.Instance)
             .CreateMapper();
 
     public static IUnitOfWork UnitOfWork(TestDb db) => new UnitOfWork(db.Context);

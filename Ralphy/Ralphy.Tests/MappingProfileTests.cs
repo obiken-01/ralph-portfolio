@@ -1,4 +1,5 @@
 using AutoMapper;
+using Microsoft.Extensions.Logging.Abstractions;
 using Ralphy.Application.Mappings;
 using Xunit;
 
@@ -16,7 +17,8 @@ public class MappingProfileTests
     public void Every_mapping_is_fully_configured()
     {
         var configuration = new MapperConfiguration(
-            cfg => cfg.AddProfile<MappingProfile>());
+            cfg => cfg.AddProfile<MappingProfile>(),
+            NullLoggerFactory.Instance);
 
         configuration.AssertConfigurationIsValid();
     }

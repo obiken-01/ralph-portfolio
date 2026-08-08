@@ -1,114 +1,83 @@
 import { Link } from 'react-router-dom'
-import { formatShortDate } from '../../utils/helpers'
+import { formatShortDate, postDate } from '../../utils/helpers'
 import { cldImage } from '../../utils/cloudinary'
+import { bucketWidth } from '../../utils/justify'
 
 /**
- * Image-led card for the photo feed.
+ * A tile in the justified feed.
  *
- * The old card led with a 3:2 crop, then date · reading time, then a two-line
- * excerpt. On a photo-first site the excerpt and the reading time are noise —
- * and with Content optional in v2.0, `readingTime(null)` cheerfully returns
- * "1 min read" for a post with no words at all. Both are gone.
- *
- * The photo renders at its own aspect ratio (Width/Height from the API), so
- * nothing crops and nothing shifts as images decode.
+ * No card, no padding, no white footer — the photograph fills the space it was
+ * given and the title sits on it. JustifiedGrid has already sized the wrapper
+ * to the photo's real aspect ratio, so `object-cover` here crops nothing; it
+ * only guards against sub-pixel rounding.
  */
-export default function PostCard({ post }) {
+export default function PostCard({ post, width }) {
   const thumb = post.thumbnailUrl ?? post.photos?.[0]?.url
   const photoCount = post.photoCount ?? post.photos?.length ?? 0
-  const width = post.thumbnailWidth ?? post.photos?.[0]?.width
-  const height = post.thumbnailHeight ?? post.photos?.[0]?.height
+  const date = postDate(post)
 
-  // TakenAt is when the shutter fired; PublishedAt is when it got written up.
-  // On a photo feed the first is the truer date.
-  const date = post.takenAt ?? post.publishedAt
+  const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
+  const requestWidth = bucketWidth(width || 800, dpr)
 
   return (
     <Link
       to={`/posts/${post.id}`}
-      className="group mb-4 block break-inside-avoid overflow-hidden rounded-2xl
-                 bg-white shadow-sm ring-1 ring-slate-900/5 transition-all
-                 duration-300 hover:-translate-y-1 hover:shadow-xl"
+      className="group relative block h-full w-full overflow-hidden rounded-sm
+                 bg-slate-200 focus:outline-none focus-visible:ring-2
+                 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
     >
-      <article>
-        <div
-          className="relative overflow-hidden bg-slate-200"
-          style={{
-            aspectRatio: width && height ? `${width} / ${height}` : '3 / 2',
-          }}
-        >
-          {thumb ? (
-            <img
-              src={cldImage(thumb, 700)}
-              alt={post.title}
-              loading="lazy"
-              decoding="async"
-              className="h-full w-full object-cover transition-transform
-                         duration-700 ease-out group-hover:scale-105"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center
-                            bg-gradient-to-br from-amber-50 to-slate-200">
-              <span className="text-4xl" aria-hidden="true">📷</span>
-            </div>
-          )}
-
-          {photoCount > 1 && (
-            <span className="absolute right-3 top-3 rounded-full bg-slate-950/60
-                             px-2.5 py-1 text-xs font-medium text-white
-                             backdrop-blur-sm">
-              {photoCount} photos
-            </span>
-          )}
+      {thumb ? (
+        <img
+          src={cldImage(thumb, requestWidth)}
+          alt={post.title}
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full object-cover transition-transform
+                     duration-700 ease-out group-hover:scale-[1.03]
+                     motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center
+                        bg-gradient-to-br from-amber-50 to-slate-200">
+          <span className="text-3xl" aria-hidden="true">📷</span>
         </div>
+      )}
 
-        <div className="p-4">
-          <h3 className="font-display text-base font-semibold leading-snug
-                         text-slate-900 transition-colors line-clamp-2
-                         group-hover:text-teal-700">
-            {post.title}
-          </h3>
+      {photoCount > 1 && (
+        <span className="absolute right-2 top-2 rounded-full bg-slate-950/50
+                         px-2 py-0.5 text-xs font-medium text-white
+                         backdrop-blur-sm">
+          {photoCount}
+        </span>
+      )}
 
-          <p className="mt-1.5 text-xs text-slate-400">
-            {post.locationName && (
-              <>
-                <span className="text-slate-500">{post.locationName}</span>
-                {date && <span className="mx-1.5" aria-hidden="true">·</span>}
-              </>
-            )}
-            {date && (
-              <time dateTime={date}>{formatShortDate(date)}</time>
-            )}
-          </p>
-
-          {post.tags?.length > 0 && (
-            <ul className="mt-2.5 flex flex-wrap gap-1">
-              {post.tags.slice(0, 3).map((tag) => (
-                <li
-                  key={tag}
-                  className="rounded-full bg-teal-50 px-2 py-0.5 text-xs
-                             font-medium text-teal-700"
-                >
-                  #{tag}
-                </li>
-              ))}
-            </ul>
+      {/* Kept permanently visible rather than hover-only: hover doesn't exist
+          on a phone, and an untitled wall of photos is hard to navigate. The
+          gradient deepens on hover so the photo dominates at rest. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0
+                      bg-gradient-to-t from-slate-950/80 via-slate-950/25
+                      to-transparent p-3 pt-10 opacity-90 transition-opacity
+                      duration-300 group-hover:opacity-100">
+        <p className="truncate font-display text-sm font-semibold
+                      leading-snug text-white drop-shadow-sm">
+          {post.title}
+        </p>
+        <p className="mt-0.5 truncate text-xs text-white/70">
+          {post.locationName && !post.locationIsPlaceholder && (
+            <span>{post.locationName}</span>
           )}
-        </div>
-      </article>
+          {post.locationName && !post.locationIsPlaceholder && date && (
+            <span className="mx-1" aria-hidden="true">·</span>
+          )}
+          {date && <time dateTime={date}>{formatShortDate(date)}</time>}
+        </p>
+      </div>
     </Link>
   )
 }
 
 export function PostCardSkeleton() {
   return (
-    <div className="mb-4 break-inside-avoid animate-pulse overflow-hidden
-                    rounded-2xl bg-white ring-1 ring-slate-900/5">
-      <div className="aspect-[3/2] bg-slate-200" />
-      <div className="space-y-2 p-4">
-        <div className="h-4 w-3/4 rounded bg-slate-200" />
-        <div className="h-3 w-1/2 rounded bg-slate-100" />
-      </div>
-    </div>
+    <div className="h-full w-full animate-pulse rounded-sm bg-slate-200" />
   )
 }

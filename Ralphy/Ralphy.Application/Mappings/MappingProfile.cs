@@ -127,6 +127,19 @@ namespace Ralphy.Application.Mappings
             // Photo mappings
             CreateMap<Photo, PhotoDto>();
 
+            // Post is guarded because the random-photo query is the only path
+            // that loads it, and a unit test may not.
+            CreateMap<Photo, FeaturedPhotoDto>()
+                .ForMember(dest => dest.PostTitle,
+                    opt => opt.MapFrom(src =>
+                        src.Post != null ? src.Post.Title : string.Empty))
+                .ForMember(dest => dest.LocationName,
+                    opt => opt.MapFrom(src =>
+                        src.Post != null && src.Post.Location != null
+                            && !src.Post.Location.IsPlaceholder
+                                ? src.Post.Location.PlaceName
+                                : null));
+
             // Comment mappings
             CreateMap<Comment, CommentDto>();
             CreateMap<CreateCommentDto, Comment>()

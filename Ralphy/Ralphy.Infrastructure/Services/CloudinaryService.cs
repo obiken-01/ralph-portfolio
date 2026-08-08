@@ -247,6 +247,46 @@ namespace Ralphy.Infrastructure.Services
             await _cloudinary.DestroyAsync(deleteParams);
         }
 
+        /// <summary>
+        /// Admin-API lookup for an existing asset's dimensions.
+        ///
+        /// Returns empty rather than throwing when the asset is missing: a
+        /// photo whose Cloudinary object was deleted should not abort a backfill
+        /// over hundreds of others.
+        /// </summary>
+        public async Task<MediaDimensions> GetDimensionsAsync(
+            string publicId, bool isVideo = false)
+        {
+            try
+            {
+                var result = await _cloudinary.GetResourceAsync(
+                    new GetResourceParams(publicId)
+                    {
+                        ResourceType = isVideo ? ResourceType.Video : ResourceType.Image,
+                    });
+
+                if (result?.Error != null || result?.Width is not > 0)
+                {
+                    _logger.LogWarning(
+                        "No dimensions from Cloudinary for {PublicId}: {Error}",
+                        publicId, result?.Error?.Message ?? "not found");
+                    return new MediaDimensions();
+                }
+
+                return new MediaDimensions
+                {
+                    Width = result.Width,
+                    Height = result.Height,
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "Failed to read dimensions for {PublicId}", publicId);
+                return new MediaDimensions();
+            }
+        }
+
         // ── Private Helpers ──────────────────────────────────────────
 
         private static void ValidateImageFile(IFormFile file)

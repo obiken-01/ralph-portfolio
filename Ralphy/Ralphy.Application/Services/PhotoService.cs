@@ -80,6 +80,16 @@ namespace Ralphy.Application.Services
                 photos.Where(p => p.Type == MediaType.Image));
         }
 
+        public async Task<IEnumerable<FeaturedPhotoDto>> GetRandomAsync(int count)
+        {
+            // Clamped rather than trusted: an unbounded count on a public,
+            // unauthenticated endpoint is a free way to dump the library.
+            var take = Math.Clamp(count, 1, 30);
+
+            var photos = await _unitOfWork.Photos.GetRandomPublishedAsync(take);
+            return _mapper.Map<IEnumerable<FeaturedPhotoDto>>(photos);
+        }
+
         public async Task<PhotoDto> UpdateAsync(
             int id, UpdatePhotoDto request, int userId)
         {
@@ -151,6 +161,62 @@ namespace Ralphy.Application.Services
 
             await _unitOfWork.Posts.RecalculateTakenAtAsync(postId);
             await _unitOfWork.SaveChangesAsync();
+        }
+
+        public async Task<DimensionStatusDto> GetDimensionStatusAsync()
+        {
+            var all = await _unitOfWork.Photos.GetAllAsync();
+
+            return new DimensionStatusDto
+            {
+                Missing = await _unitOfWork.Photos.CountMissingDimensionsAsync(),
+                Total = all.Count(),
+            };
+        }
+
+        /// <summary>
+        /// Photos uploaded before v2.0 have null Width/Height, because the app
+        /// only started keeping what Cloudinary returns at upload time. The
+        /// numbers were never lost — they are still on the asset — so this reads
+        /// them back rather than asking anyone to re-upload.
+        ///
+        /// Batched on purpose: this is one Admin API call per photo, and that
+        /// API is rate-limited far more tightly than delivery. Run it until
+        /// Remaining reaches zero.
+        /// </summary>
+        public async Task<DimensionBackfillDto> BackfillDimensionsAsync(int batchSize)
+        {
+            var take = Math.Clamp(batchSize, 1, 200);
+            var photos = (await _unitOfWork.Photos.GetMissingDimensionsAsync(take))
+                .ToList();
+
+            var updated = 0;
+
+            foreach (var photo in photos)
+            {
+                var dimensions = await _cloudinaryService.GetDimensionsAsync(
+                    photo.PublicId,
+                    isVideo: photo.Type == MediaType.Video);
+
+                if (!dimensions.Found) continue;
+
+                photo.Width = dimensions.Width;
+                photo.Height = dimensions.Height;
+                photo.UpdatedAt = DateTime.UtcNow;
+
+                await _unitOfWork.Photos.UpdateAsync(photo);
+                updated++;
+            }
+
+            if (updated > 0) await _unitOfWork.SaveChangesAsync();
+
+            return new DimensionBackfillDto
+            {
+                Scanned = photos.Count,
+                Updated = updated,
+                Failed = photos.Count - updated,
+                Remaining = await _unitOfWork.Photos.CountMissingDimensionsAsync(),
+            };
         }
 
         // ── Private helpers ──────────────────────────────────────────

@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import api from '../../api/axios'
+import { cldImage } from '../../utils/cloudinary'
 import Seo, { breadcrumbLd } from '../../components/common/Seo'
 
 // ── Fix Leaflet default marker icons (Vite issue) ───────────────
@@ -86,6 +87,12 @@ function LocationCard({ location, onHover, onSelect }) {
 }
 
 // ── Posts behind a pin ──────────────────────────────────────────
+/**
+ * What a pin opens: the photographs taken there.
+ *
+ * A place name and a list of links told you a post existed without showing you
+ * any reason to open it. On a photography site the photograph is the reason.
+ */
 function PopupPosts({ locationId }) {
   const [posts, setPosts] = useState(null)
 
@@ -98,31 +105,75 @@ function PopupPosts({ locationId }) {
   }, [locationId])
 
   if (posts === null) {
-    return <p className="text-xs text-slate-400">Loading…</p>
+    return <div className="h-28 w-full animate-pulse rounded-lg bg-slate-100" />
   }
 
   if (posts.length === 0) {
     return <p className="text-xs text-slate-400">No posts here yet.</p>
   }
 
+  const [lead, ...rest] = posts
+  const photoTotal = posts.reduce((sum, p) => sum + (p.photoCount ?? 0), 0)
+
   return (
-    <ul className="space-y-1">
-      {posts.slice(0, 4).map((post) => (
-        <li key={post.id}>
-          <Link
-            to={`/posts/${post.id}`}
-            className="text-xs font-medium text-teal-700 hover:underline"
-          >
-            {post.title}
-          </Link>
-        </li>
-      ))}
-      {posts.length > 4 && (
-        <li className="text-xs text-slate-400">
-          +{posts.length - 4} more
-        </li>
+    <div className="flex flex-col gap-2">
+      <Link to={`/posts/${lead.id}`} className="group block">
+        <div className="relative overflow-hidden rounded-lg bg-slate-100"
+             style={{
+               aspectRatio:
+                 lead.thumbnailWidth && lead.thumbnailHeight
+                   ? `${lead.thumbnailWidth} / ${lead.thumbnailHeight}`
+                   : '3 / 2',
+             }}>
+          {lead.thumbnailUrl ? (
+            <img
+              src={cldImage(lead.thumbnailUrl, 480)}
+              alt={lead.title}
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform
+                         duration-500 group-hover:scale-105"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center
+                            text-2xl">📷</div>
+          )}
+          <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t
+                           from-slate-950/85 to-transparent p-2 pt-8
+                           text-xs font-semibold text-white">
+            {lead.title}
+          </span>
+        </div>
+      </Link>
+
+      {rest.length > 0 && (
+        <div className="flex gap-1.5">
+          {rest.slice(0, 4).map((post) => (
+            <Link
+              key={post.id}
+              to={`/posts/${post.id}`}
+              title={post.title}
+              className="relative h-11 flex-1 overflow-hidden rounded
+                         bg-slate-100"
+            >
+              {post.thumbnailUrl && (
+                <img
+                  src={cldImage(post.thumbnailUrl, 160)}
+                  alt={post.title}
+                  loading="lazy"
+                  className="h-full w-full object-cover transition-opacity
+                             hover:opacity-80"
+                />
+              )}
+            </Link>
+          ))}
+        </div>
       )}
-    </ul>
+
+      <p className="text-xs text-slate-400">
+        {posts.length} {posts.length === 1 ? 'post' : 'posts'}
+        {photoTotal > 0 && ` · ${photoTotal} photos`}
+      </p>
+    </div>
   )
 }
 
@@ -223,8 +274,8 @@ export default function MapPage() {
                         position={[location.latitude, location.longitude]}
                         icon={createPinIcon(isHovered ? '#f59e0b' : '#0f766e')}
                       >
-                        <Popup>
-                          <div className="min-w-[180px]">
+                        <Popup minWidth={240} maxWidth={280}>
+                          <div className="w-[240px]">
                             <p className="mb-1 text-sm font-semibold
                                           text-slate-900">
                               {location.placeName}

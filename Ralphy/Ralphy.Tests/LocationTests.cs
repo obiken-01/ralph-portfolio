@@ -106,6 +106,39 @@ public class LocationTests
     }
 
     [Fact]
+    public async Task Reports_how_many_published_posts_are_at_each_place()
+    {
+        using var db = new TestDb();
+        var falls = db.AddLocation("Bugtong Bato");
+
+        db.AddPost(status: PostStatus.Published, locationId: falls.Id);
+        db.AddPost(status: PostStatus.Published, locationId: falls.Id);
+        db.AddPost(status: PostStatus.Draft, locationId: falls.Id);
+        db.SimulateNewRequest();
+
+        var result = (await ServiceFactory.Locations(db).GetPublicAsync())
+            .Single(l => l.Id == falls.Id);
+
+        // Regression: Where(l => l.Posts.Any(...)) is a SQL EXISTS, so the
+        // filter passed while Posts stayed unloaded and every pin on the map
+        // reported "0 posts".
+        result.PostCount.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task The_admin_picker_counts_posts_too()
+    {
+        using var db = new TestDb();
+        db.AddPost(status: PostStatus.Published, locationId: 1);
+        db.SimulateNewRequest();
+
+        var result = (await ServiceFactory.Locations(db).GetAllAsync())
+            .Single(l => l.Id == 1);
+
+        result.PostCount.Should().Be(1);
+    }
+
+    [Fact]
     public async Task The_admin_list_keeps_everything_including_the_placeholder()
     {
         using var db = new TestDb();

@@ -153,6 +153,18 @@ public sealed class TestDb : IDisposable
         return comment;
     }
 
+    /// <summary>
+    /// Forgets everything the context is tracking, so the next query behaves
+    /// like a fresh HTTP request.
+    ///
+    /// Without this, seeding and querying share one DbContext and EF's identity
+    /// map silently fixes up navigation properties from tracked entities — so a
+    /// repository that forgot its Include still returns fully-populated
+    /// navigations in tests and empty ones in production. Any test asserting on
+    /// eager loading has to call this first or it proves nothing.
+    /// </summary>
+    public void SimulateNewRequest() => Context.ChangeTracker.Clear();
+
     public void Dispose()
     {
         Context.Dispose();

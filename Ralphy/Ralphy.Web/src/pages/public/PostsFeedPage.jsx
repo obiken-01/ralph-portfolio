@@ -1,13 +1,34 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import api from '../../api/axios'
-import PostCard, { PostCardSkeleton } from '../../components/public/PostCard'
+import PostCard from '../../components/public/PostCard'
+import JustifiedGrid from '../../components/public/JustifiedGrid'
 import { TagFilterBar } from '../../components/public/TagChips'
 import Seo, { breadcrumbLd } from '../../components/common/Seo'
 import { groupByMonth } from '../../utils/helpers'
+import { postAspect } from '../../utils/justify'
+
+/** Placeholder rows while the feed loads, at plausible photo shapes. */
+function FeedSkeleton() {
+  return (
+    <div className="flex flex-col gap-1.5">
+      {[[1.5, 0.7, 1.6], [1.8, 1.2, 1.4]].map((row, i) => (
+        <div key={i} className="flex gap-1.5" style={{ height: 260 }}>
+          {row.map((aspect, j) => (
+            <div
+              key={j}
+              className="animate-pulse rounded-sm bg-slate-200"
+              style={{ flexGrow: aspect, flexBasis: 0 }}
+            />
+          ))}
+        </div>
+      ))}
+    </div>
+  )
+}
 
 /**
- * The photo feed — the site's primary browse surface, replacing /trips.
+ * The photo feed — the site's primary browse surface.
  *
  * Doubles as the tag-filtered view at /tags/:name, since the two differ only
  * in which endpoint they read and what the header says.
@@ -49,6 +70,13 @@ export default function PostsFeedPage({ filterByTag = false }) {
 
   const groups = useMemo(() => groupByMonth(posts), [posts])
 
+  // postAspect is module-level, so its identity is already stable; only the
+  // closure needs memoizing to keep JustifiedGrid from repacking each render.
+  const renderItem = useCallback(
+    (post, { width }) => <PostCard post={post} width={width} />,
+    []
+  )
+
   const heading = filterByTag ? `#${tagName}` : 'Photos'
   const path = filterByTag ? `/tags/${tagName}` : '/posts'
 
@@ -85,7 +113,7 @@ export default function PostsFeedPage({ filterByTag = false }) {
       />
 
       <header className="border-b border-slate-900/5 bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[112rem] px-3 py-12 sm:px-5 sm:py-14">
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em]
                         text-teal-700">
             {filterByTag ? 'Tagged' : 'The feed'}
@@ -102,15 +130,16 @@ export default function PostsFeedPage({ filterByTag = false }) {
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      {/* Wider than the old 7xl: justified rows earn their keep with width,
+          and the tiles carry their own labels now, so there's no text column
+          to keep readable. */}
+      <div className="mx-auto max-w-[112rem] px-3 py-8 sm:px-5">
         <div className="mb-8">
           <TagFilterBar tags={tags} active={filterByTag ? tagName : null} />
         </div>
 
         {loading ? (
-          <div className="columns-1 gap-4 sm:columns-2 lg:columns-3">
-            {[...Array(6)].map((_, i) => <PostCardSkeleton key={i} />)}
-          </div>
+          <FeedSkeleton />
         ) : posts.length === 0 ? (
           <div className="py-20 text-center">
             <span className="mb-3 block text-4xl" aria-hidden="true">📷</span>
@@ -118,17 +147,18 @@ export default function PostsFeedPage({ filterByTag = false }) {
           </div>
         ) : (
           groups.map((group) => (
-            <section key={group.key} className="mb-12">
-              <h2 className="mb-4 font-display text-lg font-semibold
-                             text-slate-500">
+            <section key={group.key} className="mb-10">
+              <h2 className="mb-3 flex items-center gap-3 text-xs font-semibold
+                             uppercase tracking-[0.16em] text-slate-400">
                 {group.label}
+                <span className="h-px flex-1 bg-slate-200" aria-hidden="true" />
               </h2>
-              {/* Masonry columns keep every photo at its own aspect ratio. */}
-              <div className="columns-1 gap-4 sm:columns-2 lg:columns-3">
-                {group.posts.map((post) => (
-                  <PostCard key={post.id} post={post} />
-                ))}
-              </div>
+
+              <JustifiedGrid
+                items={group.posts}
+                aspectOf={postAspect}
+                renderItem={renderItem}
+              />
             </section>
           ))
         )}
