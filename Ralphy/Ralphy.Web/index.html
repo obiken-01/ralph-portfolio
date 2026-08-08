@@ -6,23 +6,93 @@
     <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="theme-color" content="#0f172a" />
 
-    <title>Ralphy — Travel Stories from Occidental Mindoro</title>
+    <title>Ralphy — Travel Photography from Occidental Mindoro, Philippines</title>
     <meta
       name="description"
-      content="Travel blog and vlog by Ralph Alcaide (@lakbayOksi). Adventures across Occidental Mindoro and the Philippines, captured by drone and phone."
+      content="Ralphy is the travel photo journal of Ralph Alcaide (@lakbayOksi) — drone and phone photography from Mamburao, Paluan, Sablayan and across Occidental Mindoro, Philippines."
     />
+    <meta name="author" content="Ralph Alcaide" />
 
-    <!-- Default social tags (per-page tags are set by the app; JS-less
-         scrapers fall back to these) -->
-    <meta property="og:site_name" content="Ralphy" />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="Ralphy — Travel Stories from Occidental Mindoro" />
+    <!-- Default social tags.
+         data-default-seo marks them as fallbacks: the app removes them on
+         mount so the per-page tags from Seo.jsx are the only ones left.
+         Without that, these come first in the document and scrapers that read
+         the first match keep showing the home page for every shared link.
+         Anything without JS (Facebook, Twitter, LinkedIn, Slack) sees these.
+
+         og:image and og:url must be absolute — scrapers do not resolve
+         relative paths. Update these if the site moves to a custom domain. -->
+    <meta property="og:site_name" content="Ralphy" data-default-seo />
+    <meta property="og:type" content="website" data-default-seo />
+    <meta
+      property="og:title"
+      content="Ralphy — Travel Photography from Occidental Mindoro, Philippines"
+      data-default-seo
+    />
     <meta
       property="og:description"
-      content="Travel blog and vlog by Ralph Alcaide (@lakbayOksi). Adventures across Occidental Mindoro and the Philippines, captured by drone and phone."
+      content="Ralphy is the travel photo journal of Ralph Alcaide (@lakbayOksi) — drone and phone photography from across Occidental Mindoro, Philippines."
+      data-default-seo
     />
-    <meta property="og:image" content="/hero.jpg" />
-    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      property="og:url"
+      content="https://ralphy-production.up.railway.app/"
+      data-default-seo
+    />
+    <meta
+      property="og:image"
+      content="https://ralphy-production.up.railway.app/hero.jpg"
+      data-default-seo
+    />
+    <meta property="og:image:width" content="1200" data-default-seo />
+    <meta property="og:image:height" content="630" data-default-seo />
+    <meta property="og:locale" content="en_PH" data-default-seo />
+
+    <meta name="twitter:card" content="summary_large_image" data-default-seo />
+    <meta
+      name="twitter:title"
+      content="Ralphy — Travel Photography from Occidental Mindoro"
+      data-default-seo
+    />
+    <meta
+      name="twitter:description"
+      content="Drone and phone photography from across Occidental Mindoro, Philippines, by Ralph Alcaide."
+      data-default-seo
+    />
+    <meta
+      name="twitter:image"
+      content="https://ralphy-production.up.railway.app/hero.jpg"
+      data-default-seo
+    />
+
+    <!-- Ties the site to the accounts that already have an audience, which is
+         what lets a search engine treat "Ralphy" and "lakbayOksi" as the same
+         entity. Static so it is readable without running the app. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Ralphy",
+        "alternateName": ["lakbayOksi", "Lakbay Oksi", "Ralphy Travel"],
+        "url": "https://ralphy-production.up.railway.app/",
+        "inLanguage": "en",
+        "author": {
+          "@type": "Person",
+          "name": "Ralph Alcaide",
+          "alternateName": "lakbayOksi",
+          "url": "https://ralphy-production.up.railway.app/about",
+          "jobTitle": "Software Developer and Travel Photographer",
+          "homeLocation": {
+            "@type": "Place",
+            "name": "Occidental Mindoro, Philippines"
+          },
+          "sameAs": [
+            "https://instagram.com/lakbayOksi",
+            "https://www.youtube.com/@Lakbay_Oksi"
+          ]
+        }
+      }
+    </script>
 
     <!-- Speed up first API call + Cloudinary media -->
     <link rel="preconnect" href="https://res.cloudinary.com" />

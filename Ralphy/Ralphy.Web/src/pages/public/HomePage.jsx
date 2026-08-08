@@ -27,50 +27,46 @@ function Hero({ posts, tags, featured }) {
   return (
     <HeroSlideshow photos={featured} footer={<HeroStats stats={stats} />}>
       <>
-        {/* A hairline rule instead of the old pulsing amber dot — nothing here
-            is live, and a blinking indicator promised something the page
-            doesn't do. */}
-        <p className="mb-7 flex items-center gap-3 text-[11px] font-semibold
-                      uppercase tracking-[0.32em] text-white/70">
-          <span className="h-px w-8 bg-white/40" aria-hidden="true" />
+        {/* Rule on the left only — with the block right-aligned, a rule on
+            both sides would float away from the text. */}
+        <p className="mb-4 flex items-center justify-end gap-3 text-[10px]
+                      font-semibold uppercase tracking-[0.28em] text-white/65">
+          <span className="h-px w-6 bg-white/35" aria-hidden="true" />
           Occidental Mindoro
-          <span className="h-px w-8 bg-white/40" aria-hidden="true" />
         </p>
 
-        {/* text-balance keeps the two lines from breaking raggedly at the
-            sizes between the sm and md steps. */}
-        <h1 className="font-display text-[2.6rem] font-semibold leading-[0.95]
-                       tracking-[-0.03em] text-balance text-white
-                       sm:text-7xl md:text-8xl">
+        <h1 className="font-display text-[1.75rem] font-semibold leading-[1.05]
+                       tracking-[-0.02em] text-balance text-white
+                       sm:text-4xl md:text-[2.75rem]">
           Chasing horizons,
-          <span className="mt-1 block italic text-amber-200/95">
+          <span className="block italic text-amber-200/95">
             one island at a time
           </span>
         </h1>
 
-        <p className="mx-auto mt-8 max-w-md text-pretty text-[15px]
-                      leading-relaxed text-white/75 sm:text-base">
+        <p className="mt-4 text-pretty text-[13px] leading-relaxed
+                      text-white/70 sm:text-sm">
           Photographs from Mindoro and beyond — shot from the air and
           from the ground, by Ralph.
         </p>
 
-        <div className="mt-10 flex flex-col items-center justify-center gap-3
-                        sm:flex-row">
+        <div className="mt-6 flex flex-wrap justify-end gap-2.5">
           <Link
             to="/posts"
-            className="rounded-full bg-white px-8 py-3.5 text-sm font-semibold
-                       text-slate-900 shadow-lg shadow-slate-950/30
-                       transition-colors hover:bg-amber-100
-                       focus:outline-none focus-visible:ring-2
-                       focus-visible:ring-white focus-visible:ring-offset-2
+            className="rounded-full bg-white px-5 py-2.5 text-[13px]
+                       font-semibold text-slate-900 shadow-lg
+                       shadow-slate-950/30 transition-colors
+                       hover:bg-amber-100 focus:outline-none
+                       focus-visible:ring-2 focus-visible:ring-white
+                       focus-visible:ring-offset-2
                        focus-visible:ring-offset-slate-900"
           >
             Browse the photos
           </Link>
           <Link
             to="/map"
-            className="rounded-full border border-white/30 px-8 py-3.5 text-sm
-                       font-semibold text-white/90 backdrop-blur-sm
+            className="rounded-full border border-white/30 px-5 py-2.5
+                       text-[13px] font-semibold text-white/90 backdrop-blur-sm
                        transition-colors hover:border-white/60 hover:text-white
                        focus:outline-none focus-visible:ring-2
                        focus-visible:ring-white"
