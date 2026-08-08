@@ -4,7 +4,6 @@ using Ralphy.Api.Helpers;
 using Ralphy.Application.Common;
 using Ralphy.Application.DTOs.Photos;
 using Ralphy.Application.Services.Interfaces;
-using Ralphy.Domain.Enums;
 
 namespace Ralphy.Api.Controllers
 {
@@ -28,41 +27,21 @@ namespace Ralphy.Api.Controllers
             return Ok(ApiResponse<IEnumerable<PhotoDto>>.Ok(videos));
         }
 
-        [HttpGet("post/{postId}/phone")]
-        public async Task<IActionResult> GetPhoneVideos(int postId)
-        {
-            var videos = await _videoService.GetBySourceAsync(postId, MediaSource.Phone);
-            return Ok(ApiResponse<IEnumerable<PhotoDto>>.Ok(videos));
-        }
-
-        [HttpGet("post/{postId}/drone")]
-        public async Task<IActionResult> GetDroneVideos(int postId)
-        {
-            var videos = await _videoService.GetBySourceAsync(postId, MediaSource.Drone);
-            return Ok(ApiResponse<IEnumerable<PhotoDto>>.Ok(videos));
-        }
-
         [Authorize]
         [HttpPost("upload/{postId}")]
         public async Task<IActionResult> Upload(
             int postId,
             IFormFile file,
-            [FromForm] string source,
             [FromForm] string? caption = null)
         {
             if (file == null || file.Length == 0)
                 return BadRequest(ApiResponse<object>.Fail(400, "No file provided"));
 
-            if (!Enum.TryParse<MediaSource>(source, true, out var mediaSource))
-                return BadRequest(ApiResponse<object>.Fail(400,
-                    "Invalid source. Use 'Phone' or 'Drone'"));
-
             var userId = ClaimsHelper.GetUserId(User);
             var video = await _videoService.UploadVideoAsync(
-                file, postId, mediaSource, caption, userId);
+                file, postId, caption, userId);
 
-            _logger.LogInformation("Video uploaded for post {PostId} from {Source}",
-                postId, source);
+            _logger.LogInformation("Video uploaded for post {PostId}", postId);
 
             return Ok(ApiResponse<PhotoDto>.Ok(video, "Video uploaded successfully"));
         }

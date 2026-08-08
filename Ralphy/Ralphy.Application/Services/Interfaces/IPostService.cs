@@ -1,4 +1,4 @@
-﻿using Ralphy.Application.DTOs.Posts;
+using Ralphy.Application.DTOs.Posts;
 
 namespace Ralphy.Application.Services.Interfaces
 {
@@ -12,7 +12,9 @@ namespace Ralphy.Application.Services.Interfaces
 
         Task<PostWithDetailsDto?> GetPostWithDetailsAsync(int id);
 
-        Task<IEnumerable<PostDto>> GetByTripIdAsync(int tripId);
+        Task<IEnumerable<PostDto>> GetByTagAsync(string tagName);
+
+        Task<IEnumerable<PostDto>> GetByLocationIdAsync(int locationId);
 
         Task<PostDto> CreateAsync(CreatePostDto request, int userId);
 

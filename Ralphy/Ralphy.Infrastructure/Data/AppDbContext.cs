@@ -12,7 +12,6 @@ namespace Ralphy.Infrastructure.Data
 
         public DbSet<User> Users => Set<User>();
         public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
-        public DbSet<Trip> Trips => Set<Trip>();
         public DbSet<Post> Posts => Set<Post>();
         public DbSet<Photo> Photos => Set<Photo>();
         public DbSet<Comment> Comments => Set<Comment>();
@@ -46,24 +45,21 @@ namespace Ralphy.Infrastructure.Data
                 .HasForeignKey(pt => pt.TagId);
 
             // User relationships
+            // Deleting a user must not silently take their posts with it.
             modelBuilder.Entity<User>()
-                .HasMany(u => u.Trips)
-                .WithOne(t => t.User)
-                .HasForeignKey(t => t.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .HasMany(u => u.Posts)
+                .WithOne(p => p.User)
+                .HasForeignKey(p => p.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // Trip relationships
-            modelBuilder.Entity<Trip>()
-                .HasMany(t => t.Posts)
-                .WithOne(p => p.Trip)
-                .HasForeignKey(p => p.TripId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<Trip>()
-                .HasMany(t => t.Locations)
-                .WithOne(l => l.Trip)
-                .HasForeignKey(l => l.TripId)
-                .OnDelete(DeleteBehavior.Cascade);
+            // Location relationships
+            // Restrict, not Cascade: a Location is shared by many posts, so
+            // deleting a place must never cascade-delete everything pinned to it.
+            modelBuilder.Entity<Location>()
+                .HasMany(l => l.Posts)
+                .WithOne(p => p.Location)
+                .HasForeignKey(p => p.LocationId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Post relationships
             modelBuilder.Entity<Post>()
@@ -71,6 +67,10 @@ namespace Ralphy.Infrastructure.Data
                 .WithOne(ph => ph.Post)
                 .HasForeignKey(ph => ph.PostId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Gallery reads always sort on this pair.
+            modelBuilder.Entity<Photo>()
+                .HasIndex(p => new { p.PostId, p.SortOrder });
 
             modelBuilder.Entity<Post>()
                 .HasMany(p => p.Comments)
@@ -92,20 +92,12 @@ namespace Ralphy.Infrastructure.Data
                 .IsUnique();
 
             // Enum conversions
-            modelBuilder.Entity<Trip>()
-                .Property(t => t.Status)
-                .HasConversion<string>();
-
             modelBuilder.Entity<Post>()
                 .Property(p => p.Status)
                 .HasConversion<string>();
 
             modelBuilder.Entity<Photo>()
                 .Property(p => p.Type)
-                .HasConversion<string>();
-
-            modelBuilder.Entity<Photo>()
-                .Property(p => p.Source)
                 .HasConversion<string>();
 
             // TimekeepingUser

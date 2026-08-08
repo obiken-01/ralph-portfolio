@@ -2,23 +2,23 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../../api/axios'
 import Seo, { SITE_URL, AUTHOR_LD } from '../../components/common/Seo'
-import TripCard, { TripCardSkeleton } from '../../components/public/TripCard'
 import PostCard, { PostCardSkeleton } from '../../components/public/PostCard'
+import { TagFilterBar } from '../../components/public/TagChips'
 
 // ── Hero ────────────────────────────────────────────────────────
-function Hero({ trips, posts }) {
-  const countries = trips
-    ? [...new Set(trips.map((t) => t.country).filter(Boolean))].length
-    : null
+function Hero({ posts, tags }) {
   const photos = posts
     ? posts.reduce((sum, p) => sum + (p.photoCount ?? 0), 0)
     : null
+  const places = posts
+    ? new Set(posts.map((p) => p.locationId).filter(Boolean)).size
+    : null
 
   const stats = [
-    { label: 'Trips',     value: trips?.length ?? '—' },
-    { label: 'Stories',   value: posts?.length ?? '—' },
-    { label: 'Countries', value: countries ?? '—' },
-    { label: 'Photos',    value: photos || '—' },
+    { label: 'Photos', value: photos || '—' },
+    { label: 'Posts',  value: posts?.length ?? '—' },
+    { label: 'Places', value: places || '—' },
+    { label: 'Tags',   value: tags?.length ?? '—' },
   ]
 
   return (
@@ -60,12 +60,12 @@ function Hero({ trips, posts }) {
 
         <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
           <Link
-            to="/trips"
+            to="/posts"
             className="rounded-full bg-teal-600 px-8 py-3.5 text-sm
                        font-semibold text-white shadow-lg shadow-teal-950/40
                        transition-colors hover:bg-teal-500"
           >
-            Explore the trips
+            Browse the photos
           </Link>
           <Link
             to="/map"
@@ -126,40 +126,37 @@ function SectionHeader({ eyebrow, title, to, linkLabel }) {
   )
 }
 
-// ── Latest trips (featured + grid) ──────────────────────────────
-function LatestTrips({ trips, loading }) {
-  const [featured, ...rest] = trips
-
+// ── Latest photos ───────────────────────────────────────────────
+function LatestPhotos({ posts, tags, loading }) {
   return (
-    <section className="py-20" aria-labelledby="latest-trips">
+    <section className="py-20" aria-labelledby="latest-photos">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <SectionHeader
           eyebrow="Latest adventures"
-          title="Recent trips"
-          to="/trips"
-          linkLabel="All trips"
+          title="Recent photos"
+          to="/posts"
+          linkLabel="All photos"
         />
 
-        {loading ? (
-          <div className="grid gap-6 lg:grid-cols-2">
-            <TripCardSkeleton featured />
-            <div className="grid gap-6 sm:grid-cols-2">
-              <TripCardSkeleton />
-              <TripCardSkeleton />
-            </div>
+        {tags.length > 0 && (
+          <div className="mb-8">
+            <TagFilterBar tags={tags} limit={8} />
           </div>
-        ) : trips.length === 0 ? (
+        )}
+
+        {loading ? (
+          <div className="columns-1 gap-6 sm:columns-2 lg:columns-3">
+            {[...Array(6)].map((_, i) => <PostCardSkeleton key={i} />)}
+          </div>
+        ) : posts.length === 0 ? (
           <p className="py-14 text-center text-sm text-slate-400">
-            No trips yet — check back soon!
+            Nothing here yet — check back soon!
           </p>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-2">
-            <TripCard trip={featured} featured />
-            <div className="grid gap-6 sm:grid-cols-2">
-              {rest.slice(0, 4).map((trip) => (
-                <TripCard key={trip.id} trip={trip} />
-              ))}
-            </div>
+          <div className="columns-1 gap-6 sm:columns-2 lg:columns-3">
+            {posts.slice(0, 6).map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
           </div>
         )}
       </div>
@@ -218,7 +215,7 @@ function RecentPosts({ posts, loading }) {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <SectionHeader
           eyebrow="From the journal"
-          title="Latest stories"
+          title="On the timeline"
           to="/timeline"
           linkLabel="Full timeline"
         />
@@ -229,7 +226,7 @@ function RecentPosts({ posts, loading }) {
           </div>
         ) : posts.length === 0 ? (
           <p className="py-14 text-center text-sm text-slate-400">
-            No stories yet — check back soon!
+            Nothing on the timeline yet — check back soon!
           </p>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -285,19 +282,19 @@ function FollowCta() {
 
 // ── Main Page ───────────────────────────────────────────────────
 export default function HomePage() {
-  const [trips, setTrips] = useState([])
   const [posts, setPosts] = useState([])
+  const [tags, setTags] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [tripsRes, postsRes] = await Promise.all([
-          api.get('/trips'),
+        const [postsRes, tagsRes] = await Promise.all([
           api.get('/posts'),
+          api.get('/tags'),
         ])
-        setTrips(tripsRes.data.data ?? [])
         setPosts(postsRes.data.data ?? [])
+        setTags(tagsRes.data.data ?? [])
       } catch (err) {
         console.error('Failed to fetch home data:', err)
       } finally {
@@ -323,8 +320,8 @@ export default function HomePage() {
           author: AUTHOR_LD,
         }}
       />
-      <Hero trips={loading ? null : trips} posts={loading ? null : posts} />
-      <LatestTrips trips={trips} loading={loading} />
+      <Hero posts={loading ? null : posts} tags={loading ? null : tags} />
+      <LatestPhotos posts={posts} tags={tags} loading={loading} />
       <MapBanner />
       <RecentPosts posts={posts} loading={loading} />
       <FollowCta />

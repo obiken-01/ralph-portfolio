@@ -30,7 +30,6 @@ jobs:
 
       - name: Run tests
         run: dotnet test Ralphy/Ralphy.slnx --no-build --configuration Release
-        continue-on-error: true  # Remove this line when you add real tests
 
   # ── Frontend Build ───────────────────────────────────────────
   frontend:
@@ -50,6 +49,10 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
+        working-directory: Ralphy/Ralphy.Web
+
+      - name: Run tests
+        run: npm run test:run
         working-directory: Ralphy/Ralphy.Web
 
       - name: Build

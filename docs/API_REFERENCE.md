@@ -24,27 +24,32 @@ Validation failures return `{ "statusCode": 400, "message": "Validation failed",
 | POST | `/auth/revoke` | 🔒 | Revoke refresh token |
 | GET | `/auth/me` | 🔒 | Current user |
 
-## Trips — `/api/trips`
-
-| Method | Route | Auth | Description |
-|---|---|---|---|
-| GET | `/trips` | 🌐 | Published trips |
-| GET | `/trips/{id}` | 🌐 | Trip detail (includes locations) |
-| GET | `/trips/{id}/posts` | 🌐 | Posts of a trip |
-| GET | `/trips/all` | 🔒 | All trips incl. drafts (admin) |
-| POST/PUT/DELETE | `/trips`, `/trips/{id}` | 🔒 | CRUD |
-| PUT | `/trips/{id}/publish` · `/unpublish` | 🔒 | Status toggle |
+> **v2.0 — `Trip` is gone.** Ownership and location moved onto `Post`, and the
+> `MediaSource` (Drone/Phone) enum was removed. `/api/trips/*`,
+> `/api/posts/trip/{tripId}`, `/api/locations/trip/{tripId}` and the four
+> `/phone` · `/drone` media routes no longer exist. Old page URLs
+> (`/trips`, `/trips/{id}`, `/trips/{tripId}/posts/{postId}`) are 301'd to
+> their `/posts` equivalents by the web container's nginx.
 
 ## Posts — `/api/posts`
 
 | Method | Route | Auth | Description |
 |---|---|---|---|
-| GET | `/posts` | 🌐 | Published posts (includes photos) |
+| GET | `/posts` | 🌐 | Published feed (photos, tags, location) |
+| GET | `/posts?tag={name}` | 🌐 | Same feed, filtered by tag (case-insensitive) |
 | GET | `/posts/{id}` | 🌐 | Post detail (increments view count) |
-| GET | `/posts/trip/{tripId}` | 🌐 | Published posts for a trip |
+| GET | `/posts/location/{locationId}` | 🌐 | Published posts at a place |
 | GET | `/posts/all` | 🔒 | All posts incl. drafts |
 | POST/PUT/DELETE | `/posts`, `/posts/{id}` | 🔒 | CRUD |
 | PUT | `/posts/{id}/publish` · `/unpublish` | 🔒 | Status toggle |
+
+`locationId` is **required** on create and update. `content` is **optional** —
+a photo-first post needs no prose. Ownership is taken from the JWT; a `userId`
+in the request body is ignored.
+
+Post payload adds: `userId`, `takenAt` (earliest EXIF timestamp across its
+photos), `locationId`, `locationName`, `locationIsPlaceholder`, `tags[]`,
+`thumbnailWidth`, `thumbnailHeight`.
 
 ## Photos — `/api/photos` · Videos — `/api/videos`
 
@@ -52,17 +57,52 @@ Same shape for both (videos are `Photo` rows with `MediaType.Video`):
 
 | Method | Route | Auth | Description |
 |---|---|---|---|
-| GET | `/photos/post/{postId}` | 🌐 | All media for a post |
-| GET | `/photos/post/{postId}/phone` · `/drone` | 🌐 | Filtered by `MediaSource` |
-| POST | `/photos/upload/{postId}` | 🔒 | Multipart upload → Cloudinary (videos ≤ 100 MB) |
+| GET | `/photos/post/{postId}` | 🌐 | Media for a post, in `sortOrder` |
+| POST | `/photos/upload/{postId}` | 🔒 | Multipart upload → Cloudinary |
+| PATCH | `/photos/{id}` | 🔒 | Edit caption (≤ 300 chars) |
+| PUT | `/photos/post/{postId}/order` | 🔒 | Reorder — body `{ "photoIds": [12, 9, 31] }` |
 | DELETE | `/photos/{id}` | 🔒 | Delete (also removes from Cloudinary) |
+
+**Upload form fields.** `file` is required; `caption`, `sortOrder`, `takenAt`
+(ISO-8601), `latitude` and `longitude` are optional. The browser reads EXIF off
+the original *before* compressing — canvas re-encoding strips it — and posts the
+values alongside the file. Out-of-range coordinates and future timestamps are
+rejected rather than clamped. An absent `sortOrder` means "next", not "first".
+
+**The 10 MB image limit is ours, not Cloudinary's.** `CloudinaryService.
+ValidateImageFile()` throws before Cloudinary is ever called, so the request
+400s server-side. Kestrel accepts 100 MB bodies (`Program.cs`); the guard is the
+only thing in the way, and it is shared with CV and profile-image upload, so do
+not raise it for the gallery's sake. Allowed extensions: `.jpg .jpeg .png
+.webp`. Videos: `.mp4 .mov .avi .mkv`, 100 MB.
+
+Reorder returns **400** unless `photoIds` is exactly the post's photos, each
+listed once — a partial list would leave the sequence half-rewritten.
+
+Photo payload adds: `sortOrder`, `width`, `height`, `takenAt`, `latitude`,
+`longitude`. Width and height come free off the Cloudinary upload result and
+are what let the grid reserve the right box before an image decodes.
 
 ## Locations — `/api/locations`
 
-| Method | Route | Auth |
-|---|---|---|
-| GET | `/locations` (all) · `/locations/trip/{tripId}` | 🌐 |
-| POST / PUT `/{id}` / DELETE `/{id}` | 🔒 |
+A `Location` is a reusable place record: many posts point at one, and it no
+longer belongs to a trip or to a single user. Any authenticated admin may
+manage them.
+
+| Method | Route | Auth | Description |
+|---|---|---|---|
+| GET | `/locations` | 🌐 | Places with ≥1 published post, placeholder excluded |
+| GET | `/locations/all` | 🔒 | Every place, for the admin picker |
+| GET | `/locations/{id}` | 🌐 | One place |
+| POST / PUT `/{id}` / DELETE `/{id}` | 🔒 | CRUD |
+
+`DELETE` returns **400** while any post still references the place —
+`Post.LocationId` is a `Restrict` FK, and this turns an opaque
+`DbUpdateException` into a sentence.
+
+`isPlaceholder` flags the "West Philippine Sea" row seeded by the v2.0
+migration, which every pre-existing post was backfilled onto. It is excluded
+from the public map and drives the admin "needs location" cleanup list.
 
 ## Comments — `/api/comments`
 
@@ -74,10 +114,18 @@ Same shape for both (videos are `Photo` rows with `MediaType.Video`):
 
 ## Tags — `/api/tags`
 
-| Method | Route | Auth |
-|---|---|---|
-| GET | `/tags` | 🌐 |
-| POST `/tags`, `/tags/assign/{postId}`; DELETE `/tags/remove/{postId}`, `/tags/{id}` | 🔒 |
+Tags replace `Trip` as the grouping mechanism.
+
+| Method | Route | Auth | Description |
+|---|---|---|---|
+| GET | `/tags` | 🌐 | Tags with ≥1 published post, most-used first, with `postCount` |
+| GET | `/tags/all` | 🔒 | Every tag incl. unused, for the admin picker |
+| GET | `/tags/{name}/posts` | 🌐 | Published posts carrying a tag — **404** on an unknown tag |
+| POST | `/tags`, `/tags/assign/{postId}` | 🔒 | Assign **replaces** the post's whole tag set |
+| DELETE | `/tags/remove/{postId}`, `/tags/{id}` | 🔒 | |
+
+Names are stored lowercase and trimmed, and matched case-insensitively — so
+`/tags/Paluan/posts` and `/tags/paluan/posts` reach the same rows.
 
 ## About / Portfolio — `/api/about`
 
@@ -115,4 +163,4 @@ Same shape for both (videos are `Photo` rows with `MediaType.Video`):
 
 | Method | Route | Auth | Description |
 |---|---|---|---|
-| GET | `/sitemap.xml` | 🌐 | XML sitemap of public pages + published trips/posts. Proxied same-origin by the web container's nginx at `https://<web-domain>/sitemap.xml`. |
+| GET | `/sitemap.xml` | 🌐 | XML sitemap of public pages + published posts + tag pages. Proxied same-origin by the web container's nginx at `https://<web-domain>/sitemap.xml`. |

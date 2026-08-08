@@ -1,10 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Ralphy.Api.Helpers;
 using Ralphy.Application.Common;
 using Ralphy.Application.DTOs.Photos;
 using Ralphy.Application.Services.Interfaces;
-using Ralphy.Domain.Enums;
 
 namespace Ralphy.Api.Controllers
 {
@@ -28,43 +27,65 @@ namespace Ralphy.Api.Controllers
             return Ok(ApiResponse<IEnumerable<PhotoDto>>.Ok(photos));
         }
 
-        [HttpGet("post/{postId}/phone")]
-        public async Task<IActionResult> GetPhonePhotos(int postId)
-        {
-            var photos = await _photoService.GetBySourceAsync(postId, MediaSource.Phone);
-            return Ok(ApiResponse<IEnumerable<PhotoDto>>.Ok(photos));
-        }
-
-        [HttpGet("post/{postId}/drone")]
-        public async Task<IActionResult> GetDronePhotos(int postId)
-        {
-            var photos = await _photoService.GetBySourceAsync(postId, MediaSource.Drone);
-            return Ok(ApiResponse<IEnumerable<PhotoDto>>.Ok(photos));
-        }
-
+        /// <summary>
+        /// The EXIF fields are optional. The browser reads them off the original
+        /// before compression strips them and posts them alongside the file, so
+        /// the geotag and capture date survive the canvas round-trip.
+        /// </summary>
         [Authorize]
         [HttpPost("upload/{postId}")]
         public async Task<IActionResult> Upload(
             int postId,
             IFormFile file,
-            [FromForm] string source,
-            [FromForm] string? caption = null)
+            [FromForm] string? caption = null,
+            [FromForm] DateTime? takenAt = null,
+            [FromForm] double? latitude = null,
+            [FromForm] double? longitude = null,
+            [FromForm] int? sortOrder = null)
         {
             if (file == null || file.Length == 0)
                 return BadRequest(ApiResponse<object>.Fail(400, "No file provided"));
 
-            if (!Enum.TryParse<MediaSource>(source, true, out var mediaSource))
-                return BadRequest(ApiResponse<object>.Fail(400,
-                    "Invalid source. Use 'Phone' or 'Drone'"));
+            var metadata = new PhotoMetadataDto
+            {
+                TakenAt = takenAt,
+                Latitude = latitude,
+                Longitude = longitude,
+                SortOrder = sortOrder,
+            };
 
             var userId = ClaimsHelper.GetUserId(User);
             var photo = await _photoService.UploadPhotoAsync(
-                file, postId, mediaSource, caption, userId);
+                file, postId, caption, metadata, userId);
 
-            _logger.LogInformation("Photo uploaded for post {PostId} from {Source}",
-                postId, source);
+            _logger.LogInformation("Photo uploaded for post {PostId}", postId);
 
             return Ok(ApiResponse<PhotoDto>.Ok(photo, "Photo uploaded successfully"));
+        }
+
+        [Authorize]
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> Update(
+            int id, [FromBody] UpdatePhotoDto request)
+        {
+            if (request.Caption is { Length: > 300 })
+                return BadRequest(ApiResponse<object>.Fail(400,
+                    "Caption cannot exceed 300 characters"));
+
+            var userId = ClaimsHelper.GetUserId(User);
+            var photo = await _photoService.UpdateAsync(id, request, userId);
+            return Ok(ApiResponse<PhotoDto>.Ok(photo, "Photo updated successfully"));
+        }
+
+        [Authorize]
+        [HttpPut("post/{postId}/order")]
+        public async Task<IActionResult> Reorder(
+            int postId, [FromBody] ReorderPhotosDto request)
+        {
+            var userId = ClaimsHelper.GetUserId(User);
+            await _photoService.ReorderAsync(postId, request, userId);
+            _logger.LogInformation("Photos reordered for post {PostId}", postId);
+            return Ok(ApiResponse.OkMessage("Photo order updated"));
         }
 
         [Authorize]

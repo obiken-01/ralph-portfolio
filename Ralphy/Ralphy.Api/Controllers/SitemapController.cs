@@ -8,20 +8,20 @@ namespace Ralphy.Api.Controllers
     [ApiController]
     public class SitemapController : ControllerBase
     {
-        private readonly ITripService _tripService;
         private readonly IPostService _postService;
+        private readonly ITagService _tagService;
         private readonly IConfiguration _configuration;
 
         private static readonly XNamespace Ns =
             "http://www.sitemaps.org/schemas/sitemap/0.9";
 
         public SitemapController(
-            ITripService tripService,
             IPostService postService,
+            ITagService tagService,
             IConfiguration configuration)
         {
-            _tripService = tripService;
             _postService = postService;
+            _tagService = tagService;
             _configuration = configuration;
         }
 
@@ -32,24 +32,27 @@ namespace Ralphy.Api.Controllers
             var siteUrl = (_configuration["Seo:SiteUrl"]
                 ?? "https://ralph-portfolio-production.up.railway.app").TrimEnd('/');
 
-            var trips = await _tripService.GetAllPublishedAsync();
             var posts = await _postService.GetAllPublishedAsync();
+            var tags = await _tagService.GetPublishedAsync();
 
             var urls = new List<XElement>
             {
                 UrlElement($"{siteUrl}/", null, "weekly", "1.0"),
-                UrlElement($"{siteUrl}/trips", null, "weekly", "0.9"),
+                UrlElement($"{siteUrl}/posts", null, "weekly", "0.9"),
                 UrlElement($"{siteUrl}/map", null, "monthly", "0.6"),
                 UrlElement($"{siteUrl}/timeline", null, "weekly", "0.6"),
                 UrlElement($"{siteUrl}/about", null, "monthly", "0.5"),
             };
 
-            urls.AddRange(trips.Select(t =>
-                UrlElement($"{siteUrl}/trips/{t.Id}", t.CreatedAt, "monthly", "0.8")));
-
+            // The old /trips and /trips/{id}/posts/{id} URLs are 301'd by
+            // nginx; they are deliberately no longer advertised here.
             urls.AddRange(posts.Select(p =>
-                UrlElement($"{siteUrl}/trips/{p.TripId}/posts/{p.Id}",
+                UrlElement($"{siteUrl}/posts/{p.Id}",
                     p.PublishedAt ?? p.CreatedAt, "monthly", "0.7")));
+
+            urls.AddRange(tags.Select(t =>
+                UrlElement($"{siteUrl}/tags/{Uri.EscapeDataString(t.Name)}",
+                    null, "weekly", "0.5")));
 
             var doc = new XDocument(
                 new XDeclaration("1.0", "utf-8", null),

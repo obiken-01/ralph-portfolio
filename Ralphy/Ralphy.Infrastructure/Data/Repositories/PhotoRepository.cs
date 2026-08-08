@@ -10,10 +10,13 @@ namespace Ralphy.Infrastructure.Data.Repositories
         {
         }
 
+        // SortOrder is the display order; creation order is not.
+        // Id breaks ties so the sequence is stable across reads.
         public async Task<IEnumerable<Photo>> GetByPostIdAsync(int postId) =>
             await _dbSet
                 .Where(p => p.PostId == postId)
-                .OrderByDescending(p => p.CreatedAt)
+                .OrderBy(p => p.SortOrder)
+                .ThenBy(p => p.Id)
                 .ToListAsync();
     }
 }

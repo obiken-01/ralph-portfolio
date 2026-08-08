@@ -1,4 +1,4 @@
-﻿using Ralphy.Domain.Entities;
+using Ralphy.Domain.Entities;
 
 namespace Ralphy.Domain.Interfaces.Repositories
 {
@@ -6,6 +6,11 @@ namespace Ralphy.Domain.Interfaces.Repositories
     {
         Task<IEnumerable<Location>> GetAllLocationsAsync();
 
-        Task<IEnumerable<Location>> GetByTripIdAsync(int tripId);
+        /// <summary>Places with at least one published post, excluding the placeholder.</summary>
+        Task<IEnumerable<Location>> GetPublicAsync();
+
+        Task<bool> HasPostsAsync(int locationId);
+
+        Task<Location?> GetPlaceholderAsync();
     }
 }

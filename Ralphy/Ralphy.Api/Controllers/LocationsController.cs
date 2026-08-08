@@ -1,7 +1,6 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Ralphy.Api.Helpers;
 using Ralphy.Application.Common;
 using Ralphy.Application.DTOs.Locations;
 using Ralphy.Application.Services.Interfaces;
@@ -26,18 +25,28 @@ namespace Ralphy.Api.Controllers
             _logger = logger;
         }
 
+        /// <summary>Public map feed — placeholder and post-less places excluded.</summary>
         [HttpGet]
+        public async Task<IActionResult> GetPublic()
+        {
+            var locations = await _locationService.GetPublicAsync();
+            return Ok(ApiResponse<IEnumerable<LocationDto>>.Ok(locations));
+        }
+
+        /// <summary>Every place, for the admin picker.</summary>
+        [Authorize]
+        [HttpGet("all")]
         public async Task<IActionResult> GetAll()
         {
             var locations = await _locationService.GetAllAsync();
             return Ok(ApiResponse<IEnumerable<LocationDto>>.Ok(locations));
         }
 
-        [HttpGet("trip/{tripId}")]
-        public async Task<IActionResult> GetByTripId(int tripId)
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
         {
-            var locations = await _locationService.GetByTripIdAsync(tripId);
-            return Ok(ApiResponse<IEnumerable<LocationDto>>.Ok(locations));
+            var location = await _locationService.GetByIdAsync(id);
+            return Ok(ApiResponse<LocationDto>.Ok(location));
         }
 
         [Authorize]
@@ -49,8 +58,7 @@ namespace Ralphy.Api.Controllers
                 return BadRequest(ApiResponse<object>.Fail(400, "Validation failed",
                     validation.Errors.Select(e => e.ErrorMessage)));
 
-            var userId = ClaimsHelper.GetUserId(User);
-            var location = await _locationService.CreateAsync(request, userId);
+            var location = await _locationService.CreateAsync(request);
             _logger.LogInformation("Location created: {PlaceName}", request.PlaceName);
             return Ok(ApiResponse<LocationDto>.Ok(location, "Location created successfully"));
         }
@@ -64,8 +72,7 @@ namespace Ralphy.Api.Controllers
                 return BadRequest(ApiResponse<object>.Fail(400, "Validation failed",
                     validation.Errors.Select(e => e.ErrorMessage)));
 
-            var userId = ClaimsHelper.GetUserId(User);
-            var location = await _locationService.UpdateAsync(id, request, userId);
+            var location = await _locationService.UpdateAsync(id, request);
             _logger.LogInformation("Location updated: {Id}", id);
             return Ok(ApiResponse<LocationDto>.Ok(location, "Location updated successfully"));
         }
@@ -74,8 +81,7 @@ namespace Ralphy.Api.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var userId = ClaimsHelper.GetUserId(User);
-            await _locationService.DeleteAsync(id, userId);
+            await _locationService.DeleteAsync(id);
             _logger.LogInformation("Location deleted: {Id}", id);
             return Ok(ApiResponse.OkMessage("Location deleted successfully"));
         }

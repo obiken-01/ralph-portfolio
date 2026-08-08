@@ -27,7 +27,6 @@ namespace Ralphy.Application.Services
         public async Task<PhotoDto> UploadVideoAsync(
             IFormFile file,
             int postId,
-            MediaSource source,
             string? caption,
             int userId)
         {
@@ -36,9 +35,7 @@ namespace Ralphy.Application.Services
             if (post == null)
                 throw new KeyNotFoundException($"Post with ID {postId} not found");
 
-            // Verify ownership through trip
-            var trip = await _unitOfWork.Trips.GetByIdAsync(post.TripId);
-            if (trip == null || trip.UserId != userId)
+            if (post.UserId != userId)
                 throw new UnauthorizedAccessException(
                     "You are not authorized to upload videos to this post");
 
@@ -54,7 +51,6 @@ namespace Ralphy.Application.Services
                 PublicId = uploadResult.PublicId,
                 Caption = caption,
                 Type = MediaType.Video,
-                Source = source,
                 PostId = postId
             };
 
@@ -90,8 +86,7 @@ namespace Ralphy.Application.Services
             if (post == null)
                 throw new KeyNotFoundException("Associated post not found");
 
-            var trip = await _unitOfWork.Trips.GetByIdAsync(post.TripId);
-            if (trip == null || trip.UserId != userId)
+            if (post.UserId != userId)
                 throw new UnauthorizedAccessException(
                     "You are not authorized to delete this video");
 
@@ -103,21 +98,5 @@ namespace Ralphy.Application.Services
             await _unitOfWork.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<PhotoDto>> GetBySourceAsync(
-            int postId, MediaSource source)
-        {
-            var post = await _unitOfWork.Posts.GetByIdAsync(postId);
-            if (post == null)
-                throw new KeyNotFoundException($"Post with ID {postId} not found");
-
-            var photos = await _unitOfWork.Photos.GetByPostIdAsync(postId);
-
-            // Filter by source and type Video only
-            var filtered = photos.Where(p =>
-                p.Source == source &&
-                p.Type == MediaType.Video);
-
-            return _mapper.Map<IEnumerable<PhotoDto>>(filtered);
-        }
     }
 }

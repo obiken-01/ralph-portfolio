@@ -1,9 +1,10 @@
 import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import AdminLayout from '../../components/admin/AdminLayout'
 import api from '../../api/axios'
-import { formatShortDate } from '../../utils/helpers'
-import toast from 'react-hot-toast'
+import { formatShortDate, postDate } from '../../utils/helpers'
+import { cldImage } from '../../utils/cloudinary'
 
 // ── Delete Confirm Modal ────────────────────────────────────────
 function DeleteModal({ post, onClose, onDeleted }) {
@@ -24,14 +25,14 @@ function DeleteModal({ post, onClose, onDeleted }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/70 z-50 flex items-center
-                    justify-center p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-xl
-                      w-full max-w-sm p-6">
-        <div className="text-center mb-5">
-          <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center
-                          justify-center mx-auto mb-3">
-            <svg className="w-6 h-6 text-red-400" fill="none"
+    <div className="fixed inset-0 z-50 flex items-center justify-center
+                    bg-black/70 p-4">
+      <div className="w-full max-w-sm rounded-xl border border-slate-700
+                      bg-slate-900 p-6">
+        <div className="mb-5 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center
+                          justify-center rounded-full bg-red-500/10">
+            <svg className="h-6 w-6 text-red-400" fill="none"
                  stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0
@@ -39,34 +40,32 @@ function DeleteModal({ post, onClose, onDeleted }) {
                        00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
           </div>
-          <h2 className="text-white font-semibold mb-1">Delete Post</h2>
-          <p className="text-slate-400 text-sm">
+          <h2 className="mb-1 font-semibold text-white">Delete Post</h2>
+          <p className="text-sm text-slate-400">
             Are you sure you want to delete
-            <span className="text-white font-medium"> {post.title}</span>?
+            <span className="font-medium text-white"> {post.title}</span>?
             This will also delete all photos and videos.
           </p>
         </div>
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2.5 bg-slate-800 hover:bg-slate-700
-                       text-slate-300 text-sm font-medium rounded-lg
-                       transition-colors"
+            className="flex-1 rounded-lg bg-slate-800 px-4 py-2.5 text-sm
+                       font-medium text-slate-300 transition-colors
+                       hover:bg-slate-700"
           >
             Cancel
           </button>
           <button
             onClick={handleDelete} disabled={deleting}
-            className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700
-                       disabled:bg-red-800 text-white text-sm font-semibold
-                       rounded-lg transition-colors flex items-center
-                       justify-center gap-2"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg
+                       bg-red-600 px-4 py-2.5 text-sm font-semibold text-white
+                       transition-colors hover:bg-red-700 disabled:bg-red-800"
           >
             {deleting ? (
               <>
-                <div className="w-3.5 h-3.5 border-2 border-white
-                                border-t-transparent rounded-full
-                                animate-spin" />
+                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2
+                                border-white border-t-transparent" />
                 Deleting...
               </>
             ) : 'Delete'}
@@ -77,24 +76,109 @@ function DeleteModal({ post, onClose, onDeleted }) {
   )
 }
 
+// ── Bulk location assignment ────────────────────────────────────
+function BulkLocationBar({ selectedIds, locations, onDone, onClear }) {
+  const [locationId, setLocationId] = useState('')
+  const [applying, setApplying] = useState(false)
+
+  const apply = async () => {
+    if (!locationId) return
+    setApplying(true)
+
+    // No batch endpoint — but the whole point of this bar is that the operator
+    // does not do it one form at a time. Sequential keeps the failure story
+    // simple: whatever succeeded stays, and the count says how many.
+    let ok = 0
+    const failures = []
+
+    for (const id of selectedIds) {
+      try {
+        const { data } = await api.get(`/posts/${id}`)
+        const post = data.data
+        await api.put(`/posts/${id}`, {
+          title: post.title,
+          content: post.content ?? null,
+          videoUrl: post.videoUrl ?? null,
+          publishedAt: post.publishedAt ?? null,
+          locationId: Number(locationId),
+        })
+        ok += 1
+      } catch {
+        failures.push(id)
+      }
+    }
+
+    setApplying(false)
+    if (ok > 0) toast.success(`${ok} ${ok === 1 ? 'post' : 'posts'} updated`)
+    if (failures.length > 0) {
+      toast.error(`${failures.length} could not be updated`)
+    }
+    onDone()
+  }
+
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border
+                    border-blue-500/30 bg-blue-500/5 px-4 py-3">
+      <span className="text-xs font-medium text-blue-300">
+        {selectedIds.length} selected
+      </span>
+
+      <select
+        value={locationId}
+        onChange={(e) => setLocationId(e.target.value)}
+        className="flex-1 rounded-lg border border-slate-700 bg-slate-800 px-3
+                   py-2 text-xs text-white [color-scheme:dark]
+                   focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <option value="">Move all to…</option>
+        {locations
+          .filter((l) => !l.isPlaceholder)
+          .map((l) => (
+            <option key={l.id} value={l.id}>{l.placeName}</option>
+          ))}
+      </select>
+
+      <button
+        type="button"
+        onClick={apply}
+        disabled={!locationId || applying}
+        className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold
+                   text-white transition-colors hover:bg-blue-700
+                   disabled:opacity-50"
+      >
+        {applying ? 'Applying…' : 'Apply'}
+      </button>
+
+      <button
+        type="button"
+        onClick={onClear}
+        className="text-xs text-slate-400 hover:text-white"
+      >
+        Clear
+      </button>
+    </div>
+  )
+}
+
 // ── Main Page ───────────────────────────────────────────────────
 export default function AdminPostsPage() {
-  const [posts,      setPosts]      = useState([])
-  const [trips,      setTrips]      = useState([])
-  const [loading,    setLoading]    = useState(true)
+  const [posts, setPosts] = useState([])
+  const [locations, setLocations] = useState([])
+  const [loading, setLoading] = useState(true)
   const [deletePost, setDeletePost] = useState(null)
   const [togglingId, setTogglingId] = useState(null)
-  const [search,     setSearch]     = useState('')
-  const [filter,     setFilter]     = useState('all')
+  const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState('all')
+  const [selected, setSelected] = useState([])
 
   const fetchData = async () => {
     try {
-      const [postsRes, tripsRes] = await Promise.all([
+      const [postsRes, locationsRes] = await Promise.all([
         api.get('/posts/all'),
-        api.get('/trips/all'),
+        api.get('/locations/all'),
       ])
       setPosts(postsRes.data.data ?? [])
-      setTrips(tripsRes.data.data ?? [])
+      setLocations(locationsRes.data.data ?? [])
     } catch (err) {
       console.error(err)
     } finally {
@@ -104,8 +188,13 @@ export default function AdminPostsPage() {
 
   useEffect(() => { fetchData() }, [])
 
-  const getTripTitle = (tripId) =>
-    trips.find((t) => t.id === tripId)?.title ?? '—'
+  // The v2.0 migration parked every existing post on one placeholder location,
+  // so this count is the cleanup backlog and it should have a visible finish
+  // line. Keyed on the flag, not on a magic id or a place-name match.
+  const needsLocationCount = useMemo(
+    () => posts.filter((p) => p.locationIsPlaceholder).length,
+    [posts]
+  )
 
   const handlePublishToggle = async (post) => {
     setTogglingId(post.id)
@@ -128,15 +217,15 @@ export default function AdminPostsPage() {
 
   const filtered = useMemo(() => {
     let result = [...posts]
+
     if (filter === 'published') {
-      result = result.filter(
-        (p) => p.status === 'Published' || p.status === 1
-      )
+      result = result.filter((p) => p.status === 'Published' || p.status === 1)
     } else if (filter === 'draft') {
-      result = result.filter(
-        (p) => p.status !== 'Published' && p.status !== 1
-      )
+      result = result.filter((p) => p.status !== 'Published' && p.status !== 1)
+    } else if (filter === 'needsLocation') {
+      result = result.filter((p) => p.locationIsPlaceholder)
     }
+
     if (search.trim()) {
       const q = search.toLowerCase()
       result = result.filter((p) => p.title.toLowerCase().includes(q))
@@ -144,25 +233,43 @@ export default function AdminPostsPage() {
     return result
   }, [posts, filter, search])
 
+  const toggleSelected = (id) =>
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    )
+
+  const filters = [
+    { key: 'all', label: 'All' },
+    { key: 'published', label: 'Published' },
+    { key: 'draft', label: 'Drafts' },
+    {
+      key: 'needsLocation',
+      label: needsLocationCount > 0
+        ? `Needs location (${needsLocationCount})`
+        : 'Needs location',
+    },
+  ]
+
   return (
     <AdminLayout>
-      <div className="w-full max-w-6xl mx-auto">
+      <div className="mx-auto w-full max-w-6xl">
 
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">Posts</h1>
-            <p className="text-slate-400 text-sm mt-1">
-              Manage your blog posts.
+            <p className="mt-1 text-sm text-slate-400">
+              {needsLocationCount > 0
+                ? `${needsLocationCount} ${needsLocationCount === 1 ? 'post needs' : 'posts need'} a real location.`
+                : 'Manage your photo posts.'}
             </p>
           </div>
           <Link
             to="/admin/posts/new"
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600
-                       hover:bg-blue-700 text-white text-sm font-semibold
-                       rounded-lg transition-colors"
+            className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5
+                       text-sm font-semibold text-white transition-colors
+                       hover:bg-blue-700"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor"
+            <svg className="h-4 w-4" fill="none" stroke="currentColor"
                  viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round"
                     strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -171,10 +278,9 @@ export default function AdminPostsPage() {
           </Link>
         </div>
 
-        {/* Filter + Search */}
-        <div className="flex flex-col gap-3 mb-6">
+        <div className="mb-6 flex flex-col gap-3">
           <div className="relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4
+            <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2
                             text-slate-400" fill="none" stroke="currentColor"
                  viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -183,26 +289,23 @@ export default function AdminPostsPage() {
             <input
               type="text" placeholder="Search posts..."
               value={search} onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 bg-slate-900 border
-                         border-slate-700 rounded-lg text-sm text-slate-300
-                         placeholder-slate-500 focus:outline-none
-                         focus:ring-2 focus:ring-blue-500 transition"
+              className="w-full rounded-lg border border-slate-700 bg-slate-900
+                         py-2.5 pl-9 pr-4 text-sm text-slate-300
+                         placeholder-slate-500 transition focus:outline-none
+                         focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <div className="flex gap-2">
-            {[
-              { key: 'all',       label: 'All'       },
-              { key: 'published', label: 'Published' },
-              { key: 'draft',     label: 'Drafts'    },
-            ].map((f) => (
+          <div className="flex flex-wrap gap-2">
+            {filters.map((f) => (
               <button
-                key={f.key} onClick={() => setFilter(f.key)}
-                className={`flex-1 py-2 rounded-lg text-xs font-medium
-                            transition-colors ${
+                key={f.key} onClick={() => { setFilter(f.key); setSelected([]) }}
+                className={`flex-1 whitespace-nowrap rounded-lg py-2 text-xs
+                            font-medium transition-colors ${
                   filter === f.key
                     ? 'bg-blue-600 text-white'
-                    : 'bg-slate-900 border border-slate-700 text-slate-400\
-                       hover:text-white'
+                    : f.key === 'needsLocation' && needsLocationCount > 0
+                      ? 'border border-amber-500/40 bg-amber-500/10 text-amber-300'
+                      : 'border border-slate-700 bg-slate-900 text-slate-400 hover:text-white'
                 }`}
               >
                 {f.label}
@@ -211,55 +314,47 @@ export default function AdminPostsPage() {
           </div>
         </div>
 
-        {/* Results count */}
+        {selected.length > 0 && (
+          <BulkLocationBar
+            selectedIds={selected}
+            locations={locations}
+            onClear={() => setSelected([])}
+            onDone={() => { setSelected([]); fetchData() }}
+          />
+        )}
+
         {!loading && (
-          <p className="text-xs text-slate-500 mb-4">
+          <p className="mb-4 text-xs text-slate-500">
             {filtered.length} {filtered.length === 1 ? 'post' : 'posts'} found
           </p>
         )}
 
-        {/* Table */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl
-                        overflow-hidden">
+        <div className="overflow-hidden rounded-xl border border-slate-800
+                        bg-slate-900">
 
-          {/* Table header */}
-          <div className="flex items-center px-5 py-3 border-b border-slate-800
-                          bg-slate-800/50">
-            <div className="flex-1">
-              <span className="text-xs font-semibold text-slate-400
-                               uppercase tracking-widest">Post</span>
-            </div>
-            <div className="w-28 flex justify-center">
-              <span className="text-xs font-semibold text-slate-400
-                               uppercase tracking-widest">Status</span>
-            </div>
-            <div className="w-24 flex justify-end">
-              <span className="text-xs font-semibold text-slate-400
-                               uppercase tracking-widest">Actions</span>
-            </div>
-          </div>
-
-          {/* Rows */}
           {loading ? (
-            <div className="p-6 space-y-4">
+            <div className="space-y-4 p-6">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="animate-pulse flex gap-4">
+                <div key={i} className="flex animate-pulse gap-4">
+                  <div className="h-12 w-12 rounded bg-slate-800" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-3 bg-slate-800 rounded w-1/2" />
-                    <div className="h-3 bg-slate-800 rounded w-1/3" />
+                    <div className="h-3 w-1/2 rounded bg-slate-800" />
+                    <div className="h-3 w-1/3 rounded bg-slate-800" />
                   </div>
                 </div>
               ))}
             </div>
           ) : filtered.length === 0 ? (
             <div className="p-12 text-center">
-              <span className="text-4xl block mb-3">📝</span>
-              <p className="text-slate-400 text-sm mb-3">
-                {search ? 'No posts found.' : 'No posts yet.'}
+              <span className="mb-3 block text-4xl">📷</span>
+              <p className="mb-3 text-sm text-slate-400">
+                {search || filter !== 'all'
+                  ? 'No posts match that.'
+                  : 'No posts yet.'}
               </p>
-              {!search && (
+              {!search && filter === 'all' && (
                 <Link to="/admin/posts/new"
-                      className="text-blue-400 text-sm hover:underline">
+                      className="text-sm text-blue-400 hover:underline">
                   Create your first post →
                 </Link>
               )}
@@ -268,34 +363,70 @@ export default function AdminPostsPage() {
             filtered.map((post) => {
               const isPublished =
                 post.status === 'Published' || post.status === 1
+
               return (
                 <div
                   key={post.id}
-                  className="flex items-center px-5 py-4 border-b
-                             border-slate-800 last:border-0
-                             hover:bg-slate-800/30 transition-colors"
+                  className="flex items-center gap-3 border-b border-slate-800
+                             px-4 py-3 transition-colors last:border-0
+                             hover:bg-slate-800/30"
                 >
-                  {/* Post info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-medium truncate">
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(post.id)}
+                    onChange={() => toggleSelected(post.id)}
+                    className="h-4 w-4 flex-shrink-0 accent-blue-600"
+                    aria-label={`Select ${post.title}`}
+                  />
+
+                  {/* Photo-first admin list: the thumbnail is the point of
+                      the row, and until v2.0 it was always null because
+                      /posts/all never included Photos. */}
+                  <div className="h-12 w-12 flex-shrink-0 overflow-hidden
+                                  rounded bg-slate-800">
+                    {post.thumbnailUrl ? (
+                      <img src={cldImage(post.thumbnailUrl, 120)} alt=""
+                           loading="lazy"
+                           className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center
+                                      justify-center text-slate-600">
+                        📷
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="flex items-center gap-2 truncate text-sm
+                                  font-medium text-white">
                       {post.title}
+                      {post.locationIsPlaceholder && (
+                        <span className="flex-shrink-0 rounded bg-amber-500/15
+                                         px-1.5 py-0.5 text-xs text-amber-400">
+                          needs location
+                        </span>
+                      )}
                     </p>
-                    <p className="text-slate-500 text-xs mt-0.5 truncate">
-                      {getTripTitle(post.tripId)}
+                    <p className="mt-0.5 truncate text-xs text-slate-500">
+                      {post.locationIsPlaceholder
+                        ? '—'
+                        : post.locationName ?? '—'}
                       <span className="mx-1.5">·</span>
-                      {formatShortDate(post.publishedAt ?? post.createdAt)}
+                      {formatShortDate(postDate(post))}
+                      {post.photoCount > 0 && (
+                        <span className="ml-1.5">· 📷 {post.photoCount}</span>
+                      )}
                       {post.viewCount > 0 && (
                         <span className="ml-1.5">· 👁 {post.viewCount}</span>
                       )}
                     </p>
                   </div>
 
-                  {/* Status badge */}
-                  <div className="w-28 flex justify-center">
+                  <div className="flex w-24 justify-center">
                     <button
                       onClick={() => handlePublishToggle(post)}
                       disabled={togglingId === post.id}
-                      className={`text-xs px-2.5 py-1 rounded-full font-medium
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium
                                   transition-colors disabled:opacity-50 ${
                         isPublished
                           ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
@@ -304,23 +435,19 @@ export default function AdminPostsPage() {
                     >
                       {togglingId === post.id
                         ? '...'
-                        : isPublished ? 'Published' : 'Draft'
-                      }
+                        : isPublished ? 'Published' : 'Draft'}
                     </button>
                   </div>
 
-                  {/* Actions */}
-                  <div className="w-24 flex items-center justify-end gap-1">
-
-                    {/* Edit */}
+                  <div className="flex w-20 items-center justify-end gap-1">
                     <Link
                       to={`/admin/posts/${post.id}/edit`}
-                      className="w-7 h-7 flex items-center justify-center
-                                 rounded-lg text-slate-400 hover:bg-slate-700
-                                 hover:text-white transition-colors"
+                      className="flex h-7 w-7 items-center justify-center
+                                 rounded-lg text-slate-400 transition-colors
+                                 hover:bg-slate-700 hover:text-white"
                       title="Edit"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none"
+                      <svg className="h-3.5 w-3.5" fill="none"
                            stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round"
                               strokeWidth={2}
@@ -330,17 +457,16 @@ export default function AdminPostsPage() {
                       </svg>
                     </Link>
 
-                    {/* View */}
                     {isPublished && (
                       <Link
-                        to={`/trips/${post.tripId}/posts/${post.id}`}
+                        to={`/posts/${post.id}`}
                         target="_blank"
-                        className="w-7 h-7 flex items-center justify-center
-                                   rounded-lg text-slate-400 hover:bg-slate-700
-                                   hover:text-white transition-colors"
+                        className="flex h-7 w-7 items-center justify-center
+                                   rounded-lg text-slate-400 transition-colors
+                                   hover:bg-slate-700 hover:text-white"
                         title="View"
                       >
-                        <svg className="w-3.5 h-3.5" fill="none"
+                        <svg className="h-3.5 w-3.5" fill="none"
                              stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round"
                                 strokeWidth={2}
@@ -350,15 +476,14 @@ export default function AdminPostsPage() {
                       </Link>
                     )}
 
-                    {/* Delete */}
                     <button
                       onClick={() => setDeletePost(post)}
-                      className="w-7 h-7 flex items-center justify-center
-                                 rounded-lg text-slate-400 hover:bg-red-500/10
-                                 hover:text-red-400 transition-colors"
+                      className="flex h-7 w-7 items-center justify-center
+                                 rounded-lg text-slate-400 transition-colors
+                                 hover:bg-red-500/10 hover:text-red-400"
                       title="Delete"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none"
+                      <svg className="h-3.5 w-3.5" fill="none"
                            stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round"
                               strokeWidth={2}
@@ -367,7 +492,6 @@ export default function AdminPostsPage() {
                                  1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>
-
                   </div>
                 </div>
               )
@@ -377,7 +501,6 @@ export default function AdminPostsPage() {
 
       </div>
 
-      {/* Delete modal */}
       {deletePost && (
         <DeleteModal
           post={deletePost}

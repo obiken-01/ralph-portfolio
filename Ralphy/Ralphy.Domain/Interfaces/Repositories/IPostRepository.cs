@@ -1,9 +1,4 @@
-﻿using Ralphy.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Ralphy.Domain.Entities;
 
 namespace Ralphy.Domain.Interfaces.Repositories
 {
@@ -11,7 +6,9 @@ namespace Ralphy.Domain.Interfaces.Repositories
     {
         Task<IEnumerable<Post>> GetAllPublishedAsync();
         Task<Post?> GetPostWithDetailsAsync(int id);
-        Task<IEnumerable<Post>> GetByTripIdAsync(int tripId);
+        Task<IEnumerable<Post>> GetByTagAsync(string tagName);
+        Task<IEnumerable<Post>> GetByLocationIdAsync(int locationId);
         Task IncrementViewCountAsync(int postId);
+        Task RecalculateTakenAtAsync(int postId);
     }
 }

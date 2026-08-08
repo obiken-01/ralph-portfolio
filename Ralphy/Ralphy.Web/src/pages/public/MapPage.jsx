@@ -39,9 +39,7 @@ function FitBounds({ locations }) {
   useEffect(() => {
     if (locations.length === 0) return
     if (locations.length === 1) {
-      map.setView(
-        [locations[0].latitude, locations[0].longitude], 10
-      )
+      map.setView([locations[0].latitude, locations[0].longitude], 10)
       return
     }
     const bounds = L.latLngBounds(
@@ -54,35 +52,30 @@ function FitBounds({ locations }) {
 }
 
 // ── Location List Card ──────────────────────────────────────────
-function LocationCard({ location, trip, onHover }) {
+function LocationCard({ location, onHover, onSelect }) {
   return (
     <div
-      className="p-4 border-b border-slate-100 last:border-0 hover:bg-teal-50/60
-                 transition-colors cursor-pointer group"
+      className="group cursor-pointer border-b border-slate-100 p-4
+                 transition-colors last:border-0 hover:bg-teal-50/60"
       onMouseEnter={() => onHover(location)}
       onMouseLeave={() => onHover(null)}
+      onClick={() => onSelect(location)}
     >
       <div className="flex items-start gap-3">
-        <div className="w-7 h-7 rounded-full bg-teal-50 flex items-center
-                        justify-center flex-shrink-0 mt-0.5">
+        <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center
+                        justify-center rounded-full bg-teal-50">
           <span className="text-xs" aria-hidden="true">📍</span>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-slate-800
-                        group-hover:text-teal-700 transition-colors">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-slate-800 transition-colors
+                        group-hover:text-teal-700">
             {location.placeName}
           </p>
-          {trip && (
-            <Link
-              to={`/trips/${trip.id}`}
-              onClick={(e) => e.stopPropagation()}
-              className="text-xs text-teal-600 hover:underline"
-            >
-              {trip.title}
-            </Link>
-          )}
+          <p className="text-xs text-teal-600">
+            {location.postCount} {location.postCount === 1 ? 'post' : 'posts'}
+          </p>
           {location.description && (
-            <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">
+            <p className="mt-0.5 text-xs text-slate-400 line-clamp-1">
               {location.description}
             </p>
           )}
@@ -92,37 +85,66 @@ function LocationCard({ location, trip, onHover }) {
   )
 }
 
+// ── Posts behind a pin ──────────────────────────────────────────
+function PopupPosts({ locationId }) {
+  const [posts, setPosts] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    api.get(`/posts/location/${locationId}`)
+      .then((res) => { if (!cancelled) setPosts(res.data.data ?? []) })
+      .catch(() => { if (!cancelled) setPosts([]) })
+    return () => { cancelled = true }
+  }, [locationId])
+
+  if (posts === null) {
+    return <p className="text-xs text-slate-400">Loading…</p>
+  }
+
+  if (posts.length === 0) {
+    return <p className="text-xs text-slate-400">No posts here yet.</p>
+  }
+
+  return (
+    <ul className="space-y-1">
+      {posts.slice(0, 4).map((post) => (
+        <li key={post.id}>
+          <Link
+            to={`/posts/${post.id}`}
+            className="text-xs font-medium text-teal-700 hover:underline"
+          >
+            {post.title}
+          </Link>
+        </li>
+      ))}
+      {posts.length > 4 && (
+        <li className="text-xs text-slate-400">
+          +{posts.length - 4} more
+        </li>
+      )}
+    </ul>
+  )
+}
+
 // ── Main Page ───────────────────────────────────────────────────
 export default function MapPage() {
   const [locations, setLocations] = useState([])
-  const [trips,     setTrips]     = useState([])
-  const [loading,   setLoading]   = useState(true)
-  const [search,    setSearch]    = useState('')
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
   const [hoveredLocation, setHoveredLocation] = useState(null)
+  const [focused, setFocused] = useState(null)
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [locsRes, tripsRes] = await Promise.all([
-          api.get('/locations'),
-          api.get('/trips'),
-        ])
-        setLocations(locsRes.data.data ?? [])
-        setTrips(tripsRes.data.data     ?? [])
-      } catch (err) {
-        console.error(err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchData()
+    // GET /locations is the public feed: the seeded placeholder and any place
+    // with no published post are already excluded server-side, so the map
+    // never shows a pin cluster floating in the Mindoro Strait while the
+    // post-migration cleanup is still in progress.
+    api.get('/locations')
+      .then((res) => setLocations(res.data.data ?? []))
+      .catch(console.error)
+      .finally(() => setLoading(false))
   }, [])
 
-  // Find trip for a given location
-  const getTripForLocation = (location) =>
-    trips.find((t) => t.id === location.tripId) ?? null
-
-  // Filter locations by search
   const filtered = locations.filter((l) => {
     if (!search.trim()) return true
     const q = search.toLowerCase()
@@ -132,16 +154,15 @@ export default function MapPage() {
     )
   })
 
-  // Center of Philippines as default
   const defaultCenter = [12.8797, 121.7740]
-  const defaultZoom   = 6
+  const defaultZoom = 6
 
   return (
     <div className="min-h-screen">
       <Seo
         title="Travel Map"
-        description="Interactive map of every place Ralph has visited across
-          Occidental Mindoro and the Philippines — beaches, peaks and
+        description="Interactive map of every place Ralph has photographed
+          across Occidental Mindoro and the Philippines — beaches, peaks and
           hidden trails."
         path="/map"
         jsonLd={breadcrumbLd([
@@ -150,37 +171,33 @@ export default function MapPage() {
         ])}
       />
 
-      {/* Page header */}
-      <header className="bg-white border-b border-slate-900/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-          <p className="text-teal-700 text-xs font-semibold uppercase
-                        tracking-[0.2em] mb-2">
+      <header className="border-b border-slate-900/5 bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em]
+                        text-teal-700">
             Where I've been
           </p>
-          <h1 className="font-display text-4xl sm:text-5xl font-semibold
-                         text-slate-900">
+          <h1 className="font-display text-4xl font-semibold text-slate-900
+                         sm:text-5xl">
             Travel Map
           </h1>
-          <p className="text-slate-500 text-sm mt-3">
-            Every place I've visited, pinned on the map.
+          <p className="mt-3 text-sm text-slate-500">
+            Every place I've photographed, pinned on the map.
           </p>
         </div>
       </header>
 
-      {/* Map + Sidebar layout */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
-          {/* Map */}
           <div className="lg:col-span-2">
-            <div className="h-[420px] sm:h-[560px] rounded-2xl overflow-hidden
-                            ring-1 ring-slate-900/5 shadow-sm">
+            <div className="h-[420px] overflow-hidden rounded-2xl shadow-sm
+                            ring-1 ring-slate-900/5 sm:h-[560px]">
               {loading ? (
-                <div className="w-full h-full bg-slate-100 flex items-center
-                                justify-center">
-                  <div className="w-8 h-8 border-4 border-teal-600
-                                  border-t-transparent rounded-full
-                                  animate-spin" />
+                <div className="flex h-full w-full items-center justify-center
+                                bg-slate-100">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4
+                                  border-teal-600 border-t-transparent" />
                 </div>
               ) : (
                 <MapContainer
@@ -190,19 +207,15 @@ export default function MapPage() {
                   scrollWheelZoom={true}
                 >
                   <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">
-                                  OpenStreetMap</a> contributors'
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
 
-                  {/* Fit map to all markers */}
                   {locations.length > 0 && (
-                    <FitBounds locations={locations} />
+                    <FitBounds locations={focused ? [focused] : locations} />
                   )}
 
-                  {/* Markers */}
                   {filtered.map((location) => {
-                    const trip = getTripForLocation(location)
                     const isHovered = hoveredLocation?.id === location.id
                     return (
                       <Marker
@@ -211,61 +224,49 @@ export default function MapPage() {
                         icon={createPinIcon(isHovered ? '#f59e0b' : '#0f766e')}
                       >
                         <Popup>
-                          <div className="min-w-[160px]">
-                            <p className="font-semibold text-slate-900 text-sm
-                                          mb-1">
+                          <div className="min-w-[180px]">
+                            <p className="mb-1 text-sm font-semibold
+                                          text-slate-900">
                               {location.placeName}
                             </p>
                             {location.description && (
-                              <p className="text-xs text-slate-500 mb-2">
+                              <p className="mb-2 text-xs text-slate-500">
                                 {location.description}
                               </p>
                             )}
-                            {trip && (
-                              <Link
-                                to={`/trips/${trip.id}`}
-                                className="text-xs text-teal-700 font-medium
-                                           hover:underline"
-                              >
-                                📍 {trip.title} →
-                              </Link>
-                            )}
+                            <PopupPosts locationId={location.id} />
                           </div>
                         </Popup>
                       </Marker>
                     )
                   })}
-
                 </MapContainer>
               )}
             </div>
 
-            {/* Map legend */}
-            <div className="flex items-center gap-4 mt-3 px-1">
+            <div className="mt-3 flex items-center gap-4 px-1">
               <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-teal-600" />
+                <div className="h-3 w-3 rounded-full bg-teal-600" />
                 <span className="text-xs text-slate-500">Location pin</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-amber-400" />
+                <div className="h-3 w-3 rounded-full bg-amber-400" />
                 <span className="text-xs text-slate-500">Highlighted</span>
               </div>
-              <span className="text-xs text-slate-400 ml-auto">
+              <span className="ml-auto text-xs text-slate-400">
                 {filtered.length} location{filtered.length !== 1 ? 's' : ''}
               </span>
             </div>
           </div>
 
-          {/* Sidebar — location list */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl ring-1 ring-slate-900/5
-                            overflow-hidden shadow-sm">
+            <div className="overflow-hidden rounded-2xl bg-white shadow-sm
+                            ring-1 ring-slate-900/5">
 
-              {/* Search */}
-              <div className="p-4 border-b border-slate-100">
+              <div className="border-b border-slate-100 p-4">
                 <div className="relative">
-                  <svg className="absolute left-3 top-1/2 -translate-y-1/2
-                                  w-4 h-4 text-slate-400"
+                  <svg className="absolute left-3 top-1/2 h-4 w-4
+                                  -translate-y-1/2 text-slate-400"
                        fill="none" stroke="currentColor" viewBox="0 0 24 24"
                        aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round"
@@ -278,34 +279,33 @@ export default function MapPage() {
                     aria-label="Search locations"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-slate-50 border
-                               border-slate-200 rounded-full text-base sm:text-sm
-                               text-slate-700 placeholder-slate-400
+                    className="w-full rounded-full border border-slate-200
+                               bg-slate-50 py-2 pl-9 pr-4 text-base
+                               text-slate-700 placeholder-slate-400 transition
                                focus:outline-none focus:ring-2
-                               focus:ring-teal-500 transition"
+                               focus:ring-teal-500 sm:text-sm"
                   />
                 </div>
               </div>
 
-              {/* List */}
               <div className="overflow-y-auto" style={{ maxHeight: '480px' }}>
                 {loading ? (
-                  <div className="p-6 space-y-3">
+                  <div className="space-y-3 p-6">
                     {[...Array(4)].map((_, i) => (
-                      <div key={i} className="animate-pulse flex gap-3">
-                        <div className="w-7 h-7 rounded-full bg-slate-200
-                                        flex-shrink-0" />
+                      <div key={i} className="flex animate-pulse gap-3">
+                        <div className="h-7 w-7 flex-shrink-0 rounded-full
+                                        bg-slate-200" />
                         <div className="flex-1 space-y-1.5">
-                          <div className="h-3 bg-slate-200 rounded w-3/4" />
-                          <div className="h-3 bg-slate-100 rounded w-1/2" />
+                          <div className="h-3 w-3/4 rounded bg-slate-200" />
+                          <div className="h-3 w-1/2 rounded bg-slate-100" />
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : filtered.length === 0 ? (
                   <div className="p-8 text-center">
-                    <span className="text-3xl block mb-2" aria-hidden="true">📍</span>
-                    <p className="text-slate-400 text-sm">
+                    <span className="mb-2 block text-3xl" aria-hidden="true">📍</span>
+                    <p className="text-sm text-slate-400">
                       {search ? 'No locations found.' : 'No locations yet.'}
                     </p>
                   </div>
@@ -314,8 +314,8 @@ export default function MapPage() {
                     <LocationCard
                       key={location.id}
                       location={location}
-                      trip={getTripForLocation(location)}
                       onHover={setHoveredLocation}
+                      onSelect={setFocused}
                     />
                   ))
                 )}
@@ -326,7 +326,6 @@ export default function MapPage() {
 
         </div>
       </div>
-
     </div>
   )
 }

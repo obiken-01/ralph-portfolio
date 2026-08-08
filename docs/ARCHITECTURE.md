@@ -24,16 +24,62 @@ The backend also serves **external consumers** — currently the [php-currency-c
 
 | Entity | Notes |
 |---|---|
-| `Trip` | Title, description, country, city, start/end dates, cover image, `PostStatus` (Draft/Published). Has many `Post`s and `Location`s. Belongs to `User`. |
-| `Post` | Title, rich-text HTML `Content` (TipTap output), optional `VideoUrl`, `Status`, `ViewCount`, `PublishedAt`. Belongs to `Trip`. Has many `Photo`s, `Comment`s, `PostTag`s. |
-| `Photo` | Cloudinary `Url` + `PublicId`, caption, `MediaType` (Image/Video — **videos are stored as `Photo` rows with `Type = Video`**), `MediaSource` (Phone=0 / Drone=1). |
-| `Location` | Place name, description, latitude/longitude. Belongs to `Trip`. Drives the Leaflet map. |
+| `Post` | Title, **optional** rich-text HTML `Content` (TipTap output), optional `VideoUrl`, `Status`, `ViewCount`, `PublishedAt`, `TakenAt`. Belongs to `User` and to `Location`. Has many `Photo`s, `Comment`s, `PostTag`s. |
+| `Photo` | Cloudinary `Url` + `PublicId`, caption, `MediaType` (Image/Video — **videos are stored as `Photo` rows with `Type = Video`**), `SortOrder`, `Width`/`Height`, and EXIF `TakenAt` / `Latitude` / `Longitude`. |
+| `Location` | Place name, description, latitude/longitude, `IsPlaceholder`. A **reusable place record** — many posts point at one. Drives the Leaflet map. |
 | `Comment` | Public visitor comments on posts (name, email, content). |
-| `Tag` / `PostTag` | Many-to-many post tagging. |
+| `Tag` / `PostTag` | Many-to-many post tagging. Tags are the grouping mechanism for the photo feed. |
 | `AboutProfile`, `WorkExperience`, `Skill` | Portfolio/About-page content (bio, headline, socials, CV url, profile/cover images, skill bars by `SkillCategory`). |
 | `ContactMessage` | Messages from the About-page contact form (read/unread). |
 | `User`, `RefreshToken` | Admin auth (JWT access + refresh tokens). |
 | `TimekeepingUser`, `TimeLog` | Separate lightweight timekeeping system with its own auth (`/api/timekeeping/*`), user management and CSV export. |
+
+### Entity relationships
+
+```
+User ──1:N──▶ Post ──1:N──▶ Photo
+                │
+                ├──N:1──▶ Location
+                ├──1:N──▶ Comment
+                └──N:M──▶ Tag  (via PostTag)
+```
+
+Delete behaviour is deliberate:
+
+| Relationship | On delete | Why |
+|---|---|---|
+| `User → Post` | `Restrict` | Deleting a user must not silently take their posts. |
+| `Location → Post` | `Restrict` | Many posts share one place; deleting a place must never cascade-delete everything pinned to it. `LocationService.DeleteAsync` checks first and throws a readable message rather than letting the constraint surface as `DbUpdateException`. |
+| `Post → Photo` | `Cascade` | Photos have no meaning without their post; Cloudinary assets are deleted explicitly first. |
+| `Post → Comment` | `Cascade` | Same. |
+
+### Authorization
+
+Every write on the blog side resolves the caller through **`post.UserId`**:
+
+```csharp
+if (post.UserId != userId)
+    throw new UnauthorizedAccessException("...");
+```
+
+`PostService.CreateAsync` is the exception: there is nothing to authorize
+against on create, so being authenticated *is* the authorization, and ownership
+is taken from the JWT — never from the request body.
+
+`Location` has no per-row owner. It is shared reference data, so the
+controller's `[Authorize]` is the whole story there.
+
+> **Before v2.0** this walked `post → trip → trip.UserId` in 14 places, because
+> `Post` had no owner of its own. That is why removing `Trip` was a domain
+> refactor rather than a frontend one.
+
+### Migration history worth knowing
+
+| Migration | What it did |
+|---|---|
+| `PhotoFirstSchema` | Added `Post.UserId` / `Post.LocationId` (both required) and `Post.TakenAt`; added the six `Photo` gallery columns; dropped `Location.TripId`; made `Post.TripId` nullable and `Post.Content` optional. Columns were added nullable, backfilled, then tightened — you cannot add a `NOT NULL` FK to a populated table. Every pre-existing post was backfilled onto one seeded placeholder `Location` ("West Philippine Sea", 13.2°N 120.3°E), which the admin "needs location" list exists to clean up. |
+| `RemoveMediaSource` | Dropped `Photo.Source` and the Drone/Phone enum. |
+| `DropTrip` | Dropped `Post.TripId` and the `Trips` table — the FK first, so the table drop could not cascade through `Post` into `Photo`. Irreversible: trip descriptions were discarded, not merged. |
 
 ### Cross-cutting behavior (`Program.cs`)
 
@@ -63,15 +109,37 @@ The backend also serves **external consumers** — currently the [php-currency-c
 
 | Route | Page | Notes |
 |---|---|---|
-| `/` | `HomePage` | Hero, stats bar, latest trips, map preview, recent posts |
-| `/trips` | `TripsPage` | Search + country filter + sort |
-| `/trips/:id` | `TripDetailPage` | Hero, posts grid, locations list, info sidebar |
-| `/trips/:tripId/posts/:postId` | `PostDetailPage` | Rich-text article, photo gallery (drone/phone tabs + lightbox), video gallery, comments, sidebar |
-| `/map` | `MapPage` | Leaflet map of all `Location`s + searchable sidebar list |
-| `/timeline` | `TimelinePage` | Trips + posts merged chronologically, grouped by year |
+| `/` | `HomePage` | Hero + stats, recent photos with a tag bar, map banner, timeline preview |
+| `/posts` | `PostsFeedPage` | Masonry photo feed, grouped by the month the shutter fired |
+| `/posts/:id` | `PostDetailPage` | Gallery-first; prose renders only when present; location, tags, comments |
+| `/tags/:name` | `PostsFeedPage` | Same feed, filtered by tag |
+| `/map` | `MapPage` | Leaflet map of public `Location`s; a pin opens the posts shot there |
+| `/timeline` | `TimelinePage` | Posts in chronological order, grouped by year |
 | `/about` | `AboutPage` | Profile, work experience, skill bars, contact form |
 | `/login` | `LoginPage` | Admin login |
-| `/admin/**` | Admin pages | Protected by `ProtectedRoute` (dashboard, trips, posts + TipTap editor, about profile, timekeeping users) |
+| `/admin/**` | Admin pages | Protected by `ProtectedRoute` (dashboard, posts + photo uploader, about profile, timekeeping users) |
+
+**Legacy URLs.** `/trips`, `/trips/:id` and `/trips/:tripId/posts/:postId` are
+301'd to their `/posts` equivalents by nginx (`nginx.conf`). The sitemap
+published the nested post URL from v1, so a client-side `<Navigate>` would read
+as a soft redirect and lose the link equity — `App.jsx` keeps matching
+`<Navigate>` routes anyway, for in-app links that never reach nginx.
+
+### Photo upload pipeline
+
+1. **EXIF first.** `utils/exif.js` reads `DateTimeOriginal` and GPS off the
+   original before anything touches it. Canvas re-encoding strips metadata, and
+   `browser-image-compression`'s `preserveExif` is not worth betting a geotag on.
+2. **Compress only if needed.** `utils/imagePipeline.js` returns files already
+   under ~9.5 MB untouched — recompressing a 3 MB photo only degrades it. Over
+   the limit it compresses gently (q0.92, longest edge 5000px). Its single job
+   is clearing the API's 10 MB guard; Cloudinary already handles delivery
+   optimisation with `q_auto`/`f_auto` on both upload and delivery.
+3. **HEIC is rejected up front**, detected by extension, mime type *and* an
+   `ftyp` byte sniff — desktop Chrome and Firefox cannot decode it at all, and a
+   `.heic` renamed to `.jpg` fails the same way.
+4. **Queue.** `hooks/useUploadQueue.js` runs N single-file uploads at up to 3
+   concurrent, with per-file progress, per-file failure and per-file retry.
 
 ### Auth flow (admin)
 

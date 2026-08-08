@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Ralphy.Application.DTOs.Locations;
 
 namespace Ralphy.Application.Validators.Locations
@@ -18,9 +18,6 @@ namespace Ralphy.Application.Validators.Locations
             RuleFor(x => x.Longitude)
                 .InclusiveBetween(-180, 180)
                 .WithMessage("Longitude must be between -180 and 180");
-
-            RuleFor(x => x.TripId)
-                .GreaterThan(0).WithMessage("Valid Trip ID is required");
 
             RuleFor(x => x.Description)
                 .MaximumLength(500)
