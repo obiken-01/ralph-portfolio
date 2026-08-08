@@ -13,7 +13,7 @@ namespace Ralphy.Application.Extensions
             this IServiceCollection services)
         {
             // AutoMapper
-            services.AddAutoMapper(typeof(MappingProfile));
+            services.AddAutoMapper(cfg => { }, typeof(MappingProfile));
 
             // FluentValidation
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
