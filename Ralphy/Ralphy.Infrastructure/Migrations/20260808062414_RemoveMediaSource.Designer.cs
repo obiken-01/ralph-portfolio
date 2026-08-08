@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Ralphy.Infrastructure.Data;
@@ -11,9 +12,11 @@ using Ralphy.Infrastructure.Data;
 namespace Ralphy.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260808062414_RemoveMediaSource")]
+    partial class RemoveMediaSource
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -280,6 +283,9 @@ namespace Ralphy.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int?>("TripId")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -295,6 +301,8 @@ namespace Ralphy.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("LocationId");
+
+                    b.HasIndex("TripId");
 
                     b.HasIndex("UserId");
 
@@ -503,6 +511,58 @@ namespace Ralphy.Infrastructure.Migrations
                     b.ToTable("TimekeepingUsers", (string)null);
                 });
 
+            modelBuilder.Entity("Ralphy.Domain.Entities.Trip", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("CoverImageUrl")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Trips");
+                });
+
             modelBuilder.Entity("Ralphy.Domain.Entities.User", b =>
                 {
                     b.Property<int>("Id")
@@ -625,6 +685,11 @@ namespace Ralphy.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Ralphy.Domain.Entities.Trip", "Trip")
+                        .WithMany("Posts")
+                        .HasForeignKey("TripId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Ralphy.Domain.Entities.User", "User")
                         .WithMany("Posts")
                         .HasForeignKey("UserId")
@@ -632,6 +697,8 @@ namespace Ralphy.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Location");
+
+                    b.Navigation("Trip");
 
                     b.Navigation("User");
                 });
@@ -677,6 +744,17 @@ namespace Ralphy.Infrastructure.Migrations
                     b.Navigation("TimekeepingUser");
                 });
 
+            modelBuilder.Entity("Ralphy.Domain.Entities.Trip", b =>
+                {
+                    b.HasOne("Ralphy.Domain.Entities.User", "User")
+                        .WithMany("Trips")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Ralphy.Domain.Entities.Location", b =>
                 {
                     b.Navigation("Posts");
@@ -701,11 +779,18 @@ namespace Ralphy.Infrastructure.Migrations
                     b.Navigation("TimeLogs");
                 });
 
+            modelBuilder.Entity("Ralphy.Domain.Entities.Trip", b =>
+                {
+                    b.Navigation("Posts");
+                });
+
             modelBuilder.Entity("Ralphy.Domain.Entities.User", b =>
                 {
                     b.Navigation("Posts");
 
                     b.Navigation("RefreshTokens");
+
+                    b.Navigation("Trips");
                 });
 #pragma warning restore 612, 618
         }

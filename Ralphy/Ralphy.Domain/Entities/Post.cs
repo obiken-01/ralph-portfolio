@@ -26,11 +26,6 @@ namespace Ralphy.Domain.Entities
 
         public Location Location { get; set; } = null!;
 
-        /// <summary>Legacy grouping. Nullable since v2.0; dropped once Trip is removed.</summary>
-        public int? TripId { get; set; }
-
-        public Trip? Trip { get; set; }
-
         // Navigation properties
         public ICollection<Photo> Photos { get; set; } = new List<Photo>();
 

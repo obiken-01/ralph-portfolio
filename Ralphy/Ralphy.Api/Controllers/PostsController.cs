@@ -58,13 +58,6 @@ namespace Ralphy.Api.Controllers
             return Ok(ApiResponse<IEnumerable<PostDto>>.Ok(posts));
         }
 
-        [HttpGet("trip/{tripId}")]
-        public async Task<IActionResult> GetByTripId(int tripId)
-        {
-            var posts = await _postService.GetByTripIdAsync(tripId);
-            return Ok(ApiResponse<IEnumerable<PostDto>>.Ok(posts));
-        }
-
         [Authorize]
         [HttpGet("all")]
         public async Task<IActionResult> GetAll()

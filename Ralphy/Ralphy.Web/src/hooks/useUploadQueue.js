@@ -88,8 +88,6 @@ export function useUploadQueue({ postId, startingSortOrder = 0, onUploaded }) {
 
       const form = new FormData()
       form.append('file', prepared)
-      // Source is a required form field until RAL-218 removes the enum.
-      form.append('source', 'Phone')
       form.append('sortOrder', String(item.sortOrder))
       if (item.caption) form.append('caption', item.caption)
       if (meta.takenAt) form.append('takenAt', meta.takenAt)

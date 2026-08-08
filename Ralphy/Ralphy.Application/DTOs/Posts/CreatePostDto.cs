@@ -10,8 +10,5 @@ namespace Ralphy.Application.DTOs.Posts
         public string? VideoUrl { get; set; }
 
         public int LocationId { get; set; }
-
-        /// <summary>Legacy. Ignored when null; dropped once Trip is removed.</summary>
-        public int? TripId { get; set; }
     }
 }

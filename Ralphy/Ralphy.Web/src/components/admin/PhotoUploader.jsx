@@ -291,7 +291,6 @@ export default function PhotoUploader({ postId, onCreateDraft }) {
 
     const form = new FormData()
     form.append('file', file)
-    form.append('source', 'Phone')
 
     try {
       await toast.promise(

@@ -27,7 +27,6 @@ namespace Ralphy.Application.Services
         public async Task<PhotoDto> UploadPhotoAsync(
             IFormFile file,
             int postId,
-            MediaSource source,
             string? caption,
             PhotoMetadataDto? metadata,
             int userId)
@@ -47,7 +46,6 @@ namespace Ralphy.Application.Services
                 PublicId = uploadResult.PublicId,
                 Caption = caption,
                 Type = MediaType.Image,
-                Source = source,
                 PostId = postId,
                 // Cloudinary already measured the image on upload; keeping the
                 // numbers is what lets the grid reserve the right box.
@@ -153,22 +151,6 @@ namespace Ralphy.Application.Services
 
             await _unitOfWork.Posts.RecalculateTakenAtAsync(postId);
             await _unitOfWork.SaveChangesAsync();
-        }
-
-        public async Task<IEnumerable<PhotoDto>> GetBySourceAsync(
-            int postId, MediaSource source)
-        {
-            var post = await _unitOfWork.Posts.GetByIdAsync(postId);
-            if (post == null)
-                throw new KeyNotFoundException($"Post with ID {postId} not found");
-
-            var photos = await _unitOfWork.Photos.GetByPostIdAsync(postId);
-
-            var filtered = photos.Where(p =>
-                p.Source == source &&
-                p.Type == MediaType.Image);
-
-            return _mapper.Map<IEnumerable<PhotoDto>>(filtered);
         }
 
         // ── Private helpers ──────────────────────────────────────────

@@ -5,7 +5,6 @@ using Ralphy.Application.DTOs.Locations;
 using Ralphy.Application.DTOs.Photos;
 using Ralphy.Application.DTOs.Posts;
 using Ralphy.Application.DTOs.Tags;
-using Ralphy.Application.DTOs.Trips;
 using Ralphy.Domain.Entities;
 
 namespace Ralphy.Application.Mappings
@@ -16,35 +15,6 @@ namespace Ralphy.Application.Mappings
         {
             // User mappings
             CreateMap<User, UserDto>();
-
-            // Trip mappings
-            CreateMap<Trip, TripDto>()
-                .ForMember(dest => dest.Status,
-                    opt => opt.MapFrom(src => src.Status.ToString()))
-                .ForMember(dest => dest.PostCount,
-                    opt => opt.MapFrom(src => src.Posts != null ? src.Posts.Count : 0));
-            CreateMap<CreateTripDto, Trip>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.UserId, opt => opt.Ignore())
-                .ForMember(dest => dest.User, opt => opt.Ignore())
-                .ForMember(dest => dest.Posts, opt => opt.Ignore())
-                .ForMember(dest => dest.Status, opt => opt.Ignore())
-                .ForMember(dest => dest.CoverImageUrl, opt => opt.Ignore());
-
-            CreateMap<UpdateTripDto, Trip>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.UserId, opt => opt.Ignore())
-                .ForMember(dest => dest.User, opt => opt.Ignore())
-                .ForMember(dest => dest.Posts, opt => opt.Ignore())
-                .ForMember(dest => dest.Status, opt => opt.Ignore());
-
-            CreateMap<Trip, TripWithPostsDto>()
-                .ForMember(dest => dest.Posts, opt => opt.MapFrom(src => src.Posts))
-                .ForMember(dest => dest.Locations, opt => opt.Ignore());
 
             // Post mappings
             // The lead photo is the lowest SortOrder image, not the newest —
@@ -92,7 +62,6 @@ namespace Ralphy.Application.Mappings
                 .ForMember(dest => dest.UserId, opt => opt.Ignore())
                 .ForMember(dest => dest.User, opt => opt.Ignore())
                 .ForMember(dest => dest.Location, opt => opt.Ignore())
-                .ForMember(dest => dest.Trip, opt => opt.Ignore())
                 .ForMember(dest => dest.Photos, opt => opt.Ignore())
                 .ForMember(dest => dest.Comments, opt => opt.Ignore())
                 .ForMember(dest => dest.PostTags, opt => opt.Ignore())
@@ -108,8 +77,6 @@ namespace Ralphy.Application.Mappings
                 .ForMember(dest => dest.UserId, opt => opt.Ignore())
                 .ForMember(dest => dest.User, opt => opt.Ignore())
                 .ForMember(dest => dest.Location, opt => opt.Ignore())
-                .ForMember(dest => dest.TripId, opt => opt.Ignore())
-                .ForMember(dest => dest.Trip, opt => opt.Ignore())
                 .ForMember(dest => dest.Photos, opt => opt.Ignore())
                 .ForMember(dest => dest.Comments, opt => opt.Ignore())
                 .ForMember(dest => dest.PostTags, opt => opt.Ignore())

@@ -13,7 +13,6 @@ namespace Ralphy.Application.DTOs.Posts
         public DateTime? PublishedAt { get; set; }
         public DateTime? TakenAt { get; set; }
         public int UserId { get; set; }
-        public int? TripId { get; set; }
         public DateTime CreatedAt { get; set; }
 
         // Location, flattened — every card shows the place name.

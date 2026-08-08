@@ -9,7 +9,6 @@ namespace Ralphy.Infrastructure.Data
         private readonly AppDbContext _context;
 
         public IUserRepository Users { get; }
-        public ITripRepository Trips { get; }
         public IPostRepository Posts { get; }
         public IPhotoRepository Photos { get; }
         public ICommentRepository Comments { get; }
@@ -28,7 +27,6 @@ namespace Ralphy.Infrastructure.Data
         {
             _context = context;
             Users = new UserRepository(context);
-            Trips = new TripRepository(context);
             Posts = new PostRepository(context);
             Photos = new PhotoRepository(context);
             Comments = new CommentRepository(context);

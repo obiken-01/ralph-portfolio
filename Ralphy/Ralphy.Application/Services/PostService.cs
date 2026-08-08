@@ -76,16 +76,6 @@ namespace Ralphy.Application.Services
             return _mapper.Map<IEnumerable<PostDto>>(posts);
         }
 
-        public async Task<IEnumerable<PostDto>> GetByTripIdAsync(int tripId)
-        {
-            var trip = await _unitOfWork.Trips.GetByIdAsync(tripId);
-            if (trip == null)
-                throw new KeyNotFoundException($"Trip with ID {tripId} not found");
-
-            var posts = await _unitOfWork.Posts.GetByTripIdAsync(tripId);
-            return _mapper.Map<IEnumerable<PostDto>>(posts);
-        }
-
         public async Task<PostDto> CreateAsync(CreatePostDto request, int userId)
         {
             // Nothing to authorize against on create — being authenticated is

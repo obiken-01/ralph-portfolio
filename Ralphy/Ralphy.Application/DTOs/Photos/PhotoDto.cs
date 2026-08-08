@@ -8,7 +8,6 @@ namespace Ralphy.Application.DTOs.Photos
         public string Url { get; set; } = string.Empty;
         public string? Caption { get; set; }
         public MediaType Type { get; set; }
-        public MediaSource Source { get; set; }
         public int SortOrder { get; set; }
         public int? Width { get; set; }
         public int? Height { get; set; }

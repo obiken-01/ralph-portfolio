@@ -19,8 +19,7 @@ public class PhotoMetadataTests
         var cloudinary = ServiceFactory.CloudinaryMock(width: 5472, height: 3648);
 
         await ServiceFactory.Photos(db, cloudinary).UploadPhotoAsync(
-            ServiceFactory.FakeImage(), post.Id, MediaSource.Phone,
-            null, null, TestDb.OwnerId);
+            ServiceFactory.FakeImage(), post.Id, null, null, TestDb.OwnerId);
 
         var saved = db.Context.Photos.Single();
         saved.Width.Should().Be(5472);
@@ -35,7 +34,7 @@ public class PhotoMetadataTests
         var takenAt = new DateTime(2025, 3, 14, 6, 30, 0, DateTimeKind.Utc);
 
         await ServiceFactory.Photos(db).UploadPhotoAsync(
-            ServiceFactory.FakeImage(), post.Id, MediaSource.Phone, null,
+            ServiceFactory.FakeImage(), post.Id, null,
             new PhotoMetadataDto
             {
                 TakenAt = takenAt,
@@ -57,8 +56,7 @@ public class PhotoMetadataTests
         var post = db.AddPost();
 
         await ServiceFactory.Photos(db).UploadPhotoAsync(
-            ServiceFactory.FakeImage(), post.Id, MediaSource.Phone,
-            null, null, TestDb.OwnerId);
+            ServiceFactory.FakeImage(), post.Id, null, null, TestDb.OwnerId);
 
         var saved = db.Context.Photos.Single();
         saved.TakenAt.Should().BeNull();
@@ -77,7 +75,7 @@ public class PhotoMetadataTests
         var post = db.AddPost();
 
         var act = () => ServiceFactory.Photos(db).UploadPhotoAsync(
-            ServiceFactory.FakeImage(), post.Id, MediaSource.Phone, null,
+            ServiceFactory.FakeImage(), post.Id, null,
             new PhotoMetadataDto { Latitude = lat, Longitude = lng },
             TestDb.OwnerId);
 
@@ -94,7 +92,7 @@ public class PhotoMetadataTests
         var post = db.AddPost();
 
         var act = () => ServiceFactory.Photos(db).UploadPhotoAsync(
-            ServiceFactory.FakeImage(), post.Id, MediaSource.Phone, null,
+            ServiceFactory.FakeImage(), post.Id, null,
             new PhotoMetadataDto { TakenAt = DateTime.UtcNow.AddYears(1) },
             TestDb.OwnerId);
 
@@ -108,7 +106,7 @@ public class PhotoMetadataTests
         var post = db.AddPost();
 
         await ServiceFactory.Photos(db).UploadPhotoAsync(
-            ServiceFactory.FakeImage(), post.Id, MediaSource.Phone, null,
+            ServiceFactory.FakeImage(), post.Id, null,
             new PhotoMetadataDto { TakenAt = DateTime.UtcNow.AddHours(2) },
             TestDb.OwnerId);
 
@@ -126,7 +124,7 @@ public class PhotoMetadataTests
         {
             await photos.UploadPhotoAsync(
                 ServiceFactory.FakeImage($"shot{i}.jpg"), post.Id,
-                MediaSource.Phone, null, null, TestDb.OwnerId);
+                null, null, TestDb.OwnerId);
         }
 
         // Not all zero: an absent sortOrder means "next", not "first".
@@ -146,11 +144,11 @@ public class PhotoMetadataTests
         var earlier = new DateTime(2025, 5, 20, 8, 0, 0, DateTimeKind.Utc);
 
         await photos.UploadPhotoAsync(
-            ServiceFactory.FakeImage("b.jpg"), post.Id, MediaSource.Phone, null,
+            ServiceFactory.FakeImage("b.jpg"), post.Id, null,
             new PhotoMetadataDto { TakenAt = later }, TestDb.OwnerId);
 
         await photos.UploadPhotoAsync(
-            ServiceFactory.FakeImage("a.jpg"), post.Id, MediaSource.Phone, null,
+            ServiceFactory.FakeImage("a.jpg"), post.Id, null,
             new PhotoMetadataDto { TakenAt = earlier }, TestDb.OwnerId);
 
         db.Context.Posts.Single().TakenAt.Should().Be(earlier);

@@ -57,13 +57,6 @@ namespace Ralphy.Infrastructure.Data.Repositories
                 .OrderByDescending(p => p.PublishedAt)
                 .ToListAsync();
 
-        public async Task<IEnumerable<Post>> GetByTripIdAsync(int tripId) =>
-            await WithCardData()
-                .Where(p => p.TripId == tripId
-                    && p.Status == PostStatus.Published)
-                .OrderByDescending(p => p.PublishedAt)
-                .ToListAsync();
-
         public async Task IncrementViewCountAsync(int postId)
         {
             var post = await _dbSet.FindAsync(postId);

@@ -12,7 +12,6 @@ namespace Ralphy.Infrastructure.Data
 
         public DbSet<User> Users => Set<User>();
         public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
-        public DbSet<Trip> Trips => Set<Trip>();
         public DbSet<Post> Posts => Set<Post>();
         public DbSet<Photo> Photos => Set<Photo>();
         public DbSet<Comment> Comments => Set<Comment>();
@@ -46,25 +45,12 @@ namespace Ralphy.Infrastructure.Data
                 .HasForeignKey(pt => pt.TagId);
 
             // User relationships
-            modelBuilder.Entity<User>()
-                .HasMany(u => u.Trips)
-                .WithOne(t => t.User)
-                .HasForeignKey(t => t.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
             // Deleting a user must not silently take their posts with it.
             modelBuilder.Entity<User>()
                 .HasMany(u => u.Posts)
                 .WithOne(p => p.User)
                 .HasForeignKey(p => p.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
-
-            // Trip relationships — legacy, dropped once Trip is removed.
-            modelBuilder.Entity<Trip>()
-                .HasMany(t => t.Posts)
-                .WithOne(p => p.Trip)
-                .HasForeignKey(p => p.TripId)
-                .OnDelete(DeleteBehavior.SetNull);
 
             // Location relationships
             // Restrict, not Cascade: a Location is shared by many posts, so
@@ -106,20 +92,12 @@ namespace Ralphy.Infrastructure.Data
                 .IsUnique();
 
             // Enum conversions
-            modelBuilder.Entity<Trip>()
-                .Property(t => t.Status)
-                .HasConversion<string>();
-
             modelBuilder.Entity<Post>()
                 .Property(p => p.Status)
                 .HasConversion<string>();
 
             modelBuilder.Entity<Photo>()
                 .Property(p => p.Type)
-                .HasConversion<string>();
-
-            modelBuilder.Entity<Photo>()
-                .Property(p => p.Source)
                 .HasConversion<string>();
 
             // TimekeepingUser

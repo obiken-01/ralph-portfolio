@@ -150,8 +150,7 @@ public class OwnershipTests
         var post = db.AddPost();
 
         var act = () => ServiceFactory.Photos(db).UploadPhotoAsync(
-            ServiceFactory.FakeImage(), post.Id, MediaSource.Phone,
-            null, null, TestDb.OtherUserId);
+            ServiceFactory.FakeImage(), post.Id, null, null, TestDb.OtherUserId);
 
         await act.Should().ThrowAsync<UnauthorizedAccessException>();
     }
@@ -222,8 +221,7 @@ public class OwnershipTests
         var post = db.AddPost();
 
         var act = () => ServiceFactory.Videos(db).UploadVideoAsync(
-            ServiceFactory.FakeImage("clip.mp4"), post.Id,
-            MediaSource.Phone, null, TestDb.OtherUserId);
+            ServiceFactory.FakeImage("clip.mp4"), post.Id, null, TestDb.OtherUserId);
 
         await act.Should().ThrowAsync<UnauthorizedAccessException>();
     }

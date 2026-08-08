@@ -18,7 +18,6 @@ import LoginPage from './pages/auth/LoginPage'
 
 // Admin pages
 import DashboardPage   from './pages/admin/DashboardPage'
-import AdminTripsPage  from './pages/admin/AdminTripsPage'
 import AdminPostsPage  from './pages/admin/AdminPostsPage'
 import PostEditorPage  from './pages/admin/PostEditorPage'
 import AdminAboutPage from './pages/admin/AdminAboutPage'
@@ -87,9 +86,6 @@ export default function App() {
           {/* ── Admin (protected, no public Navbar/Footer) ── */}
           <Route path="/admin" element={
             <ProtectedRoute><DashboardPage /></ProtectedRoute>
-          }/>
-          <Route path="/admin/trips" element={
-            <ProtectedRoute><AdminTripsPage /></ProtectedRoute>
           }/>
           <Route path="/admin/posts" element={
             <ProtectedRoute><AdminPostsPage /></ProtectedRoute>

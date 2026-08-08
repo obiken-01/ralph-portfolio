@@ -8,7 +8,6 @@ namespace Ralphy.Domain.Interfaces.Repositories
         Task<Post?> GetPostWithDetailsAsync(int id);
         Task<IEnumerable<Post>> GetByTagAsync(string tagName);
         Task<IEnumerable<Post>> GetByLocationIdAsync(int locationId);
-        Task<IEnumerable<Post>> GetByTripIdAsync(int tripId);
         Task IncrementViewCountAsync(int postId);
         Task RecalculateTakenAtAsync(int postId);
     }

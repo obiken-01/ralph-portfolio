@@ -8,7 +8,6 @@ namespace Ralphy.Domain.Entities
         public string PublicId { get; set; } = string.Empty;
         public string? Caption { get; set; }
         public MediaType Type { get; set; } = MediaType.Image;
-        public MediaSource Source { get; set; } = MediaSource.Phone;
 
         /// <summary>Display order within the post's gallery. Lower comes first.</summary>
         public int SortOrder { get; set; }

@@ -16,8 +16,6 @@ namespace Ralphy.Application.Services.Interfaces
 
         Task<IEnumerable<PostDto>> GetByLocationIdAsync(int locationId);
 
-        Task<IEnumerable<PostDto>> GetByTripIdAsync(int tripId);
-
         Task<PostDto> CreateAsync(CreatePostDto request, int userId);
 
         Task<PostDto> UpdateAsync(int id, UpdatePostDto request, int userId);
