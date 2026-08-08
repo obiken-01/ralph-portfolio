@@ -5,6 +5,7 @@ import StatCard from '../../components/admin/StatCard'
 import api from '../../api/axios'
 import { formatShortDate, postDate } from '../../utils/helpers'
 import { cldImage } from '../../utils/cloudinary'
+import DimensionBackfillCard from '../../components/admin/DimensionBackfillCard'
 
 export default function DashboardPage() {
   const [posts, setPosts] = useState([])
@@ -47,6 +48,8 @@ export default function DashboardPage() {
             Welcome back! Here's an overview of your content.
           </p>
         </div>
+
+        <DimensionBackfillCard />
 
         {needsLocation > 0 && (
           <Link

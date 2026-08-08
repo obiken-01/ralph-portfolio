@@ -28,5 +28,11 @@ namespace Ralphy.Domain.Interfaces
         Task<CloudinaryUploadResult> UploadCoverImageAsync(IFormFile file);
 
         Task DeleteImageAsync(string publicId);
+
+        /// <summary>
+        /// Reads the stored dimensions of an asset already in Cloudinary.
+        /// Used to backfill photos uploaded before the app recorded them.
+        /// </summary>
+        Task<MediaDimensions> GetDimensionsAsync(string publicId, bool isVideo = false);
     }
 }

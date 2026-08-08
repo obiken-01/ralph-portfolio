@@ -101,6 +101,38 @@ namespace Ralphy.Api.Controllers
             return Ok(ApiResponse.OkMessage("Photo order updated"));
         }
 
+        /// <summary>
+        /// How many photos predate dimension recording. Drives the admin
+        /// maintenance card, which stays hidden when the answer is zero.
+        /// </summary>
+        [Authorize]
+        [HttpGet("dimensions/status")]
+        public async Task<IActionResult> GetDimensionStatus()
+        {
+            var status = await _photoService.GetDimensionStatusAsync();
+            return Ok(ApiResponse<DimensionStatusDto>.Ok(status));
+        }
+
+        /// <summary>
+        /// Reads width and height back from Cloudinary for photos uploaded
+        /// before the app kept them. Idempotent — it only touches rows still
+        /// missing them — so it is safe to call until Remaining is zero.
+        /// </summary>
+        [Authorize]
+        [HttpPost("dimensions/backfill")]
+        public async Task<IActionResult> BackfillDimensions(
+            [FromQuery] int batchSize = 25)
+        {
+            var result = await _photoService.BackfillDimensionsAsync(batchSize);
+
+            _logger.LogInformation(
+                "Dimension backfill: {Updated}/{Scanned} filled, {Remaining} left",
+                result.Updated, result.Scanned, result.Remaining);
+
+            return Ok(ApiResponse<DimensionBackfillDto>.Ok(
+                result, result.Updated + " photo(s) updated"));
+        }
+
         [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)

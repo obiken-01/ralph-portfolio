@@ -22,5 +22,14 @@ namespace Ralphy.Application.Services.Interfaces
         Task ReorderAsync(int postId, ReorderPhotosDto request, int userId);
 
         Task DeleteAsync(int id, int userId);
+
+        /// <summary>How many photos still lack width and height.</summary>
+        Task<DimensionStatusDto> GetDimensionStatusAsync();
+
+        /// <summary>
+        /// Fills width and height from Cloudinary for photos uploaded before
+        /// the app recorded them. Safe to run repeatedly.
+        /// </summary>
+        Task<DimensionBackfillDto> BackfillDimensionsAsync(int batchSize);
     }
 }

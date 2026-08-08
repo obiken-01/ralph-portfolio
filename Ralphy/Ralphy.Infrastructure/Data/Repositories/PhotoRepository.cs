@@ -21,6 +21,21 @@ namespace Ralphy.Infrastructure.Data.Repositories
                 .ToListAsync();
 
         /// <summary>
+        /// Media uploaded before the app started recording dimensions.
+        /// Ordered by Id so repeated batches walk forward deterministically
+        /// instead of re-drawing the same rows.
+        /// </summary>
+        public async Task<IEnumerable<Photo>> GetMissingDimensionsAsync(int limit) =>
+            await _dbSet
+                .Where(p => p.Width == null || p.Height == null)
+                .OrderBy(p => p.Id)
+                .Take(limit)
+                .ToListAsync();
+
+        public async Task<int> CountMissingDimensionsAsync() =>
+            await _dbSet.CountAsync(p => p.Width == null || p.Height == null);
+
+        /// <summary>
         /// A random sample of images from published posts, for the home page.
         ///
         /// Ordering happens in the database rather than by pulling every row
