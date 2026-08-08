@@ -73,7 +73,7 @@ export default function HeroSlideshow({ photos = [], children, footer }) {
           className={`absolute inset-0 h-full w-full object-cover
                       transition-opacity duration-1000 ease-in-out
                       motion-reduce:transition-none ${
-            i === index ? 'opacity-[0.72]' : 'opacity-0'
+            i === index ? 'opacity-100' : 'opacity-0'
           }`}
         />
       ))}
@@ -83,29 +83,32 @@ export default function HeroSlideshow({ photos = [], children, footer }) {
           src="/hero.jpg"
           alt="Aerial view of Occidental Mindoro"
           fetchPriority="high"
-          className="absolute inset-0 h-full w-full object-cover opacity-[0.72]"
+          className="absolute inset-0 h-full w-full object-cover"
         />
       )}
 
-      {/* Two scrims doing different jobs. The vertical one seats the photo
-          into the page top and bottom; the radial one sits under the masthead
-          so the headline stays readable over a bright sky or a white beach
-          without having to dim the whole photograph to match the worst case. */}
-      <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70
-                      via-slate-950/10 to-slate-950" />
+      {/* The scrim follows the text instead of covering the frame. With the
+          masthead anchored right, only the right edge needs darkening — the
+          left two thirds of the photograph stay untouched, which is the whole
+          point of putting a photograph there. A light vertical pass seats it
+          under the navbar and above the stats. */}
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-950/55
+                      via-transparent to-slate-950/85" />
       <div
         className="absolute inset-0"
         style={{
           background:
-            'radial-gradient(ellipse 70% 55% at 50% 42%, ' +
-            'rgba(2,6,15,.72) 0%, rgba(2,6,15,.45) 45%, transparent 78%)',
+            'linear-gradient(to left, rgba(2,6,15,.86) 0%, '
+            + 'rgba(2,6,15,.62) 26%, rgba(2,6,15,.2) 50%, transparent 68%)',
         }}
       />
 
       {/* Masthead — supplied by the page so this component stays about photos */}
-      <div className="relative z-10 mx-auto flex max-w-3xl flex-1 flex-col
-                      items-center justify-center px-4 text-center">
-        {children}
+      <div className="relative z-10 mx-auto flex w-full max-w-[100rem] flex-1
+                      items-center justify-end px-6 sm:px-10 lg:px-14">
+        <div className="max-w-xs text-right sm:max-w-sm md:max-w-md">
+          {children}
+        </div>
       </div>
 
       {footer && (
