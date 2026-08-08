@@ -73,7 +73,7 @@ export default function HeroSlideshow({ photos = [], children, footer }) {
           className={`absolute inset-0 h-full w-full object-cover
                       transition-opacity duration-1000 ease-in-out
                       motion-reduce:transition-none ${
-            i === index ? 'opacity-60' : 'opacity-0'
+            i === index ? 'opacity-[0.72]' : 'opacity-0'
           }`}
         />
       ))}
@@ -83,12 +83,24 @@ export default function HeroSlideshow({ photos = [], children, footer }) {
           src="/hero.jpg"
           alt="Aerial view of Occidental Mindoro"
           fetchPriority="high"
-          className="absolute inset-0 h-full w-full object-cover opacity-60"
+          className="absolute inset-0 h-full w-full object-cover opacity-[0.72]"
         />
       )}
 
-      <div className="absolute inset-0 bg-gradient-to-b from-slate-950/60
-                      via-slate-950/20 to-slate-950" />
+      {/* Two scrims doing different jobs. The vertical one seats the photo
+          into the page top and bottom; the radial one sits under the masthead
+          so the headline stays readable over a bright sky or a white beach
+          without having to dim the whole photograph to match the worst case. */}
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70
+                      via-slate-950/10 to-slate-950" />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(ellipse 70% 55% at 50% 42%, ' +
+            'rgba(2,6,15,.72) 0%, rgba(2,6,15,.45) 45%, transparent 78%)',
+        }}
+      />
 
       {/* Masthead — supplied by the page so this component stays about photos */}
       <div className="relative z-10 mx-auto flex max-w-3xl flex-1 flex-col

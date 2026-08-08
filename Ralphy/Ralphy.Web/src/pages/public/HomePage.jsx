@@ -27,42 +27,53 @@ function Hero({ posts, tags, featured }) {
   return (
     <HeroSlideshow photos={featured} footer={<HeroStats stats={stats} />}>
       <>
-        <p className="mb-6 inline-flex items-center gap-2 rounded-full
-                      border border-white/20 bg-white/10 px-4 py-1.5
-                      backdrop-blur-sm">
-          <span className="h-2 w-2 animate-pulse rounded-full bg-amber-400" />
-          <span className="text-xs font-medium tracking-widest text-white/80
-                           uppercase">
-            Occidental Mindoro · Philippines
-          </span>
+        {/* A hairline rule instead of the old pulsing amber dot — nothing here
+            is live, and a blinking indicator promised something the page
+            doesn't do. */}
+        <p className="mb-7 flex items-center gap-3 text-[11px] font-semibold
+                      uppercase tracking-[0.32em] text-white/70">
+          <span className="h-px w-8 bg-white/40" aria-hidden="true" />
+          Occidental Mindoro
+          <span className="h-px w-8 bg-white/40" aria-hidden="true" />
         </p>
 
-        <h1 className="font-display text-4xl font-semibold leading-tight
-                       tracking-tight text-white sm:text-6xl md:text-7xl">
+        {/* text-balance keeps the two lines from breaking raggedly at the
+            sizes between the sm and md steps. */}
+        <h1 className="font-display text-[2.6rem] font-semibold leading-[0.95]
+                       tracking-[-0.03em] text-balance text-white
+                       sm:text-7xl md:text-8xl">
           Chasing horizons,
-          <span className="block text-amber-300">one island at a time.</span>
+          <span className="mt-1 block italic text-amber-200/95">
+            one island at a time
+          </span>
         </h1>
 
-        <p className="mx-auto mt-6 max-w-xl text-base text-slate-300
-                      sm:text-lg">
-          I'm Ralph — I document trips around Mindoro and beyond with a
-          drone in the sky and a phone in my pocket.
+        <p className="mx-auto mt-8 max-w-md text-pretty text-[15px]
+                      leading-relaxed text-white/75 sm:text-base">
+          Photographs from Mindoro and beyond — shot from the air and
+          from the ground, by Ralph.
         </p>
 
-        <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
+        <div className="mt-10 flex flex-col items-center justify-center gap-3
+                        sm:flex-row">
           <Link
             to="/posts"
-            className="rounded-full bg-teal-600 px-8 py-3.5 text-sm
-                       font-semibold text-white shadow-lg shadow-teal-950/40
-                       transition-colors hover:bg-teal-500"
+            className="rounded-full bg-white px-8 py-3.5 text-sm font-semibold
+                       text-slate-900 shadow-lg shadow-slate-950/30
+                       transition-colors hover:bg-amber-100
+                       focus:outline-none focus-visible:ring-2
+                       focus-visible:ring-white focus-visible:ring-offset-2
+                       focus-visible:ring-offset-slate-900"
           >
             Browse the photos
           </Link>
           <Link
             to="/map"
-            className="rounded-full border border-white/25 bg-white/10 px-8
-                       py-3.5 text-sm font-semibold text-white backdrop-blur-sm
-                       transition-colors hover:bg-white/20"
+            className="rounded-full border border-white/30 px-8 py-3.5 text-sm
+                       font-semibold text-white/90 backdrop-blur-sm
+                       transition-colors hover:border-white/60 hover:text-white
+                       focus:outline-none focus-visible:ring-2
+                       focus-visible:ring-white"
           >
             View the map
           </Link>
