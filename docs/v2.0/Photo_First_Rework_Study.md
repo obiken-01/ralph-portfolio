@@ -1,3 +1,51 @@
+<!-- Committed alongside the code it produced. Do not edit as a live spec. -->
+
+> ## Status: implemented in v2.0 — read the corrections first
+>
+> This is the original Claude-chat study, kept verbatim as the record of how the
+> rework was scoped. It was **verified against the codebase on 2026-08-08** and
+> is accurate on every load-bearing claim: Trip really is the ownership root
+> (the check count is 14, not 12 — `VideoService` and `LocationService` each
+> have one more than the study counted), `Location.TripId` really is a required
+> FK, `Post.TripId` really was non-nullable with cascade delete, and the 10 MB
+> limit really is our own guard in `ValidateImageFile`.
+>
+> Six things it either got wrong or left out, all corrected in the shipped work:
+>
+> 1. **"Tags: backend work roughly zero"** — true of *writing* tags, false of
+>    *reading* them. There was no way to ask "which posts have this tag?".
+>    `GET /tags/{name}/posts`, `GET /posts?tag=`, and `TagDto.PostCount` are all
+>    new (RAL-211).
+> 2. **`GET /posts/all` never included `Photos`** — `PostRepository` doesn't
+>    override `GetAllAsync`, so it fell through to `BaseRepository`'s bare
+>    `ToListAsync()` and every admin row had a null thumbnail. On a photo-first
+>    admin list that is the whole point of the row.
+> 3. **Cloudinary already returns `Width`/`Height`** on the upload result and
+>    `PhotoService` was discarding them. No new API call was needed for the
+>    masonry grid — just stop throwing the numbers away.
+> 4. **HEIC is worse than the study suggests.** The filename/extension issue is
+>    only half of it: `browser-image-compression` decodes via `<canvas>`, and
+>    desktop Chrome and Firefox cannot decode HEIC *at all*. Detection now
+>    includes an `ftyp` byte sniff, because a `.heic` renamed to `.jpg` fails
+>    identically.
+> 5. **301 redirects need nginx, not React.** `<Navigate replace>` is a
+>    client-side rewrite; Google reads it as a soft redirect. The rules live in
+>    `Ralphy.Web/nginx.conf`.
+> 6. **`Location.TripId` cannot survive Phase 1.** The study's phasing implies
+>    `LocationService.GetByTripIdAsync` lives until Phase 3, but dropping the
+>    column in Phase 1 kills it immediately. It went in Phase 1.
+>
+> Also added beyond the study's scope: the repo had **zero tests**, and v2.0
+> rewrote 14 authorization checks. `Ralphy.Tests` (xUnit over in-memory SQLite)
+> and Vitest now exist, and CI no longer swallows failures.
+>
+> Deferred, not cancelled: AI-assisted description drafting.
+> `AnthropicService` already exists, so the plumbing is in place.
+>
+> Tickets: RAL-208 … RAL-220 under milestone *v2.0 — Photo-First Blog Rework*.
+
+---
+
 # Ralphy — Photo-First Blog Rework: Code Study
 
 **Repo:** `obiken-01/ralph-portfolio` @ `main`
