@@ -1,4 +1,4 @@
-using Ralphy.Domain.Entities.Work;
+﻿using Ralphy.Domain.Entities.Work;
 
 namespace Ralphy.Domain.Interfaces.Repositories.Work
 {
@@ -23,6 +23,14 @@ namespace Ralphy.Domain.Interfaces.Repositories.Work
             string? search,
             string sortBy,
             string sortDir);
+
+        /// <summary>
+        /// Logs in a date range with their work item and project loaded, for the
+        /// accomplishment report. Self-scoped like everything else here — there is
+        /// no overload that reads another user's hours.
+        /// </summary>
+        Task<IReadOnlyList<TimeLog>> GetForRangeAsync(
+            int workUserId, DateOnly from, DateOnly to, CancellationToken ct = default);
 
         Task AddAsync(TimeLog timeLog);
 

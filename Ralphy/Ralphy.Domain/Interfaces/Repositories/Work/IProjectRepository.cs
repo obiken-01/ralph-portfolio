@@ -1,4 +1,4 @@
-using Ralphy.Domain.Entities.Work;
+﻿using Ralphy.Domain.Entities.Work;
 using Ralphy.Domain.Enums;
 
 namespace Ralphy.Domain.Interfaces.Repositories.Work
@@ -17,6 +17,12 @@ namespace Ralphy.Domain.Interfaces.Repositories.Work
         Task<ProjectRole?> GetRoleAsync(int userId, int projectId, CancellationToken ct = default);
 
         Task<IReadOnlyList<ProjectMember>> GetMembersAsync(int projectId, CancellationToken ct = default);
+
+        Task<ProjectMember?> GetMemberAsync(int projectId, int workUserId, CancellationToken ct = default);
+
+        Task AddMemberAsync(ProjectMember member, CancellationToken ct = default);
+
+        void RemoveMember(ProjectMember member);
 
         Task AddAsync(Project project, CancellationToken ct = default);
 

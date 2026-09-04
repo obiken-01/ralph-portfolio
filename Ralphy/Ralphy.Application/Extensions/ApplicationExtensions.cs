@@ -33,6 +33,10 @@ namespace Ralphy.Application.Extensions
             services.AddScoped<IWorkAuthService, WorkAuthService>();
             services.AddScoped<IWorkUserService, WorkUserService>();
             services.AddScoped<ITimeLogService, TimeLogService>();
+            services.AddScoped<IProjectService, ProjectService>();
+            services.AddScoped<IWorkItemService, WorkItemService>();
+            services.AddScoped<ILabelService, LabelService>();
+            services.AddScoped<IAccomplishmentService, AccomplishmentService>();
 
             return services;
         }

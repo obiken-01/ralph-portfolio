@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Ralphy.Domain.Entities.Work;
 using Ralphy.Domain.Interfaces.Repositories.Work;
 
@@ -53,6 +53,16 @@ namespace Ralphy.Infrastructure.Data.Repositories.Work
 
             return await query.ToListAsync();
         }
+
+        public async Task<IReadOnlyList<TimeLog>> GetForRangeAsync(
+            int workUserId, DateOnly from, DateOnly to, CancellationToken ct = default)
+            => await _context.TimeLogs
+                .Include(t => t.WorkItem)!.ThenInclude(w => w!.Project)
+                .Where(t => t.WorkUserId == workUserId
+                         && t.LoggedAt >= from.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc)
+                         && t.LoggedAt <= to.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc))
+                .OrderBy(t => t.LoggedAt)
+                .ToListAsync(ct);
 
         public async Task AddAsync(TimeLog timeLog)
             => await _context.TimeLogs.AddAsync(timeLog);

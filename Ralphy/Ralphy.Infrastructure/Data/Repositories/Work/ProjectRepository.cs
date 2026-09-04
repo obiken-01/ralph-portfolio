@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Ralphy.Domain.Entities.Work;
 using Ralphy.Domain.Enums;
 using Ralphy.Domain.Interfaces.Repositories.Work;
@@ -72,6 +72,18 @@ namespace Ralphy.Infrastructure.Data.Repositories.Work
                 .OrderByDescending(m => m.Role)
                 .ThenBy(m => m.User.Username)
                 .ToListAsync(ct);
+
+        public Task<ProjectMember?> GetMemberAsync(
+            int projectId, int workUserId, CancellationToken ct = default) =>
+            _db.ProjectMembers
+                .Include(m => m.User)
+                .FirstOrDefaultAsync(m => m.ProjectId == projectId && m.WorkUserId == workUserId, ct);
+
+        public async Task AddMemberAsync(ProjectMember member, CancellationToken ct = default)
+            => await _db.ProjectMembers.AddAsync(member, ct);
+
+        public void RemoveMember(ProjectMember member)
+            => _db.ProjectMembers.Remove(member);
 
         public async Task AddAsync(Project project, CancellationToken ct = default)
             => await _db.Projects.AddAsync(project, ct);
