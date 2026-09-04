@@ -7,6 +7,8 @@ using Ralphy.Application.Extensions;
 using Ralphy.Infrastructure.Data;
 using Ralphy.Infrastructure.Extensions;
 using Serilog;
+using Ralphy.Domain.Enums;
+using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 
 Log.Logger = new LoggerConfiguration()
@@ -97,6 +99,20 @@ try
     });
 
     builder.Services.AddControllers()
+        .AddJsonOptions(options =>
+        {
+            // The Work module speaks enum NAMES on the wire — its DTOs emit
+            // "Active" and "InProgress", so they have to be accepted back too.
+            // Without this the API hands you a value it then refuses.
+            //
+            // Registered per type rather than globally on purpose: a blanket
+            // JsonStringEnumConverter would also flip PostStatus, MediaType and
+            // SkillCategory, which Ralphy.Web currently reads as integers.
+            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter<ProjectStatus>());
+            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter<ProjectRole>());
+            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter<WorkItemStatus>());
+            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter<WorkItemPriority>());
+        })
         .ConfigureApiBehaviorOptions(options =>
         {
             options.InvalidModelStateResponseFactory = context =>
