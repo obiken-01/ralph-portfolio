@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Ralphy.Application.Mappings;
 using Ralphy.Application.Services;
+using Ralphy.Application.Services.Work;
 using Ralphy.Application.Services.Interfaces;
 using System.Reflection;
 
@@ -29,9 +30,14 @@ namespace Ralphy.Application.Extensions
             services.AddScoped<IAboutService, AboutService>();
             services.AddScoped<IContactService, ContactService>();
             services.AddScoped<IShoppingListService, ShoppingListService>();
-            services.AddScoped<ITimekeepingAuthService, TimekeepingAuthService>();
-            services.AddScoped<ITimekeepingUserService, TimekeepingUserService>();
+            services.AddScoped<IWorkAuthService, WorkAuthService>();
+            services.AddScoped<IWorkUserService, WorkUserService>();
             services.AddScoped<ITimeLogService, TimeLogService>();
+            services.AddScoped<IProjectService, ProjectService>();
+            services.AddScoped<IWorkItemService, WorkItemService>();
+            services.AddScoped<ILabelService, LabelService>();
+            services.AddScoped<IAccomplishmentService, AccomplishmentService>();
+            services.AddScoped<IPatService, PatService>();
 
             return services;
         }

@@ -1,0 +1,22 @@
+{
+  "name": "ralphy-work-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MCP server exposing the Ralphy Work module (projects, tasks, time logs, accomplishments) over a personal access token.",
+  "type": "module",
+  "bin": {
+    "ralphy-work-mcp": "src/index.js"
+  },
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "check": "node --check src/index.js && node --check src/client.js && node --check src/tools.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0"
+  }
+}

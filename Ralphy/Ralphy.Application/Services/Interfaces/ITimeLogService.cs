@@ -1,4 +1,4 @@
-﻿using Ralphy.Application.DTOs.Timekeeping;
+﻿using Ralphy.Application.DTOs.Work;
 
 namespace Ralphy.Application.Services.Interfaces
 {

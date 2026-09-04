@@ -1,6 +1,7 @@
-using Microsoft.Data.Sqlite;
+﻿using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Ralphy.Domain.Entities;
+using Ralphy.Domain.Entities.Work;
 using Ralphy.Domain.Enums;
 using Ralphy.Infrastructure.Data;
 
@@ -17,6 +18,12 @@ public sealed class TestDb : IDisposable
 {
     public const int OwnerId = 1;
     public const int OtherUserId = 2;
+
+    // WorkUsers are a different table with its own key sequence, so these
+    // deliberately collide with the blog ids above — that overlap is the thing
+    // the Work visibility rules have to survive.
+    public const int WorkerId = 1;
+    public const int OtherWorkerId = 2;
 
     private readonly SqliteConnection _connection;
 
@@ -65,7 +72,103 @@ public sealed class TestDb : IDisposable
             Longitude = 122.06,
         });
 
+        Context.WorkUsers.AddRange(
+            new WorkUser
+            {
+                Id = WorkerId,
+                Username = "worker",
+                Email = "worker@example.com",
+                PasswordHash = "x",
+                PublicId = Guid.NewGuid(),
+            },
+            new WorkUser
+            {
+                Id = OtherWorkerId,
+                Username = "other-worker",
+                Email = "other-worker@example.com",
+                PasswordHash = "x",
+                PublicId = Guid.NewGuid(),
+            });
+
         Context.SaveChanges();
+    }
+
+    // ── Work module fixtures ─────────────────────────────────────────
+
+    /// <summary>
+    /// A project plus its membership rows. The owner is always a member with
+    /// Role = Admin, mirroring what ProjectService must do on create — a project
+    /// with no members is visible to nobody, including its owner.
+    /// </summary>
+    public Project AddProject(
+        int ownerId = WorkerId,
+        string name = "A project",
+        params int[] extraMemberIds)
+    {
+        var project = new Project { Name = name, OwnerUserId = ownerId };
+        Context.Projects.Add(project);
+        Context.SaveChanges();
+
+        Context.ProjectMembers.Add(new ProjectMember
+        {
+            ProjectId = project.Id,
+            WorkUserId = ownerId,
+            Role = ProjectRole.Admin,
+        });
+
+        foreach (var memberId in extraMemberIds.Where(id => id != ownerId))
+            Context.ProjectMembers.Add(new ProjectMember
+            {
+                ProjectId = project.Id,
+                WorkUserId = memberId,
+                Role = ProjectRole.Member,
+            });
+
+        Context.SaveChanges();
+        return project;
+    }
+
+    public WorkItem AddWorkItem(
+        int createdByUserId = WorkerId,
+        int? projectId = null,
+        int? assigneeUserId = null,
+        WorkItemStatus status = WorkItemStatus.Todo,
+        int boardOrder = 0,
+        string title = "A task")
+    {
+        var item = new WorkItem
+        {
+            Title = title,
+            Status = status,
+            BoardOrder = boardOrder,
+            ProjectId = projectId,
+            CreatedByUserId = createdByUserId,
+            AssigneeUserId = assigneeUserId,
+        };
+
+        Context.WorkItems.Add(item);
+        Context.SaveChanges();
+        return item;
+    }
+
+    public TimeLog AddTimeLog(
+        int workUserId = WorkerId,
+        int? workItemId = null,
+        decimal duration = 1m,
+        string description = "Did the thing")
+    {
+        var log = new TimeLog
+        {
+            TaskDescription = description,
+            Duration = duration,
+            LoggedAt = new DateTime(2026, 1, 5, 9, 0, 0, DateTimeKind.Utc),
+            WorkUserId = workUserId,
+            WorkItemId = workItemId,
+        };
+
+        Context.TimeLogs.Add(log);
+        Context.SaveChanges();
+        return log;
     }
 
     public Location AddLocation(string name, bool isPlaceholder = false)

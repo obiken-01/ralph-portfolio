@@ -19,7 +19,7 @@ From `.env.example` / Railway service variables (double-underscore = .NET config
 | Variable | Purpose |
 |---|---|
 | `ConnectionStrings__Default` | PostgreSQL connection string |
-| `Jwt__SecretKey`, `Jwt__Issuer`, `Jwt__Audience` | Admin + timekeeping JWT signing |
+| `Jwt__SecretKey`, `Jwt__Issuer`, `Jwt__Audience` | Admin + Work JWT signing (tokens are separated by a `user_type` claim, not by key) |
 | `Cloudinary__CloudName`, `Cloudinary__ApiKey`, `Cloudinary__ApiSecret` | Media uploads |
 | `Cors__AllowedOrigins__0..n` | CORS allowlist (web app origin, Netlify converter origin, localhost dev) |
 | `Anthropic__ApiKey` (+ model settings) | Claude shopping-list parsing |

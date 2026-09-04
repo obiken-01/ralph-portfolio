@@ -1,4 +1,5 @@
-﻿using Ralphy.Application.Common;
+﻿using Microsoft.EntityFrameworkCore;
+using Ralphy.Application.Common;
 using System.Net;
 using System.Text.Json;
 
@@ -41,6 +42,12 @@ namespace Ralphy.Api.Middleware
 
             var (statusCode, message) = ex switch
             {
+                // Two people moved the same card. The frontend treats 409 as
+                // "invalidate and refetch the board", not as an error toast — so
+                // this must not fall through to a 500.
+                DbUpdateConcurrencyException =>
+                    (HttpStatusCode.Conflict,
+                    "This item was changed by someone else. Refreshing."),
                 KeyNotFoundException =>
                     (HttpStatusCode.NotFound, ex.Message),
                 UnauthorizedAccessException =>
