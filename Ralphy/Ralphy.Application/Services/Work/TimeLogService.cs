@@ -24,6 +24,7 @@ namespace Ralphy.Application.Services.Work
                 query.From,
                 query.To,
                 query.Search,
+                await ResolveWorkItemIdAsync(user.Id, query.WorkItemId),
                 query.SortBy,
                 query.SortDir,
                 query.Page,
@@ -57,13 +58,16 @@ namespace Ralphy.Application.Services.Work
                 TaskDescription = dto.TaskDescription,
                 LoggedAt = dto.LoggedAt,
                 WorkUserId = user.Id,
-                Duration = dto.Duration
+                Duration = dto.Duration,
+                WorkItemId = await ResolveWorkItemIdAsync(user.Id, dto.WorkItemId)
             };
 
             await _uow.TimeLogs.AddAsync(log);
             await _uow.SaveChangesAsync();
 
-            return MapToDto(log);
+            // Re-read so the WorkItem navigation is populated; the tracked entity
+            // has the FK but not the title the caller is about to render.
+            return await GetByIdAsync(userPublicId, log.Id);
         }
 
         public async Task<TimeLogDto> UpdateAsync(Guid userPublicId, int id, UpdateTimeLogDto dto)
@@ -76,12 +80,13 @@ namespace Ralphy.Application.Services.Work
             log.TaskDescription = dto.TaskDescription;
             log.Duration = dto.Duration;
             log.LoggedAt = dto.LoggedAt;
+            log.WorkItemId = await ResolveWorkItemIdAsync(user.Id, dto.WorkItemId);
             log.UpdatedAt = DateTime.UtcNow;
 
             _uow.TimeLogs.Update(log);
             await _uow.SaveChangesAsync();
 
-            return MapToDto(log);
+            return await GetByIdAsync(userPublicId, log.Id);
         }
 
         public async Task DeleteAsync(Guid userPublicId, int id)
@@ -104,6 +109,7 @@ namespace Ralphy.Application.Services.Work
                 query.From,
                 query.To,
                 query.Search,
+                await ResolveWorkItemIdAsync(user.Id, query.WorkItemId),
                 query.SortBy,
                 query.SortDir);
 
@@ -122,6 +128,23 @@ namespace Ralphy.Application.Services.Work
 
         // --- private helpers ---
 
+        /// <summary>
+        /// Turns a public task id into an internal one, refusing any task the
+        /// caller cannot see. Without this, booking hours against a guessed GUID
+        /// would attach your time to a stranger's task — and their task detail
+        /// would then show a row it has no business showing.
+        /// </summary>
+        private async Task<int?> ResolveWorkItemIdAsync(int workUserId, Guid? workItemPublicId)
+        {
+            if (workItemPublicId is null)
+                return null;
+
+            var item = await _uow.WorkItems.GetForWriteAsync(workUserId, workItemPublicId.Value)
+                ?? throw new KeyNotFoundException("Work item not found");
+
+            return item.Id;
+        }
+
         private async Task<WorkUser> GetUserOrThrowAsync(Guid publicId)
         {
             return await _uow.WorkUsers.GetByPublicIdAsync(publicId)
@@ -134,6 +157,8 @@ namespace Ralphy.Application.Services.Work
             TaskDescription = log.TaskDescription,
             Duration = log.Duration,
             LoggedAt = log.LoggedAt,
+            WorkItemId = log.WorkItem?.PublicId,
+            WorkItemTitle = log.WorkItem?.Title,
             CreatedAt = log.CreatedAt
         };
     }

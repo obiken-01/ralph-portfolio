@@ -1,4 +1,5 @@
 ﻿using Ralphy.Application.DTOs.Work;
+using Ralphy.Application.DTOs.Work.Directory;
 using Ralphy.Application.Services.Interfaces;
 using Ralphy.Domain.Entities.Work;
 using Ralphy.Domain.Interfaces;
@@ -20,6 +21,23 @@ namespace Ralphy.Application.Services.Work
         {
             var users = await _uow.WorkUsers.GetAllAsync();
             return users.Select(MapToDto);
+        }
+
+        public async Task<IEnumerable<WorkUserDirectoryDto>> GetDirectoryAsync()
+        {
+            var users = await _uow.WorkUsers.GetAllAsync();
+
+            // Active accounts only: a deactivated person cannot act on an
+            // assignment, so offering them in a picker is a trap.
+            return users
+                .Where(u => u.IsActive)
+                .Select(u => new WorkUserDirectoryDto
+                {
+                    PublicId = u.PublicId,
+                    DisplayName = u.Username,
+                    IsActive = u.IsActive,
+                })
+                .ToList();
         }
 
         public async Task<WorkUserDto> GetByPublicIdAsync(Guid publicId)

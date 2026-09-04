@@ -8,5 +8,9 @@
         public DateTime CreatedAt { get; set; }
         public decimal Duration { get; set; }
 
+        /// <summary>Null for logs not booked against a task, including every legacy row.</summary>
+        public Guid? WorkItemId { get; set; }
+
+        public string? WorkItemTitle { get; set; }
     }
 }

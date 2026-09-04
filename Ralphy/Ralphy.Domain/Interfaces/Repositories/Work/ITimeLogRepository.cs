@@ -11,6 +11,7 @@ namespace Ralphy.Domain.Interfaces.Repositories.Work
             DateOnly? from,
             DateOnly? to,
             string? search,
+            int? workItemId,
             string sortBy,
             string sortDir,
             int page,
@@ -21,6 +22,7 @@ namespace Ralphy.Domain.Interfaces.Repositories.Work
             DateOnly? from,
             DateOnly? to,
             string? search,
+            int? workItemId,
             string sortBy,
             string sortDir);
 

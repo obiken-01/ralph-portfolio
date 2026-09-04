@@ -66,13 +66,32 @@ try
             limiterOptions.QueueLimit = 0;
         });
 
+        // The Work module is interactive — dragging cards across a board issues
+        // a request per drop — so it gets its own, far larger window than the
+        // shopping-list OCR endpoint.
+        options.AddFixedWindowLimiter("work-api", limiterOptions =>
+        {
+            limiterOptions.PermitLimit = 200;
+            limiterOptions.Window = TimeSpan.FromMinutes(1);
+            limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            limiterOptions.QueueLimit = 0;
+        });
+
         options.RejectionStatusCode = 429;
 
         options.OnRejected = async (context, cancellationToken) =>
         {
             context.HttpContext.Response.ContentType = "application/json";
+
+            // Derived from the lease rather than hardcoded: this handler is shared
+            // by every policy, and the old copy told Work clients the limit was
+            // "10 per hour" because that is the shopping-list number.
+            var retryAfter = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var window)
+                ? $" Try again in {Math.Ceiling(window.TotalSeconds)} seconds."
+                : string.Empty;
+
             await context.HttpContext.Response.WriteAsJsonAsync(
-                ApiResponse<string>.Fail(429, "Too many requests. Limit is 10 per hour."),
+                ApiResponse<string>.Fail(429, $"Too many requests.{retryAfter}"),
                 cancellationToken);
         };
     });

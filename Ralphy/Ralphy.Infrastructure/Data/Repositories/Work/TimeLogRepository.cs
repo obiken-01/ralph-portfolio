@@ -15,6 +15,7 @@ namespace Ralphy.Infrastructure.Data.Repositories.Work
 
         public async Task<TimeLog?> GetByIdAsync(int id, int workUserId)
             => await _context.TimeLogs
+                .Include(t => t.WorkItem)
                 .FirstOrDefaultAsync(t => t.Id == id && t.WorkUserId == workUserId);
 
         public async Task<(IEnumerable<TimeLog> Items, int TotalCount)> GetFilteredAsync(
@@ -22,12 +23,13 @@ namespace Ralphy.Infrastructure.Data.Repositories.Work
             DateOnly? from,
             DateOnly? to,
             string? search,
+            int? workItemId,
             string sortBy,
             string sortDir,
             int page,
             int pageSize)
         {
-            var query = BuildQuery(workUserId, from, to, search);
+            var query = BuildQuery(workUserId, from, to, search, workItemId);
             query = ApplySort(query, sortBy, sortDir);
 
             var totalCount = await query.CountAsync();
@@ -45,10 +47,11 @@ namespace Ralphy.Infrastructure.Data.Repositories.Work
             DateOnly? from,
             DateOnly? to,
             string? search,
+            int? workItemId,
             string sortBy,
             string sortDir)
         {
-            var query = BuildQuery(workUserId, from, to, search);
+            var query = BuildQuery(workUserId, from, to, search, workItemId);
             query = ApplySort(query, sortBy, sortDir);
 
             return await query.ToListAsync();
@@ -79,10 +82,15 @@ namespace Ralphy.Infrastructure.Data.Repositories.Work
             int workUserId,
             DateOnly? from,
             DateOnly? to,
-            string? search)
+            string? search,
+            int? workItemId)
         {
             var query = _context.TimeLogs
+                .Include(t => t.WorkItem)
                 .Where(t => t.WorkUserId == workUserId);
+
+            if (workItemId.HasValue)
+                query = query.Where(t => t.WorkItemId == workItemId.Value);
 
             if (from.HasValue)
                 query = query.Where(t => t.LoggedAt >= from.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));

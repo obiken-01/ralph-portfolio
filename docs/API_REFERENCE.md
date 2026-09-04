@@ -167,6 +167,44 @@ a bare `[Authorize]` is not sufficient here.
 | GET | `/work/logs/export` | 🔒 `WorkUser` | CSV export |
 | CRUD | `/work/admin/users...` (+ reset-password, activate/deactivate) | 🔒 `RalphyAdmin` | Manage work users |
 
+### Projects, tasks and reporting
+
+Every route below is `🔒 WorkUser` and rate-limited by the `work-api` policy
+(200/min — a Kanban drag is one request per drop). Entities are addressed by
+`publicId` GUID; internal integer keys are never exposed. Enum values cross the
+wire as names (`InProgress`, `Urgent`), not ints.
+
+| Method | Route | Description |
+|---|---|---|
+| GET | `/work/projects` `?status=&search=` | Projects you are a member of |
+| POST | `/work/projects` | Creator becomes Owner + Admin member |
+| GET | `/work/projects/{publicId}` | Detail incl. members and milestones |
+| PUT | `/work/projects/{publicId}` | Requires `Admin` |
+| DELETE | `/work/projects/{publicId}` | Requires **Owner**, not merely Admin |
+| GET | `/work/projects/{publicId}/timeline` | Gantt data; undated items returned separately |
+| GET/POST | `/work/projects/{publicId}/members` | POST requires `Admin` |
+| PATCH/DELETE | `/work/projects/{publicId}/members/{userPublicId}` | Requires `Admin`; the owner cannot be demoted or removed |
+| GET | `/work/tasks` | Filter by project, status, priority, label, assignee, dates, search |
+| GET | `/work/tasks/board` `?projectId=&assignee=` | All columns, empty ones included |
+| GET/POST | `/work/tasks[/{publicId}]` | Create in a project needs `Member` |
+| PUT | `/work/tasks/{publicId}` | |
+| PATCH | `/work/tasks/{publicId}/move` | Cross-project moves check the **destination** role |
+| PATCH | `/work/tasks/{publicId}/status` · `/assignee` | Assignee must be a project member |
+| DELETE | `/work/tasks/{publicId}` | |
+| GET | `/work/tasks/export` | CSV of the filtered set |
+| CRUD | `/work/labels[/{id}]` | Workspace-wide, lowercase, unique |
+| GET | `/work/users/directory` | Names and ids only — for assignee pickers |
+| GET | `/work/accomplishments` `?from=&to=` | **Always self-scoped.** Per-day, for the DTR report |
+
+`?assignee=` accepts `me`, `unassigned`, or a user `publicId`.
+
+**Visibility.** A task is visible if it has no project and you created it, or it
+belongs to a project you are a member of. One predicate enforces this and every
+read composes onto it. Seeing a task never exposes other people's hours on it.
+
+**409 Conflict** from a board move means someone else moved the card first —
+refetch the board rather than showing an error.
+
 ## Sitemap (v2.0)
 
 | Method | Route | Auth | Description |
