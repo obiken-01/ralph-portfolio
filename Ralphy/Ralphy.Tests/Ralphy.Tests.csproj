@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -21,9 +21,13 @@
          foreign keys and relational semantics, which is the whole point when
          the thing under test is a required FK. -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.4" />
   </ItemGroup>
 
   <ItemGroup>
+    <!-- ClaimsHelper lives in the API project and is the single chokepoint that
+         keeps the blog and Work identity spaces apart, so it is worth testing. -->
+    <ProjectReference Include="..\Ralphy.Api\Ralphy.Api.csproj" />
     <ProjectReference Include="..\Ralphy.Application\Ralphy.Application.csproj" />
     <ProjectReference Include="..\Ralphy.Domain\Ralphy.Domain.csproj" />
     <ProjectReference Include="..\Ralphy.Infrastructure\Ralphy.Infrastructure.csproj" />

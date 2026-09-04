@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Ralphy.Domain.Constants;
+using Ralphy.Domain.Enums;
 using Ralphy.Domain.Interfaces;
 using Ralphy.Infrastructure.Data;
 using Ralphy.Infrastructure.Services;
@@ -73,7 +75,17 @@ namespace Ralphy.Infrastructure.Extensions
                 };
             });
 
-            services.AddAuthorization();
+            // Two identity spaces share this JWT scheme, so a bare [Authorize] is
+            // never enough — it proves the token is signed, not which table its
+            // `sub` indexes. Every protected endpoint picks one of these.
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("WorkUser", policy =>
+                    policy.RequireClaim(AppClaimTypes.UserType, nameof(UserType.Work)));
+
+                options.AddPolicy("RalphyAdmin", policy =>
+                    policy.RequireClaim(AppClaimTypes.UserType, nameof(UserType.Ralphy)));
+            });
 
             // Add after Password Service registration
             services.Configure<CloudinarySettings>(

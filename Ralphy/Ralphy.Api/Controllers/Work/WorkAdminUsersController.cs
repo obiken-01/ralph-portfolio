@@ -11,7 +11,7 @@ namespace Ralphy.Api.Controllers.Work
     // DEPRECATED alias — the tools site calls this until the Netlify cutover.
     // Remove in the follow-up commit once WM-B07 verifies the new prefix.
     [Route("api/timekeeping/admin/users")]
-    [Authorize]
+    [Authorize(Policy = "RalphyAdmin")]
     public class WorkAdminUsersController : ControllerBase
     {
         private readonly IWorkUserService _userService;

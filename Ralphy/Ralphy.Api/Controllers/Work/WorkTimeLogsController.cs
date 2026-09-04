@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Ralphy.Api.Helpers;
 using Ralphy.Application.Common;
 using Ralphy.Application.DTOs.Work;
 using Ralphy.Application.Services.Interfaces;
@@ -12,7 +13,7 @@ namespace Ralphy.Api.Controllers.Work
     // DEPRECATED alias — the tools site calls this until the Netlify cutover.
     // Remove in the follow-up commit once WM-B07 verifies the new prefix.
     [Route("api/timekeeping/logs")]
-    [Authorize]
+    [Authorize(Policy = "WorkUser")]
     public class WorkTimeLogsController : ControllerBase
     {
         private readonly ITimeLogService _timeLogService;
@@ -95,14 +96,10 @@ namespace Ralphy.Api.Controllers.Work
 
         private async Task<Guid?> GetWorkUserPublicIdAsync()
         {
-            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                ?? User.FindFirst("sub")?.Value;
-
-            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-                return null;
-
-            var tkUser = await _uow.WorkUsers.GetByIdAsync(userId);
-            return tkUser?.PublicId;
+            // GetWorkUserId asserts the token's user_type, so this id cannot be a
+            // blog User's that happens to collide with a WorkUser row.
+            var workUser = await _uow.WorkUsers.GetByIdAsync(User.GetWorkUserId());
+            return workUser?.PublicId;
         }
     }
 }

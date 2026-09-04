@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Ralphy.Api.Helpers;
 using Ralphy.Application.Common;
 using Ralphy.Application.DTOs.Auth;
 using Ralphy.Application.DTOs.Work;
@@ -65,21 +66,15 @@ namespace Ralphy.Api.Controllers.Work
             return Ok(ApiResponse.OkMessage("Token revoked successfully"));
         }
 
-        [Authorize]
+        [Authorize(Policy = "WorkUser")]
         [HttpGet("me")]
         public async Task<IActionResult> Me()
         {
-            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                ?? User.FindFirst("sub")?.Value;
-
-            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-                return Unauthorized(ApiResponse<object>.Fail(401, "Invalid token"));
-
-            var tkUser = await _uow.WorkUsers.GetByIdAsync(userId);
-            if (tkUser == null)
+            var workUser = await _uow.WorkUsers.GetByIdAsync(User.GetWorkUserId());
+            if (workUser == null)
                 return Unauthorized(ApiResponse<object>.Fail(401, "User not found"));
 
-            var result = await _userService.GetByPublicIdAsync(tkUser.PublicId);
+            var result = await _userService.GetByPublicIdAsync(workUser.PublicId);
             return Ok(ApiResponse<WorkUserDto>.Ok(result));
         }
     }

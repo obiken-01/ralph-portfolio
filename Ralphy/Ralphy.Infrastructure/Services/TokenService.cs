@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Ralphy.Domain.Constants;
 using Ralphy.Domain.Entities;
+using Ralphy.Domain.Enums;
 using Ralphy.Domain.Interfaces;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -38,11 +40,12 @@ namespace Ralphy.Infrastructure.Services
 
             var claims = new[]
             {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
-            new Claim(JwtRegisteredClaimNames.UniqueName, user.Username),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        };
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim(JwtRegisteredClaimNames.UniqueName, user.Username),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(AppClaimTypes.UserType, nameof(UserType.Ralphy))
+            };
 
             var token = new JwtSecurityToken(
                 issuer: issuer,
@@ -54,7 +57,7 @@ namespace Ralphy.Infrastructure.Services
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public string GenerateAccessToken(int userId, string email, string username)
+        public string GenerateAccessToken(int userId, string email, string username, UserType userType)
         {
             var secretKey = _configuration["Jwt__SecretKey"]
                 ?? _configuration["Jwt:SecretKey"]
@@ -76,7 +79,8 @@ namespace Ralphy.Infrastructure.Services
                 new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, email),
                 new Claim(JwtRegisteredClaimNames.UniqueName, username),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(AppClaimTypes.UserType, userType.ToString())
             };
 
             var token = new JwtSecurityToken(

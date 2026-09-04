@@ -70,7 +70,7 @@ namespace Ralphy.Application.Services.Work
             await _uow.RefreshTokens.AddAsync(newRefreshToken);
             await _uow.SaveChangesAsync();
 
-            var accessToken = _tokenService.GenerateAccessToken(user.Id, user.Email, user.Username);
+            var accessToken = _tokenService.GenerateAccessToken(user.Id, user.Email, user.Username, UserType.Work);
 
             return new WorkLoginResponseDto
             {
@@ -100,7 +100,7 @@ namespace Ralphy.Application.Services.Work
 
         private async Task<WorkLoginResponseDto> GenerateAuthResponseAsync(WorkUser user)
         {
-            var accessToken = _tokenService.GenerateAccessToken(user.Id, user.Email, user.Username);
+            var accessToken = _tokenService.GenerateAccessToken(user.Id, user.Email, user.Username, UserType.Work);
             var refreshTokenValue = _tokenService.GenerateRefreshToken();
 
             var refreshToken = new RefreshToken
