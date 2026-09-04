@@ -80,9 +80,13 @@ namespace Ralphy.Api.Controllers.Work
 
         [Authorize(Policy = "WorkWrite")]
         [HttpPatch("{publicId:guid}/status")]
-        public async Task<IActionResult> SetStatus(Guid publicId, [FromBody] WorkItemStatus status)
+        public async Task<IActionResult> SetStatus(Guid publicId, [FromBody] UpdateStatusDto dto)
         {
-            var result = await _service.SetStatusAsync(UserId, publicId, status);
+            // A DTO rather than a bare [FromBody] enum: binding the enum directly
+            // demanded the naked JSON literal "InProgress", and the natural
+            // { "status": "InProgress" } bound nothing and fell through to
+            // Backlog. The service signature is unchanged.
+            var result = await _service.SetStatusAsync(UserId, publicId, dto.Status);
             return Ok(ApiResponse<WorkItemCardDto>.Ok(result, "Status updated"));
         }
 

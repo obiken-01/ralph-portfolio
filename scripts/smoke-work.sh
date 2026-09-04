@@ -115,8 +115,27 @@ expect "board serves every column, Cancelled excluded" \
   "$(body GET "$API/api/work/tasks/board" "$W" | J "','.join(c['status'] for c in d['data']['columns'])")"
 
 expect "PATCH /tasks/{id}/move"           200 "$(code PATCH "$API/api/work/tasks/$TASK/move" "$W" '{"status":"InProgress","newIndex":0}')"
-expect "PATCH /tasks/{id}/status"         200 "$(code PATCH "$API/api/work/tasks/$TASK/status" "$W" '"Done"')"
 expect "GET   /projects/{id}/timeline"    200 "$(code GET "$API/api/work/projects/$PROJ/timeline" "$W")"
+
+# --- status changes, by dropdown and by drag ---------------------------
+# The endpoint used to bind a bare [FromBody] enum, so it demanded the naked
+# literal "Done" and silently fell through to Backlog for the obvious payload.
+expect "legacy bare-string status body refused" 400   "$(code PATCH "$API/api/work/tasks/$TASK/status" "$W" '\"Done\"')"
+expect "PATCH /tasks/{id}/status"               200   "$(code PATCH "$API/api/work/tasks/$TASK/status" "$W" '{"status":"Done"}')"
+expect "  ...the new status was committed"      "Done"   "$(body GET "$API/api/work/tasks/$TASK" "$W" | J "d['data']['status']")"
+expect "  ...and completedAt was stamped"       "True"   "$(body GET "$API/api/work/tasks/$TASK" "$W" | J "d['data']['completedAt'] is not None")"
+
+code PATCH "$API/api/work/tasks/$TASK/status" "$W" '{"status":"InProgress"}' >/dev/null
+expect "moving away from Done clears completedAt" "True"   "$(body GET "$API/api/work/tasks/$TASK" "$W" | J "d['data']['completedAt'] is None")"
+
+# The path most likely to diverge: a drag must complete a task exactly as the
+# dropdown does, or the board and the reporting disagree.
+code PATCH "$API/api/work/tasks/$TASK/move" "$W" '{"status":"Done","newIndex":0}' >/dev/null
+expect "a DRAG into Done also stamps completedAt" "True"   "$(body GET "$API/api/work/tasks/$TASK" "$W" | J "d['data']['completedAt'] is not None")"
+
+TASK2=$(body POST "$API/api/work/tasks" "$W"   "{\"title\":\"smoke-$RUN second\",\"projectPublicId\":\"$PROJ\",\"status\":\"Todo\"}" | J "d['data']['publicId']")
+code PATCH "$API/api/work/tasks/$TASK/move" "$W" '{"status":"Todo","newIndex":0}' >/dev/null
+expect "a dragged card lands at the requested index" "smoke-$RUN task"   "$(body GET "$API/api/work/tasks/board" "$W" | J "[c for c in d['data']['columns'] if c['status']=='Todo'][0]['items'][0]['title']")"
 expect "GET   /tasks/export"              200 "$(code GET "$API/api/work/tasks/export" "$W")"
 expect "GET   /work/users/directory"      200 "$(code GET "$API/api/work/users/directory" "$W")"
 
