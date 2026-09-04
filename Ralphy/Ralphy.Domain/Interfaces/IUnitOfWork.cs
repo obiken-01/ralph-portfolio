@@ -24,6 +24,9 @@ namespace Ralphy.Domain.Interfaces
         // Work repositories (v1.3 as Timekeeping, renamed in the Work module rollout)
         IWorkUserRepository WorkUsers { get; }
         ITimeLogRepository TimeLogs { get; }
+        IProjectRepository Projects { get; }
+        IWorkItemRepository WorkItems { get; }
+        ILabelRepository Labels { get; }
 
         Task<int> SaveChangesAsync();
     }

@@ -24,6 +24,9 @@ namespace Ralphy.Infrastructure.Data
         public IContactMessageRepository ContactMessages { get; }
         public IWorkUserRepository WorkUsers { get; }
         public ITimeLogRepository TimeLogs { get; }
+        public IProjectRepository Projects { get; }
+        public IWorkItemRepository WorkItems { get; }
+        public ILabelRepository Labels { get; }
 
         public UnitOfWork(AppDbContext context)
         {
@@ -42,6 +45,9 @@ namespace Ralphy.Infrastructure.Data
             ContactMessages = new ContactMessageRepository(context);
             WorkUsers = new WorkUserRepository(context);
             TimeLogs = new TimeLogRepository(context);
+            Projects = new ProjectRepository(context);
+            WorkItems = new WorkItemRepository(context);
+            Labels = new LabelRepository(context);
         }
 
         public async Task<int> SaveChangesAsync() =>
