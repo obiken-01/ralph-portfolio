@@ -164,7 +164,18 @@ DTR cutoff.
 
 ## 4. Defects in the spec to carry forward (not B0 work — record now, fix in phase)
 
-**B2 — `ReorderColumnAsync` bypasses `VisibleTo`.** Spec §4.4 queries `_db.WorkItems`
+**B1 — the phase boundary does not quite hold (found while building B1; fixed).**
+Spec B1 adds entity classes and B2 configures them. That works for entities with a
+conventional `Id`, but `TimeLog.WorkItem` drags the entire new graph into the model by
+navigation discovery, and `WorkItemLabel` is a composite-key join entity with no `Id`.
+An unconfigured key fails model validation outright, which breaks **every** test that
+touches `AppDbContext` — 71 of 79, none of them Work tests. One `HasKey` line now lives
+in `OnModelCreating` ahead of WM-B20, commented as such. Nothing else from B2 was pulled
+forward.
+
+**B2 — `ReorderColumnAsync` bypasses `VisibleTo`.** *(Interface signature already fixed
+in B1 — `userId` is the first parameter. The implementation must actually use it.)*
+Spec §4.4 queries `_db.WorkItems`
 directly and fetches `target` via an unscoped `FirstAsync`, inside the file the spec
 itself calls "the single most important … nothing bypasses it." Worse: when
 `projectId` is `null` (standalone items), `Where(w => w.Status == status && w.ProjectId == projectId)`

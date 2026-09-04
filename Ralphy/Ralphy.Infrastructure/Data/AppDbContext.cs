@@ -34,6 +34,16 @@ namespace Ralphy.Infrastructure.Data
             modelBuilder.Entity<PostTag>()
                 .HasKey(pt => new { pt.PostId, pt.TagId });
 
+            // WorkItemLabel composite primary key, same pattern as PostTag.
+            //
+            // This one line is here ahead of the rest of the Work module's
+            // configuration (WM-B20) because it has to be: TimeLog.WorkItem drags
+            // the whole new entity graph into the model by navigation discovery,
+            // and a join entity with no Id fails model validation outright — which
+            // breaks every test that touches the DbContext, not just Work ones.
+            modelBuilder.Entity<WorkItemLabel>()
+                .HasKey(wl => new { wl.WorkItemId, wl.LabelId });
+
             // PostTag relationships
             modelBuilder.Entity<PostTag>()
                 .HasOne(pt => pt.Post)
