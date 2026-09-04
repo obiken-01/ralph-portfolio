@@ -9,8 +9,9 @@
 # that the real PostgreSQL schema behaves (DateOnly, xmin, the ToTable pins), and
 # that a token minted for one identity space is refused by the other.
 #
-# Idempotent — everything it creates is named with a per-run id and removed at the
-# end, so it can be run repeatedly against the same database.
+# Idempotent — work data is named with a per-run id and removed over the API at
+# the end. The one exception is a single reusable blog admin (smoke_admin), kept
+# because blog users have no delete endpoint.
 set -uo pipefail
 
 API="${1:-http://localhost:5000}"
@@ -53,10 +54,19 @@ echo "Work module smoke test against $API   (run $RUN)"
 echo
 
 echo "== 0. seed =========================================================="
-body POST "$API/api/auth/register" "" \
-  "{\"username\":\"smoke_$RUN\",\"email\":\"smoke-$RUN@example.com\",\"password\":\"Sm0ke!Pass123\",\"confirmPassword\":\"Sm0ke!Pass123\"}" >/dev/null
+# One fixed admin, reused across runs. Work users are removed over the API at the
+# end, but blog users have no delete endpoint — a per-run admin would leave one
+# behind on every run and grow without bound.
+ADMIN_EMAIL="smoke-admin@example.com"
 ADMIN=$(body POST "$API/api/auth/login" "" \
-  "{\"email\":\"smoke-$RUN@example.com\",\"password\":\"Sm0ke!Pass123\"}" | J "d['data']['accessToken']")
+  "{\"email\":\"$ADMIN_EMAIL\",\"password\":\"Sm0ke!Pass123\"}" | J "d['data']['accessToken']")
+
+if [ -z "$ADMIN" ]; then
+  body POST "$API/api/auth/register" "" \
+    "{\"username\":\"smoke_admin\",\"email\":\"$ADMIN_EMAIL\",\"password\":\"Sm0ke!Pass123\",\"confirmPassword\":\"Sm0ke!Pass123\"}" >/dev/null
+  ADMIN=$(body POST "$API/api/auth/login" "" \
+    "{\"email\":\"$ADMIN_EMAIL\",\"password\":\"Sm0ke!Pass123\"}" | J "d['data']['accessToken']")
+fi
 [ -n "$ADMIN" ] && ok "ralphy admin session" || { bad "ralphy admin login"; exit 1; }
 
 for who in worker other; do
