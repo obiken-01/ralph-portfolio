@@ -1,4 +1,4 @@
-﻿namespace Ralphy.Application.DTOs.Timekeeping
+﻿namespace Ralphy.Application.DTOs.Work
 {
     public class CreateTimeLogDto
     {

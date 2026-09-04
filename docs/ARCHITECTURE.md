@@ -32,7 +32,7 @@ The backend also serves **external consumers** — currently the [php-currency-c
 | `AboutProfile`, `WorkExperience`, `Skill` | Portfolio/About-page content (bio, headline, socials, CV url, profile/cover images, skill bars by `SkillCategory`). |
 | `ContactMessage` | Messages from the About-page contact form (read/unread). |
 | `User`, `RefreshToken` | Admin auth (JWT access + refresh tokens). |
-| `TimekeepingUser`, `TimeLog` | Separate lightweight timekeeping system with its own auth (`/api/timekeeping/*`), user management and CSV export. |
+| `WorkUser`, `TimeLog` | The Work module (formerly Timekeeping): a separate lightweight system with its own auth (`/api/work/*`), user management and CSV export. Its CLR types live under `Entities/Work/`; the physical tables are still named `TimekeepingUsers`/`TimeLogs`, pinned via `ToTable`. |
 
 ### Entity relationships
 
@@ -117,7 +117,7 @@ controller's `[Authorize]` is the whole story there.
 | `/timeline` | `TimelinePage` | Posts in chronological order, grouped by year |
 | `/about` | `AboutPage` | Profile, work experience, skill bars, contact form |
 | `/login` | `LoginPage` | Admin login |
-| `/admin/**` | Admin pages | Protected by `ProtectedRoute` (dashboard, posts + photo uploader, about profile, timekeeping users) |
+| `/admin/**` | Admin pages | Protected by `ProtectedRoute` (dashboard, posts + photo uploader, about profile, work users) |
 
 **Legacy URLs.** `/trips`, `/trips/:id` and `/trips/:tripId/posts/:postId` are
 301'd to their `/posts` equivalents by nginx (`nginx.conf`). The sitemap

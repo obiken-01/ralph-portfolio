@@ -1,25 +1,28 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Ralphy.Application.Common;
-using Ralphy.Application.DTOs.Timekeeping;
+using Ralphy.Application.DTOs.Work;
 using Ralphy.Application.Services.Interfaces;
 using Ralphy.Domain.Interfaces;
 
-namespace Ralphy.Api.Controllers
+namespace Ralphy.Api.Controllers.Work
 {
     [ApiController]
+    [Route("api/work/logs")]
+    // DEPRECATED alias — the tools site calls this until the Netlify cutover.
+    // Remove in the follow-up commit once WM-B07 verifies the new prefix.
     [Route("api/timekeeping/logs")]
     [Authorize]
-    public class TimeLogController : ControllerBase
+    public class WorkTimeLogsController : ControllerBase
     {
         private readonly ITimeLogService _timeLogService;
         private readonly IUnitOfWork _uow;
-        private readonly ILogger<TimeLogController> _logger;
+        private readonly ILogger<WorkTimeLogsController> _logger;
 
-        public TimeLogController(
+        public WorkTimeLogsController(
             ITimeLogService timeLogService,
             IUnitOfWork uow,
-            ILogger<TimeLogController> logger)
+            ILogger<WorkTimeLogsController> logger)
         {
             _timeLogService = timeLogService;
             _uow = uow;
@@ -29,7 +32,7 @@ namespace Ralphy.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> GetFiltered([FromQuery] TimeLogQueryDto query)
         {
-            var publicId = await GetTimekeepingUserPublicIdAsync();
+            var publicId = await GetWorkUserPublicIdAsync();
             if (publicId == null)
                 return Unauthorized(ApiResponse<object>.Fail(401, "Unauthorized"));
 
@@ -40,7 +43,7 @@ namespace Ralphy.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateTimeLogDto request)
         {
-            var publicId = await GetTimekeepingUserPublicIdAsync();
+            var publicId = await GetWorkUserPublicIdAsync();
             if (publicId == null)
                 return Unauthorized(ApiResponse<object>.Fail(401, "Unauthorized"));
 
@@ -52,7 +55,7 @@ namespace Ralphy.Api.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateTimeLogDto request)
         {
-            var publicId = await GetTimekeepingUserPublicIdAsync();
+            var publicId = await GetWorkUserPublicIdAsync();
             if (publicId == null)
                 return Unauthorized(ApiResponse<object>.Fail(401, "Unauthorized"));
 
@@ -64,7 +67,7 @@ namespace Ralphy.Api.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var publicId = await GetTimekeepingUserPublicIdAsync();
+            var publicId = await GetWorkUserPublicIdAsync();
             if (publicId == null)
                 return Unauthorized(ApiResponse<object>.Fail(401, "Unauthorized"));
 
@@ -76,7 +79,7 @@ namespace Ralphy.Api.Controllers
         [HttpGet("export")]
         public async Task<IActionResult> Export([FromQuery] TimeLogQueryDto query)
         {
-            var publicId = await GetTimekeepingUserPublicIdAsync();
+            var publicId = await GetWorkUserPublicIdAsync();
             if (publicId == null)
                 return Unauthorized(ApiResponse<object>.Fail(401, "Unauthorized"));
 
@@ -90,7 +93,7 @@ namespace Ralphy.Api.Controllers
 
         // --- private helpers ---
 
-        private async Task<Guid?> GetTimekeepingUserPublicIdAsync()
+        private async Task<Guid?> GetWorkUserPublicIdAsync()
         {
             var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
                 ?? User.FindFirst("sub")?.Value;
@@ -98,7 +101,7 @@ namespace Ralphy.Api.Controllers
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
                 return null;
 
-            var tkUser = await _uow.TimekeepingUsers.GetByIdAsync(userId);
+            var tkUser = await _uow.WorkUsers.GetByIdAsync(userId);
             return tkUser?.PublicId;
         }
     }

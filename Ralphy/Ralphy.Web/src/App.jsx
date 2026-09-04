@@ -21,7 +21,7 @@ import DashboardPage   from './pages/admin/DashboardPage'
 import AdminPostsPage  from './pages/admin/AdminPostsPage'
 import PostEditorPage  from './pages/admin/PostEditorPage'
 import AdminAboutPage from './pages/admin/AdminAboutPage'
-import AdminTimekeepingUsersPage from './pages/admin/AdminTimekeepingUsersPage'
+import AdminWorkUsersPage from './pages/admin/AdminWorkUsersPage'
 
 // Scroll to top on route change (SPA navigations keep scroll otherwise)
 function ScrollToTop() {
@@ -99,9 +99,12 @@ export default function App() {
           <Route path="/admin/about" element={
             <ProtectedRoute><AdminAboutPage /></ProtectedRoute>
           }/>
-          <Route path="/admin/timekeeping-users" element={
-            <ProtectedRoute><AdminTimekeepingUsersPage /></ProtectedRoute>
+          <Route path="/admin/work-users" element={
+            <ProtectedRoute><AdminWorkUsersPage /></ProtectedRoute>
           }/>
+          {/* Renamed in the Work module rollout; keeps existing bookmarks alive. */}
+          <Route path="/admin/timekeeping-users"
+            element={<Navigate to="/admin/work-users" replace />} />
 
         </Routes>
       </AuthProvider>

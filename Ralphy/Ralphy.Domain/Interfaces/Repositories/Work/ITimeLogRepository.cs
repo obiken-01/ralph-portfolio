@@ -1,13 +1,13 @@
-﻿using Ralphy.Domain.Entities;
+using Ralphy.Domain.Entities.Work;
 
-namespace Ralphy.Domain.Interfaces.Repositories
+namespace Ralphy.Domain.Interfaces.Repositories.Work
 {
     public interface ITimeLogRepository
     {
-        Task<TimeLog?> GetByIdAsync(int id, int timekeepingUserId);
+        Task<TimeLog?> GetByIdAsync(int id, int workUserId);
 
         Task<(IEnumerable<TimeLog> Items, int TotalCount)> GetFilteredAsync(
-            int timekeepingUserId,
+            int workUserId,
             DateOnly? from,
             DateOnly? to,
             string? search,
@@ -17,7 +17,7 @@ namespace Ralphy.Domain.Interfaces.Repositories
             int pageSize);
 
         Task<IEnumerable<TimeLog>> GetForExportAsync(
-            int timekeepingUserId,
+            int workUserId,
             DateOnly? from,
             DateOnly? to,
             string? search,

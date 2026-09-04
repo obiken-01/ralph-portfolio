@@ -1,19 +1,20 @@
 ﻿using Ralphy.Application.DTOs.Auth;
-using Ralphy.Application.DTOs.Timekeeping;
+using Ralphy.Application.DTOs.Work;
 using Ralphy.Application.Services.Interfaces;
 using Ralphy.Domain.Entities;
+using Ralphy.Domain.Entities.Work;
 using Ralphy.Domain.Enums;
 using Ralphy.Domain.Interfaces;
 
-namespace Ralphy.Application.Services
+namespace Ralphy.Application.Services.Work
 {
-    public class TimekeepingAuthService : ITimekeepingAuthService
+    public class WorkAuthService : IWorkAuthService
     {
         private readonly IUnitOfWork _uow;
         private readonly ITokenService _tokenService;
         private readonly IPasswordService _passwordService;
 
-        public TimekeepingAuthService(
+        public WorkAuthService(
             IUnitOfWork uow,
             ITokenService tokenService,
             IPasswordService passwordService)
@@ -23,9 +24,9 @@ namespace Ralphy.Application.Services
             _passwordService = passwordService;
         }
 
-        public async Task<TimekeepingLoginResponseDto> LoginAsync(LoginRequestDto dto)
+        public async Task<WorkLoginResponseDto> LoginAsync(LoginRequestDto dto)
         {
-            var user = await _uow.TimekeepingUsers.GetByEmailAsync(dto.Email)
+            var user = await _uow.WorkUsers.GetByEmailAsync(dto.Email)
                 ?? throw new UnauthorizedAccessException("Invalid email or password");
 
             if (!user.IsActive)
@@ -37,18 +38,18 @@ namespace Ralphy.Application.Services
             return await GenerateAuthResponseAsync(user);
         }
 
-        public async Task<TimekeepingLoginResponseDto> RefreshTokenAsync(RefreshTokenRequestDto dto)
+        public async Task<WorkLoginResponseDto> RefreshTokenAsync(RefreshTokenRequestDto dto)
         {
             var existingToken = await _uow.RefreshTokens.GetByTokenAsync(dto.RefreshToken)
                 ?? throw new UnauthorizedAccessException("Invalid refresh token");
 
-            if (existingToken.UserType != UserType.Timekeeping)
+            if (existingToken.UserType != UserType.Work)
                 throw new UnauthorizedAccessException("Invalid refresh token");
 
             if (!existingToken.IsActive)
                 throw new UnauthorizedAccessException("Refresh token is expired or revoked");
 
-            var user = await _uow.TimekeepingUsers.GetByIdAsync(existingToken.UserId)
+            var user = await _uow.WorkUsers.GetByIdAsync(existingToken.UserId)
                 ?? throw new UnauthorizedAccessException("User not found");
 
             if (!user.IsActive)
@@ -62,7 +63,7 @@ namespace Ralphy.Application.Services
                 Token = _tokenService.GenerateRefreshToken(),
                 ExpiresAt = DateTime.UtcNow.AddDays(7),
                 UserId = user.Id,
-                UserType = UserType.Timekeeping
+                UserType = UserType.Work
             };
 
             existingToken.ReplacedByToken = newRefreshToken.Token;
@@ -71,7 +72,7 @@ namespace Ralphy.Application.Services
 
             var accessToken = _tokenService.GenerateAccessToken(user.Id, user.Email, user.Username);
 
-            return new TimekeepingLoginResponseDto
+            return new WorkLoginResponseDto
             {
                 AccessToken = accessToken,
                 RefreshToken = newRefreshToken.Token,
@@ -85,7 +86,7 @@ namespace Ralphy.Application.Services
             var existingToken = await _uow.RefreshTokens.GetByTokenAsync(refreshToken)
                 ?? throw new UnauthorizedAccessException("Invalid refresh token");
 
-            if (existingToken.UserType != UserType.Timekeeping)
+            if (existingToken.UserType != UserType.Work)
                 throw new UnauthorizedAccessException("Invalid refresh token");
 
             if (!existingToken.IsActive)
@@ -97,7 +98,7 @@ namespace Ralphy.Application.Services
 
         // --- private helpers ---
 
-        private async Task<TimekeepingLoginResponseDto> GenerateAuthResponseAsync(TimekeepingUser user)
+        private async Task<WorkLoginResponseDto> GenerateAuthResponseAsync(WorkUser user)
         {
             var accessToken = _tokenService.GenerateAccessToken(user.Id, user.Email, user.Username);
             var refreshTokenValue = _tokenService.GenerateRefreshToken();
@@ -107,13 +108,13 @@ namespace Ralphy.Application.Services
                 Token = refreshTokenValue,
                 ExpiresAt = DateTime.UtcNow.AddDays(7),
                 UserId = user.Id,
-                UserType = UserType.Timekeeping
+                UserType = UserType.Work
             };
 
             await _uow.RefreshTokens.AddAsync(refreshToken);
             await _uow.SaveChangesAsync();
 
-            return new TimekeepingLoginResponseDto
+            return new WorkLoginResponseDto
             {
                 AccessToken = accessToken,
                 RefreshToken = refreshTokenValue,
@@ -122,7 +123,7 @@ namespace Ralphy.Application.Services
             };
         }
 
-        private static TimekeepingUserDto MapToDto(TimekeepingUser user) => new()
+        private static WorkUserDto MapToDto(WorkUser user) => new()
         {
             PublicId = user.PublicId,
             Username = user.Username,

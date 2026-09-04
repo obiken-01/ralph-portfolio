@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Ralphy.Domain.Entities
+namespace Ralphy.Domain.Entities.Work
 {
-    public class TimekeepingUser : BaseEntity
+    /// <summary>
+    /// A user of the Work module — a separate identity space from the blog's
+    /// <see cref="Ralphy.Domain.Entities.User"/>. The two share an integer key
+    /// sequence but nothing else,
+    /// which is why access tokens carry a user_type claim.
+    /// </summary>
+    public class WorkUser : BaseEntity
     {
         public Guid PublicId { get; set; }
         public string Username { get; set; } = string.Empty;

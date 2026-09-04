@@ -150,14 +150,22 @@ Names are stored lowercase and trimmed, and matched case-insensitively — so
 |---|---|---|---|
 | POST | `/shopping-list/parse` | 🔑 ⏱ 10/hour | Multipart `image` (≤ 10 MB) → Claude vision OCR → JSON array of `{ name, quantity, unit, notes }`. Consumed by the [php-currency-converter-app](https://github.com/obiken-01/php-currency-converter-app) on Netlify. |
 
-## Timekeeping — `/api/timekeeping` (separate mini-app)
+## Work — `/api/work` (separate mini-app)
+
+Formerly Timekeeping. Every route below is also served under the old
+`/api/timekeeping/*` prefix as a **deprecated alias**, so the Netlify tools site keeps
+working across the deploy window. The aliases come out once that frontend has cut over.
+
+Access tokens carry a `user_type` claim (`Ralphy` | `Work`). The two identity spaces
+share an integer key sequence, so a token minted for one is rejected by the other —
+a bare `[Authorize]` is not sufficient here.
 
 | Method | Route | Auth | Description |
 |---|---|---|---|
-| POST | `/timekeeping/auth/login` · `/refresh` · `/revoke`; GET `/me` | 🌐/🔒 | Timekeeping-user auth (separate from admin) |
-| GET/POST/PUT/DELETE | `/timekeeping/logs[/{id}]` | 🔒 (timekeeping JWT) | Time-log CRUD, `DateOnly` filters |
-| GET | `/timekeeping/logs/export` | 🔒 | CSV export |
-| CRUD | `/timekeeping/admin/users...` (+ reset-password, activate/deactivate) | 🔒 (admin) | Manage timekeeping users |
+| POST | `/work/auth/login` · `/refresh` · `/revoke`; GET `/me` | 🌐/🔒 `WorkUser` | Work-user auth (separate from admin) |
+| GET/POST/PUT/DELETE | `/work/logs[/{id}]` | 🔒 `WorkUser` | Time-log CRUD, `DateOnly` filters |
+| GET | `/work/logs/export` | 🔒 `WorkUser` | CSV export |
+| CRUD | `/work/admin/users...` (+ reset-password, activate/deactivate) | 🔒 `RalphyAdmin` | Manage work users |
 
 ## Sitemap (v2.0)
 

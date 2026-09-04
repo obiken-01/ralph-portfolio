@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Ralphy.Domain.Entities;
+using Ralphy.Domain.Entities.Work;
 using Ralphy.Domain.Enums;
 
 namespace Ralphy.Infrastructure.Data
@@ -22,7 +23,7 @@ namespace Ralphy.Infrastructure.Data
         public DbSet<WorkExperience> WorkExperiences => Set<WorkExperience>();
         public DbSet<Skill> Skills => Set<Skill>();
         public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
-        public DbSet<TimekeepingUser> TimekeepingUsers { get; set; }
+        public DbSet<WorkUser> WorkUsers { get; set; }
         public DbSet<TimeLog> TimeLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -100,9 +101,13 @@ namespace Ralphy.Infrastructure.Data
                 .Property(p => p.Type)
                 .HasConversion<string>();
 
-            // TimekeepingUser
-            modelBuilder.Entity<TimekeepingUser>(entity =>
+            // WorkUser
+            modelBuilder.Entity<WorkUser>(entity =>
             {
+                // The class was renamed TimekeepingUser -> WorkUser; the physical
+                // table deliberately was not. Pinning it here keeps the rename a
+                // source-only change with zero migration risk against Railway.
+                // Index names derive from this, so IX_TimekeepingUsers_* also stand.
                 entity.ToTable("TimekeepingUsers");
 
                 entity.HasKey(u => u.Id);
@@ -136,8 +141,8 @@ namespace Ralphy.Infrastructure.Data
                     .HasDefaultValue(true);
 
                 entity.HasMany(u => u.TimeLogs)
-                    .WithOne(t => t.TimekeepingUser)
-                    .HasForeignKey(t => t.TimekeepingUserId)
+                    .WithOne(t => t.User)
+                    .HasForeignKey(t => t.WorkUserId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
@@ -155,7 +160,10 @@ namespace Ralphy.Infrastructure.Data
                 entity.Property(t => t.LoggedAt)
                     .IsRequired();
 
-                entity.Property(t => t.TimekeepingUserId)
+                // Same reasoning as WorkUser.ToTable: the property is WorkUserId,
+                // the column stays TimekeepingUserId. No schema change in this phase.
+                entity.Property(t => t.WorkUserId)
+                    .HasColumnName("TimekeepingUserId")
                     .IsRequired();
 
                 entity.Property(t => t.Duration)

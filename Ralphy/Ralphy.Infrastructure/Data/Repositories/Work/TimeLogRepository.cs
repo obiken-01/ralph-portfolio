@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Ralphy.Domain.Entities;
-using Ralphy.Domain.Interfaces.Repositories;
+using Microsoft.EntityFrameworkCore;
+using Ralphy.Domain.Entities.Work;
+using Ralphy.Domain.Interfaces.Repositories.Work;
 
-namespace Ralphy.Infrastructure.Data.Repositories
+namespace Ralphy.Infrastructure.Data.Repositories.Work
 {
     public class TimeLogRepository : ITimeLogRepository
     {
@@ -13,12 +13,12 @@ namespace Ralphy.Infrastructure.Data.Repositories
             _context = context;
         }
 
-        public async Task<TimeLog?> GetByIdAsync(int id, int timekeepingUserId)
+        public async Task<TimeLog?> GetByIdAsync(int id, int workUserId)
             => await _context.TimeLogs
-                .FirstOrDefaultAsync(t => t.Id == id && t.TimekeepingUserId == timekeepingUserId);
+                .FirstOrDefaultAsync(t => t.Id == id && t.WorkUserId == workUserId);
 
         public async Task<(IEnumerable<TimeLog> Items, int TotalCount)> GetFilteredAsync(
-            int timekeepingUserId,
+            int workUserId,
             DateOnly? from,
             DateOnly? to,
             string? search,
@@ -27,7 +27,7 @@ namespace Ralphy.Infrastructure.Data.Repositories
             int page,
             int pageSize)
         {
-            var query = BuildQuery(timekeepingUserId, from, to, search);
+            var query = BuildQuery(workUserId, from, to, search);
             query = ApplySort(query, sortBy, sortDir);
 
             var totalCount = await query.CountAsync();
@@ -41,14 +41,14 @@ namespace Ralphy.Infrastructure.Data.Repositories
         }
 
         public async Task<IEnumerable<TimeLog>> GetForExportAsync(
-            int timekeepingUserId,
+            int workUserId,
             DateOnly? from,
             DateOnly? to,
             string? search,
             string sortBy,
             string sortDir)
         {
-            var query = BuildQuery(timekeepingUserId, from, to, search);
+            var query = BuildQuery(workUserId, from, to, search);
             query = ApplySort(query, sortBy, sortDir);
 
             return await query.ToListAsync();
@@ -66,13 +66,13 @@ namespace Ralphy.Infrastructure.Data.Repositories
         // --- private helpers ---
 
         private IQueryable<TimeLog> BuildQuery(
-            int timekeepingUserId,
+            int workUserId,
             DateOnly? from,
             DateOnly? to,
             string? search)
         {
             var query = _context.TimeLogs
-                .Where(t => t.TimekeepingUserId == timekeepingUserId);
+                .Where(t => t.WorkUserId == workUserId);
 
             if (from.HasValue)
                 query = query.Where(t => t.LoggedAt >= from.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));

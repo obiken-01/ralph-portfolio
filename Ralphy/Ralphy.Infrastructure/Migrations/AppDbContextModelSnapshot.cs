@@ -416,93 +416,6 @@ namespace Ralphy.Infrastructure.Migrations
                     b.ToTable("Tags");
                 });
 
-            modelBuilder.Entity("Ralphy.Domain.Entities.TimeLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("Duration")
-                        .HasColumnType("numeric(5,2)");
-
-                    b.Property<DateTime>("LoggedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("TaskDescription")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<int>("TimekeepingUserId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TimekeepingUserId");
-
-                    b.ToTable("TimeLogs", (string)null);
-                });
-
-            modelBuilder.Entity("Ralphy.Domain.Entities.TimekeepingUser", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("PublicId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Email")
-                        .IsUnique();
-
-                    b.HasIndex("PublicId")
-                        .IsUnique();
-
-                    b.HasIndex("Username")
-                        .IsUnique();
-
-                    b.ToTable("TimekeepingUsers", (string)null);
-                });
-
             modelBuilder.Entity("Ralphy.Domain.Entities.User", b =>
                 {
                     b.Property<int>("Id")
@@ -552,6 +465,94 @@ namespace Ralphy.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Ralphy.Domain.Entities.Work.TimeLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("Duration")
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<DateTime>("LoggedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TaskDescription")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("WorkUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("TimekeepingUserId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkUserId");
+
+                    b.ToTable("TimeLogs", (string)null);
+                });
+
+            modelBuilder.Entity("Ralphy.Domain.Entities.Work.WorkUser", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("PublicId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("PublicId")
+                        .IsUnique();
+
+                    b.HasIndex("Username")
+                        .IsUnique();
+
+                    b.ToTable("TimekeepingUsers", (string)null);
                 });
 
             modelBuilder.Entity("Ralphy.Domain.Entities.WorkExperience", b =>
@@ -666,15 +667,15 @@ namespace Ralphy.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Ralphy.Domain.Entities.TimeLog", b =>
+            modelBuilder.Entity("Ralphy.Domain.Entities.Work.TimeLog", b =>
                 {
-                    b.HasOne("Ralphy.Domain.Entities.TimekeepingUser", "TimekeepingUser")
+                    b.HasOne("Ralphy.Domain.Entities.Work.WorkUser", "User")
                         .WithMany("TimeLogs")
-                        .HasForeignKey("TimekeepingUserId")
+                        .HasForeignKey("WorkUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("TimekeepingUser");
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Ralphy.Domain.Entities.Location", b =>
@@ -696,16 +697,16 @@ namespace Ralphy.Infrastructure.Migrations
                     b.Navigation("PostTags");
                 });
 
-            modelBuilder.Entity("Ralphy.Domain.Entities.TimekeepingUser", b =>
-                {
-                    b.Navigation("TimeLogs");
-                });
-
             modelBuilder.Entity("Ralphy.Domain.Entities.User", b =>
                 {
                     b.Navigation("Posts");
 
                     b.Navigation("RefreshTokens");
+                });
+
+            modelBuilder.Entity("Ralphy.Domain.Entities.Work.WorkUser", b =>
+                {
+                    b.Navigation("TimeLogs");
                 });
 #pragma warning restore 612, 618
         }

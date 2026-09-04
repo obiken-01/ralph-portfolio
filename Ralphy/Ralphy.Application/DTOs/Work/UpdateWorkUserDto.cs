@@ -1,6 +1,6 @@
-﻿namespace Ralphy.Application.DTOs.Timekeeping
+﻿namespace Ralphy.Application.DTOs.Work
 {
-    public class UpdateTimekeepingUserDto
+    public class UpdateWorkUserDto
     {
         public string Username { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;

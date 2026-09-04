@@ -48,7 +48,7 @@ function CreateUserModal({ onClose, onSaved }) {
     e.preventDefault()
     setSaving(true)
     try {
-      await api.post('/timekeeping/admin/users', form)
+      await api.post('/work/admin/users', form)
       toast.success('User created!')
       onSaved()
       onClose()
@@ -141,7 +141,7 @@ function EditUserModal({ user, onClose, onSaved }) {
     e.preventDefault()
     setSaving(true)
     try {
-      await api.put(`/timekeeping/admin/users/${user.publicId}`, form)
+      await api.put(`/work/admin/users/${user.publicId}`, form)
       toast.success('User updated!')
       onSaved()
       onClose()
@@ -225,7 +225,7 @@ function ResetPasswordModal({ user, onClose }) {
     setSaving(true)
     try {
       await api.post(
-        `/timekeeping/admin/users/${user.publicId}/reset-password`,
+        `/work/admin/users/${user.publicId}/reset-password`,
         { newPassword }
       )
       toast.success('Password reset successfully!')
@@ -362,7 +362,7 @@ function DeleteModal({ label, onClose, onConfirm }) {
 }
 
 // ── Main Page ───────────────────────────────────────────────────
-export default function AdminTimekeepingUsersPage() {
+export default function AdminWorkUsersPage() {
   const [users,   setUsers]   = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -374,7 +374,7 @@ export default function AdminTimekeepingUsersPage() {
 
   const fetchUsers = async () => {
     try {
-      const res = await api.get('/timekeeping/admin/users')
+      const res = await api.get('/work/admin/users')
       setUsers(res.data.data ?? [])
     } catch {
       toast.error('Failed to load users')
@@ -388,8 +388,8 @@ export default function AdminTimekeepingUsersPage() {
   const handleToggleActive = async (user) => {
     try {
       const endpoint = user.isActive
-        ? `/timekeeping/admin/users/${user.publicId}/deactivate`
-        : `/timekeeping/admin/users/${user.publicId}/activate`
+        ? `/work/admin/users/${user.publicId}/deactivate`
+        : `/work/admin/users/${user.publicId}/activate`
       await api.patch(endpoint)
       toast.success(user.isActive ? 'User deactivated' : 'User activated')
       fetchUsers()
@@ -399,7 +399,7 @@ export default function AdminTimekeepingUsersPage() {
   }
 
   const handleDelete = async (publicId) => {
-    await api.delete(`/timekeeping/admin/users/${publicId}`)
+    await api.delete(`/work/admin/users/${publicId}`)
     toast.success('User deleted')
     fetchUsers()
   }
@@ -427,9 +427,9 @@ export default function AdminTimekeepingUsersPage() {
 
         {/* Page title */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-white">Timekeeping Users</h1>
+          <h1 className="text-2xl font-bold text-white">Work Users</h1>
           <p className="text-slate-400 text-sm mt-1">
-            Manage user accounts for the timekeeping tool.
+            Manage user accounts for the Work module.
           </p>
         </div>
 

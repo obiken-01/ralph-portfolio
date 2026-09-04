@@ -1,4 +1,5 @@
 ﻿using Ralphy.Domain.Interfaces.Repositories;
+using Ralphy.Domain.Interfaces.Repositories.Work;
 
 namespace Ralphy.Domain.Interfaces
 {
@@ -20,8 +21,8 @@ namespace Ralphy.Domain.Interfaces
         ISkillRepository Skills { get; }
         IContactMessageRepository ContactMessages { get; }
 
-        // Timekeeping repositories (v1.3)
-        ITimekeepingUserRepository TimekeepingUsers { get; }
+        // Work repositories (v1.3 as Timekeeping, renamed in the Work module rollout)
+        IWorkUserRepository WorkUsers { get; }
         ITimeLogRepository TimeLogs { get; }
 
         Task<int> SaveChangesAsync();

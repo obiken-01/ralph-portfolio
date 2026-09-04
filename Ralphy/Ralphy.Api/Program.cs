@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -8,7 +8,6 @@ using Ralphy.Infrastructure.Data;
 using Ralphy.Infrastructure.Extensions;
 using Serilog;
 using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.RateLimiting;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()

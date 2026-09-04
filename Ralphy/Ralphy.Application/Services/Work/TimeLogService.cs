@@ -1,10 +1,10 @@
-﻿using Ralphy.Application.DTOs.Timekeeping;
+﻿using Ralphy.Application.DTOs.Work;
 using Ralphy.Application.Services.Interfaces;
-using Ralphy.Domain.Entities;
+using Ralphy.Domain.Entities.Work;
 using Ralphy.Domain.Interfaces;
 using System.Text;
 
-namespace Ralphy.Application.Services
+namespace Ralphy.Application.Services.Work
 {
     public class TimeLogService : ITimeLogService
     {
@@ -56,7 +56,7 @@ namespace Ralphy.Application.Services
             {
                 TaskDescription = dto.TaskDescription,
                 LoggedAt = dto.LoggedAt,
-                TimekeepingUserId = user.Id,
+                WorkUserId = user.Id,
                 Duration = dto.Duration
             };
 
@@ -122,9 +122,9 @@ namespace Ralphy.Application.Services
 
         // --- private helpers ---
 
-        private async Task<Domain.Entities.TimekeepingUser> GetUserOrThrowAsync(Guid publicId)
+        private async Task<WorkUser> GetUserOrThrowAsync(Guid publicId)
         {
-            return await _uow.TimekeepingUsers.GetByPublicIdAsync(publicId)
+            return await _uow.WorkUsers.GetByPublicIdAsync(publicId)
                 ?? throw new KeyNotFoundException("User not found");
         }
 

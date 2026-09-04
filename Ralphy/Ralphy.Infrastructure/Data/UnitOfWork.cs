@@ -1,6 +1,8 @@
 ﻿using Ralphy.Domain.Interfaces;
 using Ralphy.Domain.Interfaces.Repositories;
+using Ralphy.Domain.Interfaces.Repositories.Work;
 using Ralphy.Infrastructure.Data.Repositories;
+using Ralphy.Infrastructure.Data.Repositories.Work;
 
 namespace Ralphy.Infrastructure.Data
 {
@@ -20,7 +22,7 @@ namespace Ralphy.Infrastructure.Data
         public IWorkExperienceRepository WorkExperiences { get; }
         public ISkillRepository Skills { get; }
         public IContactMessageRepository ContactMessages { get; }
-        public ITimekeepingUserRepository TimekeepingUsers { get; }
+        public IWorkUserRepository WorkUsers { get; }
         public ITimeLogRepository TimeLogs { get; }
 
         public UnitOfWork(AppDbContext context)
@@ -38,7 +40,7 @@ namespace Ralphy.Infrastructure.Data
             WorkExperiences = new WorkExperienceRepository(context);
             Skills = new SkillRepository(context);
             ContactMessages = new ContactMessageRepository(context);
-            TimekeepingUsers = new TimekeepingUserRepository(context);
+            WorkUsers = new WorkUserRepository(context);
             TimeLogs = new TimeLogRepository(context);
         }
 

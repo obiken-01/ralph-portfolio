@@ -1,22 +1,25 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Ralphy.Application.Common;
-using Ralphy.Application.DTOs.Timekeeping;
+using Ralphy.Application.DTOs.Work;
 using Ralphy.Application.Services.Interfaces;
 
-namespace Ralphy.Api.Controllers
+namespace Ralphy.Api.Controllers.Work
 {
     [ApiController]
+    [Route("api/work/admin/users")]
+    // DEPRECATED alias — the tools site calls this until the Netlify cutover.
+    // Remove in the follow-up commit once WM-B07 verifies the new prefix.
     [Route("api/timekeeping/admin/users")]
     [Authorize]
-    public class TimekeepingAdminController : ControllerBase
+    public class WorkAdminUsersController : ControllerBase
     {
-        private readonly ITimekeepingUserService _userService;
-        private readonly ILogger<TimekeepingAdminController> _logger;
+        private readonly IWorkUserService _userService;
+        private readonly ILogger<WorkAdminUsersController> _logger;
 
-        public TimekeepingAdminController(
-            ITimekeepingUserService userService,
-            ILogger<TimekeepingAdminController> logger)
+        public WorkAdminUsersController(
+            IWorkUserService userService,
+            ILogger<WorkAdminUsersController> logger)
         {
             _userService = userService;
             _logger = logger;
@@ -26,30 +29,30 @@ namespace Ralphy.Api.Controllers
         public async Task<IActionResult> GetAll()
         {
             var users = await _userService.GetAllAsync();
-            return Ok(ApiResponse<IEnumerable<TimekeepingUserDto>>.Ok(users));
+            return Ok(ApiResponse<IEnumerable<WorkUserDto>>.Ok(users));
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateTimekeepingUserDto request)
+        public async Task<IActionResult> Create([FromBody] CreateWorkUserDto request)
         {
             var user = await _userService.CreateAsync(request);
-            _logger.LogInformation("Timekeeping user created: {Username}", request.Username);
-            return Ok(ApiResponse<TimekeepingUserDto>.Ok(user, "User created successfully"));
+            _logger.LogInformation("Work user created: {Username}", request.Username);
+            return Ok(ApiResponse<WorkUserDto>.Ok(user, "User created successfully"));
         }
 
         [HttpPut("{publicId}")]
-        public async Task<IActionResult> Update(Guid publicId, [FromBody] UpdateTimekeepingUserDto request)
+        public async Task<IActionResult> Update(Guid publicId, [FromBody] UpdateWorkUserDto request)
         {
             var user = await _userService.UpdateAsync(publicId, request);
-            _logger.LogInformation("Timekeeping user updated: {PublicId}", publicId);
-            return Ok(ApiResponse<TimekeepingUserDto>.Ok(user, "User updated successfully"));
+            _logger.LogInformation("Work user updated: {PublicId}", publicId);
+            return Ok(ApiResponse<WorkUserDto>.Ok(user, "User updated successfully"));
         }
 
         [HttpPost("{publicId}/reset-password")]
-        public async Task<IActionResult> ResetPassword(Guid publicId, [FromBody] ResetTimekeepingPasswordDto request)
+        public async Task<IActionResult> ResetPassword(Guid publicId, [FromBody] ResetWorkPasswordDto request)
         {
             await _userService.ResetPasswordAsync(publicId, request);
-            _logger.LogInformation("Timekeeping user password reset: {PublicId}", publicId);
+            _logger.LogInformation("Work user password reset: {PublicId}", publicId);
             return Ok(ApiResponse.OkMessage("Password reset successfully"));
         }
 
@@ -57,7 +60,7 @@ namespace Ralphy.Api.Controllers
         public async Task<IActionResult> Activate(Guid publicId)
         {
             await _userService.ActivateAsync(publicId);
-            _logger.LogInformation("Timekeeping user activated: {PublicId}", publicId);
+            _logger.LogInformation("Work user activated: {PublicId}", publicId);
             return Ok(ApiResponse.OkMessage("User activated successfully"));
         }
 
@@ -65,7 +68,7 @@ namespace Ralphy.Api.Controllers
         public async Task<IActionResult> Deactivate(Guid publicId)
         {
             await _userService.DeactivateAsync(publicId);
-            _logger.LogInformation("Timekeeping user deactivated: {PublicId}", publicId);
+            _logger.LogInformation("Work user deactivated: {PublicId}", publicId);
             return Ok(ApiResponse.OkMessage("User deactivated successfully"));
         }
 
@@ -73,7 +76,7 @@ namespace Ralphy.Api.Controllers
         public async Task<IActionResult> Delete(Guid publicId)
         {
             await _userService.DeleteAsync(publicId);
-            _logger.LogInformation("Timekeeping user deleted: {PublicId}", publicId);
+            _logger.LogInformation("Work user deleted: {PublicId}", publicId);
             return Ok(ApiResponse.OkMessage("User deleted successfully"));
         }
     }
