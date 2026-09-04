@@ -1,4 +1,39 @@
-# Work Module — Phase B0 implementation plan
+# Work Module — implementation plan and record
+
+> **Status (all phases).** B0–B6 are implemented and committed on
+> `feature/work-module`. **134 .NET tests** and **5 MCP tests** pass; the solution
+> builds clean with zero warnings.
+>
+> | Phase | State |
+> |---|---|
+> | B0 — Rename | ✅ done, zero migrations (`ToTable` pins) |
+> | B1 — Domain | ✅ done |
+> | B2 — Infrastructure | ✅ done, `AddWorkModule` migration audited |
+> | B3 — Application | ✅ done |
+> | B4 — API | ✅ done except WM-B46 (live Swagger sweep) |
+> | B5 — TimeLog + accomplishments | ✅ done except WM-B54 (CSV diff) |
+> | B6 — PAT + MCP | ✅ done except WM-B66 (see below) |
+>
+> **Four items remain, all blocked on something outside the code:**
+>
+> - **WM-B07 / WM-B46** — deploy and smoke-test both route prefixes. Needs a
+>   running Postgres (`docker compose up`) or the Railway deploy itself.
+> - **WM-B54** — run `GET /work/accomplishments` over two past DTR cutoffs and
+>   diff against what the CSV produced. Needs real logged data. If they disagree
+>   the grouping is wrong, and a cutoff is the worst time to discover that.
+> - **WM-B66** — teach the `accomplishment-report` skill to prefer MCP. The skill
+>   is platform-bundled (`anthropic-skills:accomplishment-report`), not a file in
+>   this repo or under `~/.claude`, so it cannot be edited from here.
+> - **RAL-23** (idle logout) — still open, and still gating heavy use of the new
+>   auth path. One login now covers logs, tasks, board and timeline, so a refresh
+>   failure drops you out of all of them, possibly mid-drag.
+>
+> The sections below are the original B0 plan, kept as the record of what was
+> decided and why.
+
+---
+
+# Phase B0 implementation plan
 
 Companion to `WORK_MODULE_SPEC_BACKEND.md`. That spec was written against an assumed
 file layout; this document is the corrected version, checked against the tree on
