@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Ralphy.Api.Helpers;
@@ -15,7 +15,7 @@ namespace Ralphy.Api.Controllers.Work
     /// </summary>
     [ApiController]
     [Route("api/work/tasks")]
-    [Authorize(Policy = "WorkUser")]
+    [Authorize(Policy = "WorkRead")]
     [EnableRateLimiting("work-api")]
     public class WorkItemsController : ControllerBase
     {
@@ -52,6 +52,7 @@ namespace Ralphy.Api.Controllers.Work
             return Ok(ApiResponse<WorkItemDetailDto>.Ok(result));
         }
 
+        [Authorize(Policy = "WorkWrite")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateWorkItemDto dto)
         {
@@ -60,6 +61,7 @@ namespace Ralphy.Api.Controllers.Work
             return Ok(ApiResponse<WorkItemDetailDto>.Created(result, "Task created successfully"));
         }
 
+        [Authorize(Policy = "WorkWrite")]
         [HttpPut("{publicId:guid}")]
         public async Task<IActionResult> Update(Guid publicId, [FromBody] UpdateWorkItemDto dto)
         {
@@ -68,6 +70,7 @@ namespace Ralphy.Api.Controllers.Work
             return Ok(ApiResponse<WorkItemDetailDto>.Ok(result, "Task updated successfully"));
         }
 
+        [Authorize(Policy = "WorkWrite")]
         [HttpPatch("{publicId:guid}/move")]
         public async Task<IActionResult> Move(Guid publicId, [FromBody] MoveWorkItemDto dto)
         {
@@ -75,6 +78,7 @@ namespace Ralphy.Api.Controllers.Work
             return Ok(ApiResponse<WorkItemCardDto>.Ok(result, "Task moved"));
         }
 
+        [Authorize(Policy = "WorkWrite")]
         [HttpPatch("{publicId:guid}/status")]
         public async Task<IActionResult> SetStatus(Guid publicId, [FromBody] WorkItemStatus status)
         {
@@ -82,6 +86,7 @@ namespace Ralphy.Api.Controllers.Work
             return Ok(ApiResponse<WorkItemCardDto>.Ok(result, "Status updated"));
         }
 
+        [Authorize(Policy = "WorkWrite")]
         [HttpPatch("{publicId:guid}/assignee")]
         public async Task<IActionResult> SetAssignee(Guid publicId, [FromBody] UpdateAssigneeDto dto)
         {
@@ -89,6 +94,7 @@ namespace Ralphy.Api.Controllers.Work
             return Ok(ApiResponse<WorkItemCardDto>.Ok(result, "Assignee updated"));
         }
 
+        [Authorize(Policy = "WorkWrite")]
         [HttpDelete("{publicId:guid}")]
         public async Task<IActionResult> Delete(Guid publicId)
         {

@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Ralphy.Api.Controllers.Work;
@@ -36,7 +36,8 @@ public class WorkApiSurfaceTests
             "WorkProjectsController",
             "WorkLabelsController",
             "WorkDirectoryController",
-            "WorkAccomplishmentsController");
+            "WorkAccomplishmentsController",
+            "WorkTokensController");
     }
 
     [Fact]
@@ -70,6 +71,57 @@ public class WorkApiSurfaceTests
 
         offenders.Should().BeEmpty(
             "a bare [Authorize] cannot tell a blog token from a Work token");
+    }
+
+    [Fact]
+    public void Every_mutating_work_endpoint_demands_the_write_scope()
+    {
+        var offenders = new List<string>();
+
+        foreach (var controller in WorkControllers)
+        {
+            // Token management is JWT-only and is asserted separately below.
+            if (controller == typeof(WorkTokensController)
+                || controller == typeof(WorkAdminUsersController)
+                || controller == typeof(WorkAuthController))
+            {
+                continue;
+            }
+
+            foreach (var method in controller.GetMethods(
+                BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            {
+                var mutates =
+                    method.GetCustomAttributes<HttpPostAttribute>().Any() ||
+                    method.GetCustomAttributes<HttpPutAttribute>().Any() ||
+                    method.GetCustomAttributes<HttpPatchAttribute>().Any() ||
+                    method.GetCustomAttributes<HttpDeleteAttribute>().Any();
+
+                if (!mutates)
+                    continue;
+
+                var policies = method.GetCustomAttributes<AuthorizeAttribute>()
+                    .Select(a => a.Policy)
+                    .ToList();
+
+                if (!policies.Contains("WorkWrite"))
+                    offenders.Add($"{controller.Name}.{method.Name}");
+            }
+        }
+
+        offenders.Should().BeEmpty(
+            "a read-only token handed to Claude Desktop must not be able to write");
+    }
+
+    [Fact]
+    public void Issuing_tokens_is_reachable_only_with_a_login_session()
+    {
+        // If a PAT could reach this, a read-only token would simply mint itself a
+        // write-scoped one and the scope split would mean nothing.
+        typeof(WorkTokensController)
+            .GetCustomAttributes<AuthorizeAttribute>()
+            .Should().ContainSingle()
+            .Which.Policy.Should().Be("WorkSession");
     }
 
     [Fact]
@@ -110,6 +162,7 @@ public class WorkApiSurfaceTests
             (typeof(WorkLabelsController), "api/work/labels"),
             (typeof(WorkDirectoryController), "api/work/users"),
             (typeof(WorkAccomplishmentsController), "api/work/accomplishments"),
+            (typeof(WorkTokensController), "api/work/tokens"),
         })
         {
             controller.GetCustomAttributes<RouteAttribute>()

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Ralphy.Api.Helpers;
@@ -11,7 +11,7 @@ namespace Ralphy.Api.Controllers.Work
 {
     [ApiController]
     [Route("api/work/projects")]
-    [Authorize(Policy = "WorkUser")]
+    [Authorize(Policy = "WorkRead")]
     [EnableRateLimiting("work-api")]
     public class WorkProjectsController : ControllerBase
     {
@@ -48,6 +48,7 @@ namespace Ralphy.Api.Controllers.Work
             return Ok(ApiResponse<ProjectTimelineDto>.Ok(result));
         }
 
+        [Authorize(Policy = "WorkWrite")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateProjectDto dto)
         {
@@ -56,6 +57,7 @@ namespace Ralphy.Api.Controllers.Work
             return Ok(ApiResponse<ProjectDetailDto>.Created(result, "Project created successfully"));
         }
 
+        [Authorize(Policy = "WorkWrite")]
         [HttpPut("{publicId:guid}")]
         public async Task<IActionResult> Update(Guid publicId, [FromBody] UpdateProjectDto dto)
         {
@@ -64,6 +66,7 @@ namespace Ralphy.Api.Controllers.Work
             return Ok(ApiResponse<ProjectDetailDto>.Ok(result, "Project updated successfully"));
         }
 
+        [Authorize(Policy = "WorkWrite")]
         [HttpDelete("{publicId:guid}")]
         public async Task<IActionResult> Delete(Guid publicId)
         {
@@ -81,6 +84,7 @@ namespace Ralphy.Api.Controllers.Work
             return Ok(ApiResponse<IEnumerable<ProjectMemberDto>>.Ok(result));
         }
 
+        [Authorize(Policy = "WorkWrite")]
         [HttpPost("{publicId:guid}/members")]
         public async Task<IActionResult> AddMember(Guid publicId, [FromBody] AddProjectMemberDto dto)
         {
@@ -89,6 +93,7 @@ namespace Ralphy.Api.Controllers.Work
             return Ok(ApiResponse<ProjectMemberDto>.Created(result, "Member added"));
         }
 
+        [Authorize(Policy = "WorkWrite")]
         [HttpPatch("{publicId:guid}/members/{userPublicId:guid}")]
         public async Task<IActionResult> UpdateMemberRole(
             Guid publicId, Guid userPublicId, [FromBody] UpdateMemberRoleDto dto)
@@ -97,6 +102,7 @@ namespace Ralphy.Api.Controllers.Work
             return Ok(ApiResponse<ProjectMemberDto>.Ok(result, "Role updated"));
         }
 
+        [Authorize(Policy = "WorkWrite")]
         [HttpDelete("{publicId:guid}/members/{userPublicId:guid}")]
         public async Task<IActionResult> RemoveMember(Guid publicId, Guid userPublicId)
         {

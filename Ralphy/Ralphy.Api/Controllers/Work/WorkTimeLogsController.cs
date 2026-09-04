@@ -13,7 +13,7 @@ namespace Ralphy.Api.Controllers.Work
     // DEPRECATED alias — the tools site calls this until the Netlify cutover.
     // Remove in the follow-up commit once WM-B07 verifies the new prefix.
     [Route("api/timekeeping/logs")]
-    [Authorize(Policy = "WorkUser")]
+    [Authorize(Policy = "WorkRead")]
     public class WorkTimeLogsController : ControllerBase
     {
         private readonly ITimeLogService _timeLogService;
@@ -41,6 +41,7 @@ namespace Ralphy.Api.Controllers.Work
             return Ok(ApiResponse<PagedTimeLogResultDto>.Ok(result));
         }
 
+        [Authorize(Policy = "WorkWrite")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateTimeLogDto request)
         {
@@ -53,6 +54,7 @@ namespace Ralphy.Api.Controllers.Work
             return Ok(ApiResponse<TimeLogDto>.Ok(result, "Time log created successfully"));
         }
 
+        [Authorize(Policy = "WorkWrite")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateTimeLogDto request)
         {
@@ -65,6 +67,7 @@ namespace Ralphy.Api.Controllers.Work
             return Ok(ApiResponse<TimeLogDto>.Ok(result, "Time log updated successfully"));
         }
 
+        [Authorize(Policy = "WorkWrite")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

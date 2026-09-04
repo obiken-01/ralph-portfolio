@@ -27,6 +27,7 @@ namespace Ralphy.Infrastructure.Data
         public IProjectRepository Projects { get; }
         public IWorkItemRepository WorkItems { get; }
         public ILabelRepository Labels { get; }
+        public IPersonalAccessTokenRepository PersonalAccessTokens { get; }
 
         public UnitOfWork(AppDbContext context)
         {
@@ -48,6 +49,7 @@ namespace Ralphy.Infrastructure.Data
             Projects = new ProjectRepository(context);
             WorkItems = new WorkItemRepository(context);
             Labels = new LabelRepository(context);
+            PersonalAccessTokens = new PersonalAccessTokenRepository(context);
         }
 
         public async Task<int> SaveChangesAsync() =>

@@ -196,7 +196,18 @@ wire as names (`InProgress`, `Urgent`), not ints.
 | GET | `/work/users/directory` | Names and ids only — for assignee pickers |
 | GET | `/work/accomplishments` `?from=&to=` | **Always self-scoped.** Per-day, for the DTR report |
 
+| GET/POST | `/work/tokens` | Personal access tokens — **login session only** |
+| DELETE | `/work/tokens/{id}` | Revoke |
+
 `?assignee=` accepts `me`, `unassigned`, or a user `publicId`.
+
+**Two credentials, one identity.** Work endpoints accept either a login JWT or a
+personal access token (`Authorization: Bearer rpat_…`). A PAT resolves to a
+WorkUser and inherits exactly that user's project visibility — there is no second
+authorisation path. Tokens carry scopes: `tasks:read` is required for every Work
+endpoint, `tasks:write` additionally for every mutation. A login JWT carries no
+scopes and is unrestricted. `/work/tokens` itself is JWT-only, so a read-only
+token cannot mint itself a write-scoped one.
 
 **Visibility.** A task is visible if it has no project and you created it, or it
 belongs to a project you are a member of. One predicate enforces this and every

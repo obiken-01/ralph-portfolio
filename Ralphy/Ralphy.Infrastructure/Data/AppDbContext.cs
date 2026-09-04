@@ -31,6 +31,7 @@ namespace Ralphy.Infrastructure.Data
         public DbSet<Label> Labels => Set<Label>();
         public DbSet<WorkItemLabel> WorkItemLabels => Set<WorkItemLabel>();
         public DbSet<Milestone> Milestones => Set<Milestone>();
+        public DbSet<PersonalAccessToken> PersonalAccessTokens => Set<PersonalAccessToken>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -289,6 +290,23 @@ namespace Ralphy.Infrastructure.Data
                 entity.HasOne(m => m.Project)
                     .WithMany(p => p.Milestones)
                     .HasForeignKey(m => m.ProjectId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<PersonalAccessToken>(entity =>
+            {
+                entity.Property(t => t.Name).IsRequired().HasMaxLength(100);
+                entity.Property(t => t.Prefix).IsRequired().HasMaxLength(16);
+                entity.Property(t => t.Scopes).IsRequired().HasMaxLength(200);
+
+                // SHA-256 hex. Unique because a collision here would mean two
+                // credentials authenticating as each other.
+                entity.Property(t => t.TokenHash).IsRequired().HasMaxLength(64);
+                entity.HasIndex(t => t.TokenHash).IsUnique();
+
+                entity.HasOne(t => t.User)
+                    .WithMany()
+                    .HasForeignKey(t => t.WorkUserId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
 

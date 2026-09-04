@@ -27,6 +27,7 @@ namespace Ralphy.Domain.Interfaces
         IProjectRepository Projects { get; }
         IWorkItemRepository WorkItems { get; }
         ILabelRepository Labels { get; }
+        IPersonalAccessTokenRepository PersonalAccessTokens { get; }
 
         Task<int> SaveChangesAsync();
     }

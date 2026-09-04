@@ -1,4 +1,4 @@
-namespace Ralphy.Domain.Constants
+﻿namespace Ralphy.Domain.Constants
 {
     /// <summary>
     /// Custom JWT claim types.
@@ -11,5 +11,12 @@ namespace Ralphy.Domain.Constants
     public static class AppClaimTypes
     {
         public const string UserType = "user_type";
+
+        /// <summary>
+        /// Repeated once per granted PAT scope. Absent on tokens minted by a
+        /// login, which is how an unrestricted browser session is told apart from
+        /// a deliberately narrowed machine credential.
+        /// </summary>
+        public const string Scope = "scope";
     }
 }

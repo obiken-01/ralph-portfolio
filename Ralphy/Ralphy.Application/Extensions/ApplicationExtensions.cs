@@ -37,6 +37,7 @@ namespace Ralphy.Application.Extensions
             services.AddScoped<IWorkItemService, WorkItemService>();
             services.AddScoped<ILabelService, LabelService>();
             services.AddScoped<IAccomplishmentService, AccomplishmentService>();
+            services.AddScoped<IPatService, PatService>();
 
             return services;
         }

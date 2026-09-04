@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Ralphy.Application.Common;
@@ -14,7 +14,7 @@ namespace Ralphy.Api.Controllers.Work
     /// </summary>
     [ApiController]
     [Route("api/work/labels")]
-    [Authorize(Policy = "WorkUser")]
+    [Authorize(Policy = "WorkRead")]
     [EnableRateLimiting("work-api")]
     public class WorkLabelsController : ControllerBase
     {
@@ -32,6 +32,7 @@ namespace Ralphy.Api.Controllers.Work
             return Ok(ApiResponse<IEnumerable<LabelDto>>.Ok(result));
         }
 
+        [Authorize(Policy = "WorkWrite")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] SaveLabelDto dto)
         {
@@ -39,6 +40,7 @@ namespace Ralphy.Api.Controllers.Work
             return Ok(ApiResponse<LabelDto>.Created(result, "Label created"));
         }
 
+        [Authorize(Policy = "WorkWrite")]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] SaveLabelDto dto)
         {
@@ -46,6 +48,7 @@ namespace Ralphy.Api.Controllers.Work
             return Ok(ApiResponse<LabelDto>.Ok(result, "Label updated"));
         }
 
+        [Authorize(Policy = "WorkWrite")]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {

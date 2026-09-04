@@ -7,10 +7,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Ralphy.Domain.Constants;
 using Ralphy.Domain.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Ralphy.Domain.Interfaces;
+using Ralphy.Domain.Interfaces.Repositories.Work;
+using Ralphy.Infrastructure.Data.Repositories.Work;
 using Ralphy.Infrastructure.Data;
 using Ralphy.Infrastructure.Services;
 using Ralphy.Infrastructure.Settings;
+using Microsoft.AspNetCore.Authentication;
 using System.Text;
 
 namespace Ralphy.Infrastructure.Extensions
@@ -39,11 +43,18 @@ namespace Ralphy.Infrastructure.Extensions
                 ?? configuration["Jwt:SecretKey"]
                 ?? throw new InvalidOperationException("JWT SecretKey is not configured");
 
+            // The PAT handler needs this directly, outside the UnitOfWork: it runs
+            // during authentication, before any request scope has done work.
+            services.AddScoped<IPersonalAccessTokenRepository, PersonalAccessTokenRepository>();
+            services.AddSingleton<IAuthorizationHandler, WorkScopeHandler>();
+
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
+            .AddScheme<AuthenticationSchemeOptions, PatAuthenticationHandler>(
+                PatAuthenticationHandler.SchemeName, _ => { })
             .AddJwtBearer(options =>
             {
                 options.TokenValidationParameters = new TokenValidationParameters
@@ -80,11 +91,41 @@ namespace Ralphy.Infrastructure.Extensions
             // `sub` indexes. Every protected endpoint picks one of these.
             services.AddAuthorization(options =>
             {
-                options.AddPolicy("WorkUser", policy =>
-                    policy.RequireClaim(AppClaimTypes.UserType, nameof(UserType.Work)));
+                // Work endpoints accept either credential: a browser JWT or a
+                // personal access token. Both resolve to the same WorkUserId, so
+                // visibility and project roles apply identically to each.
+                var workSchemes = new[]
+                {
+                    JwtBearerDefaults.AuthenticationScheme,
+                    PatAuthenticationHandler.SchemeName,
+                };
 
-                options.AddPolicy("RalphyAdmin", policy =>
-                    policy.RequireClaim(AppClaimTypes.UserType, nameof(UserType.Ralphy)));
+                options.AddPolicy("WorkUser", policy => policy
+                    .AddAuthenticationSchemes(workSchemes)
+                    .RequireClaim(AppClaimTypes.UserType, nameof(UserType.Work)));
+
+                options.AddPolicy("WorkRead", policy => policy
+                    .AddAuthenticationSchemes(workSchemes)
+                    .RequireClaim(AppClaimTypes.UserType, nameof(UserType.Work))
+                    .AddRequirements(new WorkScopeRequirement("tasks:read")));
+
+                options.AddPolicy("WorkWrite", policy => policy
+                    .AddAuthenticationSchemes(workSchemes)
+                    .RequireClaim(AppClaimTypes.UserType, nameof(UserType.Work))
+                    .AddRequirements(new WorkScopeRequirement("tasks:write")));
+
+                // Issuing and revoking credentials is a browser action. If a PAT
+                // could reach this, a read-only token could mint itself a
+                // write-scoped one and the scope split would mean nothing.
+                options.AddPolicy("WorkSession", policy => policy
+                    .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+                    .RequireClaim(AppClaimTypes.UserType, nameof(UserType.Work)));
+
+                // Deliberately JWT-only. Personal access tokens are a Work-module
+                // credential and must never reach account administration.
+                options.AddPolicy("RalphyAdmin", policy => policy
+                    .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+                    .RequireClaim(AppClaimTypes.UserType, nameof(UserType.Ralphy)));
             });
 
             // Add after Password Service registration

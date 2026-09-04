@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Ralphy.Application.Common;
@@ -14,7 +14,7 @@ namespace Ralphy.Api.Controllers.Work
     /// </summary>
     [ApiController]
     [Route("api/work/users")]
-    [Authorize(Policy = "WorkUser")]
+    [Authorize(Policy = "WorkRead")]
     [EnableRateLimiting("work-api")]
     public class WorkDirectoryController : ControllerBase
     {
