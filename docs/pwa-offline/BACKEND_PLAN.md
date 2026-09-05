@@ -147,6 +147,17 @@ than which one produced it.
 - Reusing another account's `publicId` returns **409, not 200** — do not treat a
   409 on create as "already synced" without checking the id came back matching.
 
+### The backdating window applies to creates only
+
+PWA-B5 asks for a ±90 day guard on `LoggedAt`. That belongs on **create**, where
+a device with a wrong clock could invent an entry at a nonsense date.
+
+It is deliberately **not** applied to updates. An update targets a record the
+user deliberately opened, and the client resends `loggedAt` on every edit — so
+the window there would make a log older than ninety days permanently
+uneditable, typo and all, for no integrity gain. The no-future rule stays on
+both paths, so forward drift is still caught.
+
 ### One thing that changed beyond the spec
 
 The Work controllers never ran their FluentValidation validators — the project

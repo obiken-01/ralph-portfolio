@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using Ralphy.Application.DTOs.Work;
 
 namespace Ralphy.Application.Validators.Work
@@ -53,15 +53,16 @@ namespace Ralphy.Application.Validators.Work
                 .WithMessage("publicId must be a real GUID, not an empty one.");
         }
 
-        internal static bool BeWithinClockTolerance(DateTime loggedAt)
-        {
-            var utc = loggedAt.Kind == DateTimeKind.Unspecified
-                ? DateTime.SpecifyKind(loggedAt, DateTimeKind.Utc)
-                : loggedAt.ToUniversalTime();
+        internal static bool BeWithinClockTolerance(DateTime loggedAt) =>
+            BeNotInTheFuture(loggedAt) && AsUtc(loggedAt) >= DateTime.UtcNow.Subtract(MaxBackdating);
 
-            var now = DateTime.UtcNow;
-            return utc <= now.Add(MaxClockSkew) && utc >= now.Subtract(MaxBackdating);
-        }
+        internal static bool BeNotInTheFuture(DateTime loggedAt) =>
+            AsUtc(loggedAt) <= DateTime.UtcNow.Add(MaxClockSkew);
+
+        private static DateTime AsUtc(DateTime value) =>
+            value.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(value, DateTimeKind.Utc)
+                : value.ToUniversalTime();
     }
 
     /// <summary>
@@ -81,11 +82,17 @@ namespace Ralphy.Application.Validators.Work
                 .GreaterThan(0).WithMessage("Duration must be greater than zero.")
                 .LessThanOrEqualTo(24).WithMessage("A single log cannot exceed 24 hours.");
 
+            // No future dates, but no backdating limit either.
+            //
+            // On create the ninety-day window guards against a device inventing
+            // an entry at a nonsense date. An update cannot do that: it targets a
+            // record the user deliberately opened, and the frontend resends
+            // loggedAt on every edit — so applying the window here would make a
+            // log older than ninety days permanently uneditable, typo and all,
+            // for no integrity gain. Forward drift is still caught.
             RuleFor(x => x.LoggedAt)
-                .Must(CreateTimeLogDtoValidator.BeWithinClockTolerance)
-                .WithMessage(
-                    $"loggedAt must be within the last {CreateTimeLogDtoValidator.MaxBackdating.Days} days " +
-                    "and not in the future. Check the device clock.");
+                .Must(CreateTimeLogDtoValidator.BeNotInTheFuture)
+                .WithMessage("loggedAt cannot be in the future. Check the device clock.");
         }
     }
 }

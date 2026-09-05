@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using Ralphy.Application.DTOs.Work;
 using Ralphy.Application.DTOs.Work.WorkItems;
 using Ralphy.Application.Services.Work;
@@ -218,6 +218,37 @@ public class OfflineSyncTimestampTests
         // Without slack, a phone a minute ahead of the server cannot log the work
         // it has just done — the single most common real request there is.
         result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void An_old_log_can_still_be_corrected()
+    {
+        var result = new UpdateTimeLogDtoValidator().Validate(new UpdateTimeLogDto
+        {
+            TaskDescription = "Fixing a typo in last quarter's entry",
+            Duration = 1m,
+            LoggedAt = DateTime.UtcNow.AddDays(-200),
+        });
+
+        // The backdating window belongs on create, where a wrong clock could
+        // invent an entry at a nonsense date. An update targets a record the user
+        // deliberately opened, and the client resends loggedAt on every edit — so
+        // applying the window here makes an old log permanently uneditable.
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void An_edit_still_cannot_move_a_log_into_the_future()
+    {
+        var result = new UpdateTimeLogDtoValidator().Validate(new UpdateTimeLogDto
+        {
+            TaskDescription = "Tomorrow",
+            Duration = 1m,
+            LoggedAt = DateTime.UtcNow.AddDays(1),
+        });
+
+        // Forward drift is still caught on both paths.
+        result.IsValid.Should().BeFalse();
     }
 
     [Fact]
