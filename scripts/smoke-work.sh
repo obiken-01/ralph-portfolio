@@ -18,6 +18,15 @@ set -uo pipefail
 
 API="${1:-http://localhost:5000}"
 RUN=$(date +%H%M%S)$$
+
+# Log dates are relative, never fixed. LoggedAt now has to fall inside the
+# backdating window, so a hardcoded date would pass today and then quietly start
+# failing the whole suite the day it aged past ninety — for a reason that has
+# nothing to do with the code under test.
+LOG_AT=$(date -u -d '4 days ago' +%Y-%m-%dT09:00:00Z)
+LOG_AT2=$(date -u -d '4 days ago' +%Y-%m-%dT11:00:00Z)
+ACC_FROM=$(date -u -d '10 days ago' +%Y-%m-%d)
+ACC_TO=$(date -u +%Y-%m-%d)
 PASS=0
 FAIL=0
 
@@ -92,14 +101,14 @@ expect "GET  /api/timekeeping/auth/me"    200 "$(code GET "$API/api/timekeeping/
 echo
 echo "== 2. time log CRUD on both prefixes ================================"
 LOG=$(body POST "$API/api/work/logs" "$W" \
-  "{\"taskDescription\":\"smoke-$RUN new\",\"duration\":1.5,\"loggedAt\":\"2026-09-01T09:00:00Z\"}" | J "d['data']['id']")
+  "{\"taskDescription\":\"smoke-$RUN new\",\"duration\":1.5,\"loggedAt\":\"$LOG_AT\"}" | J "d['data']['id']")
 LOG2=$(body POST "$API/api/timekeeping/logs" "$W" \
-  "{\"taskDescription\":\"smoke-$RUN old\",\"duration\":2,\"loggedAt\":\"2026-09-01T11:00:00Z\"}" | J "d['data']['id']")
+  "{\"taskDescription\":\"smoke-$RUN old\",\"duration\":2,\"loggedAt\":\"$LOG_AT2\"}" | J "d['data']['id']")
 [ -n "$LOG" ]  && ok "POST /api/work/logs"                || bad "POST /api/work/logs"
 [ -n "$LOG2" ] && ok "POST /api/timekeeping/logs (alias)" || bad "alias POST logs"
 expect "GET  /api/work/logs"              200 "$(code GET "$API/api/work/logs" "$W")"
 expect "GET  /api/timekeeping/logs"       200 "$(code GET "$API/api/timekeeping/logs" "$W")"
-expect "PUT  /api/work/logs/{id}"         200 "$(code PUT "$API/api/work/logs/$LOG" "$W" "{\"taskDescription\":\"smoke-$RUN edited\",\"duration\":2.5,\"loggedAt\":\"2026-09-01T09:00:00Z\"}")"
+expect "PUT  /api/work/logs/{id}"         200 "$(code PUT "$API/api/work/logs/$LOG" "$W" "{\"taskDescription\":\"smoke-$RUN edited\",\"duration\":2.5,\"loggedAt\":\"$LOG_AT\"}")"
 expect "GET  /api/work/logs/export"       200 "$(code GET "$API/api/work/logs/export" "$W")"
 expect "DEL  /api/timekeeping/logs/{id}"  200 "$(code DELETE "$API/api/timekeeping/logs/$LOG2" "$W")"
 
@@ -164,12 +173,12 @@ expect "a non-member cannot move the task"    404 "$(code PATCH "$API/api/work/t
 
 echo
 echo "== 6. accomplishments (self-scoped) ================================="
-expect "GET /work/accomplishments" 200 "$(code GET "$API/api/work/accomplishments?from=2026-09-01&to=2026-09-30" "$W")"
+expect "GET /work/accomplishments" 200 "$(code GET "$API/api/work/accomplishments?from=$ACC_FROM&to=$ACC_TO" "$W")"
 expect "this run's edited log is reported at its own hours" "2.5" \
-  "$(body GET "$API/api/work/accomplishments?from=2026-09-01&to=2026-09-30" "$W" \
+  "$(body GET "$API/api/work/accomplishments?from=$ACC_FROM&to=$ACC_TO" "$W" \
      | J "[e['hours'] for day in d['data']['days'] for e in day['entries'] if 'smoke-$RUN edited' in e['title']][0]")"
 expect "another user's accomplishments are empty" "0" \
-  "$(body GET "$API/api/work/accomplishments?from=2026-09-01&to=2026-09-30" "$OTHER" | J "len(d['data']['days'])")"
+  "$(body GET "$API/api/work/accomplishments?from=$ACC_FROM&to=$ACC_TO" "$OTHER" | J "len(d['data']['days'])")"
 
 echo
 echo "== 7. personal access tokens ======================================="
