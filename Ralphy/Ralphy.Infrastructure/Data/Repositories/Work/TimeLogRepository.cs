@@ -18,6 +18,11 @@ namespace Ralphy.Infrastructure.Data.Repositories.Work
                 .Include(t => t.WorkItem)
                 .FirstOrDefaultAsync(t => t.Id == id && t.WorkUserId == workUserId);
 
+        public async Task<TimeLog?> GetByPublicIdAsync(Guid publicId, int workUserId)
+            => await _context.TimeLogs
+                .Include(t => t.WorkItem)
+                .FirstOrDefaultAsync(t => t.PublicId == publicId && t.WorkUserId == workUserId);
+
         public async Task<(IEnumerable<TimeLog> Items, int TotalCount)> GetFilteredAsync(
             int workUserId,
             DateOnly? from,

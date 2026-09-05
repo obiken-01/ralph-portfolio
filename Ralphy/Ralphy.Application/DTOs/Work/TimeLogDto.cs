@@ -3,6 +3,12 @@
     public class TimeLogDto
     {
         public int Id { get; set; }
+
+        /// <summary>
+        /// The idempotency key. Echoed back so a syncing client can match what it
+        /// queued against what the server actually holds.
+        /// </summary>
+        public Guid PublicId { get; set; }
         public string TaskDescription { get; set; } = string.Empty;
         public DateTime LoggedAt { get; set; }
         public DateTime CreatedAt { get; set; }

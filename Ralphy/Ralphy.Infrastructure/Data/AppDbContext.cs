@@ -160,6 +160,11 @@ namespace Ralphy.Infrastructure.Data
 
                 entity.HasKey(t => t.Id);
 
+                // Unique, because it is what makes a replayed create idempotent:
+                // without the constraint two racing retries both pass the existence
+                // check and both insert.
+                entity.HasIndex(t => t.PublicId).IsUnique();
+
                 entity.Property(t => t.TaskDescription)
                     .IsRequired()
                     .HasMaxLength(500);
