@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Ralphy.Api.Filters;
 using Ralphy.Api.Helpers;
 using Ralphy.Application.Common;
 using Ralphy.Application.DTOs.Work.WorkItems;
@@ -15,6 +16,7 @@ namespace Ralphy.Api.Controllers.Work
     /// </summary>
     [ApiController]
     [Route("api/work/tasks")]
+    [ValidateDto]
     [Authorize(Policy = "WorkRead")]
     [EnableRateLimiting("work-api")]
     public class WorkItemsController : ControllerBase
@@ -86,7 +88,7 @@ namespace Ralphy.Api.Controllers.Work
             // demanded the naked JSON literal "InProgress", and the natural
             // { "status": "InProgress" } bound nothing and fell through to
             // Backlog. The service signature is unchanged.
-            var result = await _service.SetStatusAsync(UserId, publicId, dto.Status);
+            var result = await _service.SetStatusAsync(UserId, publicId, dto.Status, dto.CompletedAt);
             return Ok(ApiResponse<WorkItemCardDto>.Ok(result, "Status updated"));
         }
 

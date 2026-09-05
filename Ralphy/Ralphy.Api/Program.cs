@@ -69,12 +69,22 @@ try
         });
 
         // The Work module is interactive — dragging cards across a board issues
-        // a request per drop — so it gets its own, far larger window than the
+        // a request per drop — so it gets far more headroom than the
         // shopping-list OCR endpoint.
-        options.AddFixedWindowLimiter("work-api", limiterOptions =>
+        //
+        // A token bucket rather than a fixed window, because of offline sync. A
+        // device offline all morning flushes its outbox in a few seconds; under a
+        // fixed window that burst lands wherever the window happens to be and can
+        // exhaust it, and the client sees 429 in precisely the situation sync
+        // exists to handle. The bucket absorbs 100 at once and refills steadily,
+        // so a flush costs burst capacity that comes straight back rather than a
+        // quota that does not.
+        options.AddTokenBucketLimiter("work-api", limiterOptions =>
         {
-            limiterOptions.PermitLimit = 200;
-            limiterOptions.Window = TimeSpan.FromMinutes(1);
+            limiterOptions.TokenLimit = 100;
+            limiterOptions.TokensPerPeriod = 20;
+            limiterOptions.ReplenishmentPeriod = TimeSpan.FromSeconds(1);
+            limiterOptions.AutoReplenishment = true;
             limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
             limiterOptions.QueueLimit = 0;
         });

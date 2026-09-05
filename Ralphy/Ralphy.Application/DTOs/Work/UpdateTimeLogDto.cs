@@ -2,6 +2,15 @@
 {
     public class UpdateTimeLogDto
     {
+        /// <summary>
+        /// The UpdatedAt the client last saw. When supplied and the server has
+        /// moved past it, the write is refused with 409 and the current state.
+        ///
+        /// Optional, so online clients that never had a stale snapshot are
+        /// unaffected. Omitting it means last-write-wins, as before.
+        /// </summary>
+        public DateTime? ExpectedUpdatedAt { get; set; }
+
         public string TaskDescription { get; set; } = string.Empty;
         public DateTime LoggedAt { get; set; }
         public decimal Duration { get; set; }

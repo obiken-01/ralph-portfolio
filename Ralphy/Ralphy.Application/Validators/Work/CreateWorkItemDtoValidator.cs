@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using Ralphy.Application.DTOs.Work.WorkItems;
 
 namespace Ralphy.Application.Validators.Work
@@ -12,6 +12,14 @@ namespace Ralphy.Application.Validators.Work
                 .MaximumLength(200);
 
             RuleFor(x => x.Summary).MaximumLength(280);
+
+            // Guid.Empty is what an uninitialised client field serialises to.
+            // Accepted as a real key it would collide with the next such request
+            // from anyone.
+            RuleFor(x => x.PublicId)
+                .NotEqual(Guid.Empty)
+                .When(x => x.PublicId.HasValue)
+                .WithMessage("publicId must be a real GUID, not an empty one.");
 
             RuleFor(x => x.DueDate)
                 .GreaterThanOrEqualTo(x => x.StartDate!.Value)

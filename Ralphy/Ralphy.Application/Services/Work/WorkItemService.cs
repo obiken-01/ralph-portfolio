@@ -1,9 +1,10 @@
-using Ralphy.Application.Common;
+﻿using Ralphy.Application.Common;
 using Ralphy.Application.DTOs.Work.Labels;
 using Ralphy.Application.DTOs.Work.WorkItems;
 using Ralphy.Application.Services.Interfaces;
 using Ralphy.Domain.Entities.Work;
 using Ralphy.Domain.Enums;
+using Ralphy.Domain.Exceptions;
 using Ralphy.Domain.Interfaces;
 using Ralphy.Domain.Models.Work;
 using System.Text;
@@ -90,8 +91,19 @@ namespace Ralphy.Application.Services.Work
                 projectId = project.Id;
             }
 
+            // An outbox replaying a create whose first response was lost must not
+            // create the task twice. Scoped to the caller, so a colliding GUID
+            // from another account can never resolve to their record.
+            if (dto.PublicId is not null)
+            {
+                var existing = await _uow.WorkItems.GetByPublicIdAsync(userId, dto.PublicId.Value);
+                if (existing is not null)
+                    return MapToDetail(existing);
+            }
+
             var item = new WorkItem
             {
+                PublicId = dto.PublicId ?? Guid.NewGuid(),
                 Title = dto.Title.Trim(),
                 Summary = dto.Summary,
                 Description = dto.Description,
@@ -106,12 +118,29 @@ namespace Ralphy.Application.Services.Work
             };
 
             if (dto.Status == WorkItemStatus.Done)
-                item.CompletedAt = DateTime.UtcNow;
+                item.CompletedAt = Normalise(dto.CompletedAt ?? DateTime.UtcNow);
 
             await ApplyLabelsAsync(item, dto.LabelIds);
 
             await _uow.WorkItems.AddAsync(item);
-            await _uow.SaveChangesAsync();
+
+            try
+            {
+                await _uow.SaveChangesAsync();
+            }
+            catch (DuplicateKeyException)
+            {
+                // Two retries raced and both cleared the check above; the unique
+                // index settled it. Return the winner — the outcome the caller
+                // asked for has already happened.
+                var winner = await _uow.WorkItems.GetByPublicIdAsync(userId, item.PublicId);
+                if (winner is not null)
+                    return MapToDetail(winner);
+
+                // Unreadable under our own id means the GUID belongs to someone
+                // else. Not idempotency — a genuine collision.
+                throw;
+            }
 
             return await GetAsync(userId, item.PublicId);
         }
@@ -124,6 +153,7 @@ namespace Ralphy.Application.Services.Work
                 ?? throw new KeyNotFoundException("Work item not found");
 
             await EnsureCanWriteAsync(userId, item);
+            EnsureNotStale(item, dto.ExpectedUpdatedAt);
 
             var targetProjectId = item.ProjectId;
 
@@ -154,7 +184,7 @@ namespace Ralphy.Application.Services.Work
             item.AssigneeUserId = await ResolveAssigneeIdAsync(dto.AssigneePublicId, targetProjectId);
             item.UpdatedAt = DateTime.UtcNow;
 
-            ApplyStatus(item, dto.Status);
+            ApplyStatus(item, dto.Status, dto.CompletedAt);
             await ApplyLabelsAsync(item, dto.LabelIds);
 
             await _uow.SaveChangesAsync();
@@ -180,7 +210,7 @@ namespace Ralphy.Application.Services.Work
                 targetProjectId = project.Id;
             }
 
-            ApplyStatus(item, dto.Status);
+            ApplyStatus(item, dto.Status, dto.CompletedAt);
             item.UpdatedAt = DateTime.UtcNow;
 
             await _uow.WorkItems.ReorderColumnAsync(
@@ -194,14 +224,15 @@ namespace Ralphy.Application.Services.Work
             return MapToCard(moved);
         }
 
-        public async Task<WorkItemCardDto> SetStatusAsync(int userId, Guid publicId, WorkItemStatus status)
+        public async Task<WorkItemCardDto> SetStatusAsync(
+            int userId, Guid publicId, WorkItemStatus status, DateTime? completedAt = null)
         {
             var item = await _uow.WorkItems.GetForWriteAsync(userId, publicId)
                 ?? throw new KeyNotFoundException("Work item not found");
 
             await EnsureCanWriteAsync(userId, item);
 
-            ApplyStatus(item, status);
+            ApplyStatus(item, status, completedAt);
             item.BoardOrder = await _uow.WorkItems.GetNextBoardOrderAsync(userId, status, item.ProjectId);
             item.UpdatedAt = DateTime.UtcNow;
 
@@ -310,13 +341,53 @@ namespace Ralphy.Application.Services.Work
 
         // --- private helpers ---
 
-        private static void ApplyStatus(WorkItem item, WorkItemStatus status)
+        /// <summary>
+        /// The single transition both the dropdown and a Kanban drag run through.
+        ///
+        /// completedAt exists for offline sync: a task finished on Monday and
+        /// synced on Wednesday must report Monday, or the accomplishment report
+        /// attributes the work to the wrong day. Null keeps the previous
+        /// behaviour exactly — server clock — so online callers are unaffected.
+        /// </summary>
+        private static void ApplyStatus(WorkItem item, WorkItemStatus status, DateTime? completedAt = null)
         {
             if (item.Status == status)
                 return;
 
             item.Status = status;
-            item.CompletedAt = status == WorkItemStatus.Done ? DateTime.UtcNow : null;
+            item.CompletedAt = status == WorkItemStatus.Done
+                ? Normalise(completedAt ?? DateTime.UtcNow)
+                : null;
+        }
+
+        /// <summary>
+        /// Forces a client timestamp to UTC. See TimeLogService.Normalise — same
+        /// reasoning: timestamptz rejects DateTimeKind.Unspecified, and
+        /// relabelling a local time instead of converting it shifts the value.
+        /// </summary>
+        private static DateTime Normalise(DateTime value) => value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Local => value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Utc),
+        };
+
+        /// <summary>
+        /// Refuses an edit made against a snapshot the server has since moved past.
+        /// UpdatedAt is null until first edit, so CreatedAt stands in — see
+        /// TimeLogService.EnsureNotStale.
+        /// </summary>
+        private void EnsureNotStale(WorkItem item, DateTime? expectedUpdatedAt)
+        {
+            if (expectedUpdatedAt is null)
+                return;
+
+            var lastModified = item.UpdatedAt ?? item.CreatedAt;
+
+            if (lastModified > Normalise(expectedUpdatedAt.Value).AddSeconds(1))
+                throw new ConflictException(
+                    "This task was changed since you last saw it.",
+                    MapToDetail(item));
         }
 
         private async Task ApplyLabelsAsync(WorkItem item, List<int> labelIds)

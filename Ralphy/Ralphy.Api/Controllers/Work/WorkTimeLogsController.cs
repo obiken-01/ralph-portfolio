@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Ralphy.Api.Filters;
 using Ralphy.Api.Helpers;
 using Ralphy.Application.Common;
 using Ralphy.Application.DTOs.Work;
@@ -13,7 +15,12 @@ namespace Ralphy.Api.Controllers.Work
     // DEPRECATED alias — the tools site calls this until the Netlify cutover.
     // Remove in the follow-up commit once WM-B07 verifies the new prefix.
     [Route("api/timekeeping/logs")]
+    [ValidateDto]
     [Authorize(Policy = "WorkRead")]
+    // The one Work controller that shipped without a limiter. Brought under the
+    // policy now that the policy is a bucket sized for a sync flush — leaving the
+    // busiest write surface unlimited was not a decision, it was an omission.
+    [EnableRateLimiting("work-api")]
     public class WorkTimeLogsController : ControllerBase
     {
         private readonly ITimeLogService _timeLogService;

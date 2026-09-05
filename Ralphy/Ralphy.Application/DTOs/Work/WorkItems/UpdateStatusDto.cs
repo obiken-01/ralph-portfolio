@@ -1,4 +1,4 @@
-using Ralphy.Domain.Enums;
+﻿using Ralphy.Domain.Enums;
 
 namespace Ralphy.Application.DTOs.Work.WorkItems
 {
@@ -15,5 +15,15 @@ namespace Ralphy.Application.DTOs.Work.WorkItems
     public class UpdateStatusDto
     {
         public WorkItemStatus Status { get; set; }
+
+        /// <summary>
+        /// When the task was actually finished, for a status change made offline.
+        ///
+        /// Only read when the status is Done. Null means the server clock, which
+        /// is what every online caller sends — a task completed on Monday and
+        /// synced on Wednesday would otherwise report Wednesday, and the
+        /// accomplishment report would credit the wrong day.
+        /// </summary>
+        public DateTime? CompletedAt { get; set; }
     }
 }
