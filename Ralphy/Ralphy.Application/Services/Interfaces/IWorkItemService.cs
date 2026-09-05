@@ -1,4 +1,4 @@
-using Ralphy.Application.Common;
+﻿using Ralphy.Application.Common;
 using Ralphy.Application.DTOs.Work.WorkItems;
 using Ralphy.Domain.Enums;
 
@@ -27,7 +27,12 @@ namespace Ralphy.Application.Services.Interfaces
 
         Task<WorkItemCardDto> MoveAsync(int userId, Guid publicId, MoveWorkItemDto dto);
 
-        Task<WorkItemCardDto> SetStatusAsync(int userId, Guid publicId, WorkItemStatus status);
+        /// <summary>
+        /// completedAt is for offline sync — a task finished on Monday and synced
+        /// on Wednesday must report Monday. Null means the server clock.
+        /// </summary>
+        Task<WorkItemCardDto> SetStatusAsync(
+            int userId, Guid publicId, WorkItemStatus status, DateTime? completedAt = null);
 
         Task<WorkItemCardDto> SetAssigneeAsync(int userId, Guid publicId, UpdateAssigneeDto dto);
 
