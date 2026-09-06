@@ -15,5 +15,17 @@
         /// two-day disconnect, so the coarser timestamp is what syncs against.
         /// </summary>
         public DateTime? ExpectedUpdatedAt { get; set; }
+
+        /// <summary>
+        /// Detach the task from its project, making it standalone.
+        ///
+        /// A missing projectPublicId used to mean this, which silently orphaned
+        /// every task edited by a client that did not echo the field back — the
+        /// task vanished from the project board with nothing on screen to say
+        /// why. Omission now KEEPS the current project; unlinking has to be
+        /// asked for. Ignored when projectPublicId is supplied, which already
+        /// says where the task should end up.
+        /// </summary>
+        public bool ClearProject { get; set; }
     }
 }
