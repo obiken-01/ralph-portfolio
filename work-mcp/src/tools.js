@@ -275,7 +275,9 @@ export function buildTools(api) {
       scope: 'tasks:write',
       description:
         'Replace a task’s fields. This is a full update — fields you omit are cleared, so ' +
-        'read the task first and send back the whole shape.',
+        'read the task first and send back the whole shape. The one exception is the project: ' +
+        'omitting projectId leaves the task in the project it is already in, and unlinking it ' +
+        'takes clearProject.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -284,6 +286,12 @@ export function buildTools(api) {
           summary: { type: 'string', maxLength: 280 },
           description: { type: 'string' },
           projectId: GUID,
+          clearProject: {
+            type: 'boolean',
+            description:
+              'Detach the task from its project, making it standalone and private to its ' +
+              'creator. Only the creator may do this.',
+          },
           status: { type: 'string', enum: STATUSES },
           priority: { type: 'string', enum: PRIORITIES },
           startDate: DATE,
@@ -301,7 +309,8 @@ export function buildTools(api) {
       scope: 'tasks:write',
       description:
         'Move a task to another board column and position. Moving it into a different project ' +
-        'requires the Member role in the destination.',
+        'requires the Member role in the destination. Omitting projectId keeps the card in its ' +
+        'current project.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -309,6 +318,10 @@ export function buildTools(api) {
           status: { type: 'string', enum: STATUSES },
           newIndex: { type: 'integer', minimum: 0, description: 'Defaults to the top.' },
           projectId: GUID,
+          clearProject: {
+            type: 'boolean',
+            description: 'Drop the card out of its project as part of the move.',
+          },
         },
         required: ['publicId', 'status'],
       },
@@ -317,6 +330,7 @@ export function buildTools(api) {
           status: args.status,
           newIndex: args.newIndex ?? 0,
           projectPublicId: args.projectId ?? null,
+          clearProject: args.clearProject ?? false,
         }),
     },
 
@@ -360,7 +374,11 @@ function toCreateWorkItemBody(args) {
     priority: args.priority ?? 'Normal',
     startDate: args.startDate,
     dueDate: args.dueDate,
+    // A null project no longer means "unlink" on update — the server keeps the
+    // task where it is unless clearProject says otherwise. On create there is
+    // nothing to keep, so null still means standalone.
     projectPublicId: args.projectId ?? null,
+    clearProject: args.clearProject ?? false,
     assigneePublicId: args.assigneeId ?? null,
     labelIds: args.labelIds ?? [],
   };

@@ -187,7 +187,7 @@ wire as names (`InProgress`, `Urgent`), not ints.
 | GET | `/work/tasks` | Filter by project, status, priority, label, assignee, dates, search |
 | GET | `/work/tasks/board` `?projectId=&assignee=` | All columns, empty ones included |
 | GET/POST | `/work/tasks[/{publicId}]` | Create in a project needs `Member` |
-| PUT | `/work/tasks/{publicId}` | |
+| PUT | `/work/tasks/{publicId}` | Omitting `projectPublicId` keeps the task's current project |
 | PATCH | `/work/tasks/{publicId}/move` | Cross-project moves check the **destination** role |
 | PATCH | `/work/tasks/{publicId}/status` · `/assignee` | Assignee must be a project member |
 | DELETE | `/work/tasks/{publicId}` | |
@@ -212,6 +212,16 @@ token cannot mint itself a write-scoped one.
 **Visibility.** A task is visible if it has no project and you created it, or it
 belongs to a project you are a member of. One predicate enforces this and every
 read composes onto it. Seeing a task never exposes other people's hours on it.
+
+**The project field on a write.** `PUT /work/tasks/{publicId}` and `PATCH
+/work/tasks/{publicId}/move` read the project the same way: a `projectPublicId`
+moves the task there (membership of the *destination* is checked), `"clearProject":
+true` unlinks it into a standalone task, and sending neither leaves the task in
+the project it is already in. An absent `projectPublicId` used to mean "make it
+standalone", so any client that saved an edit or dragged a card without echoing
+the field back silently stripped the task out of its project. Only the task's
+creator may unlink it — detaching hides it from every other member of the
+project.
 
 **409 Conflict** from a board move means someone else moved the card first —
 refetch the board rather than showing an error.

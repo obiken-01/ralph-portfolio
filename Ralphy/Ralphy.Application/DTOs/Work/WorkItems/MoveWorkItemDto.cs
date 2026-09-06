@@ -18,7 +18,18 @@ namespace Ralphy.Application.DTOs.Work.WorkItems
         /// Allows cross-project moves. The service checks membership of the
         /// DESTINATION separately — being able to see the source proves nothing
         /// about the target.
+        ///
+        /// Omitting it keeps the card in the project it is already in. It used to
+        /// mean "standalone", so a board that dragged a card without echoing the
+        /// field back unlinked it from its project on every drop.
         /// </summary>
         public Guid? ProjectPublicId { get; set; }
+
+        /// <summary>
+        /// Drop the card out of its project as part of the move. See
+        /// UpdateWorkItemDto.ClearProject — the two write paths must agree on
+        /// what an absent project means, or one of them orphans tasks.
+        /// </summary>
+        public bool ClearProject { get; set; }
     }
 }

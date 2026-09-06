@@ -155,24 +155,8 @@ namespace Ralphy.Application.Services.Work
             await EnsureCanWriteAsync(userId, item);
             EnsureNotStale(item, dto.ExpectedUpdatedAt);
 
-            var targetProjectId = item.ProjectId;
-
-            if (dto.ProjectPublicId is null)
-            {
-                // Detaching to standalone would make the item private to its
-                // creator, silently removing it from everyone else's board.
-                if (item.ProjectId is not null && item.CreatedByUserId != userId)
-                    throw new UnauthorizedAccessException(
-                        "Only the creator can detach this task from its project.");
-
-                targetProjectId = null;
-            }
-            else
-            {
-                var project = await GetVisibleProjectOrThrowAsync(userId, dto.ProjectPublicId.Value);
-                await EnsureRoleAsync(userId, project.Id, ProjectRole.Member);
-                targetProjectId = project.Id;
-            }
+            var targetProjectId = await ResolveTargetProjectIdAsync(
+                userId, item, dto.ProjectPublicId, dto.ClearProject);
 
             item.Title = dto.Title.Trim();
             item.Summary = dto.Summary;
@@ -199,16 +183,8 @@ namespace Ralphy.Application.Services.Work
 
             await EnsureCanWriteAsync(userId, item);
 
-            int? targetProjectId = null;
-
-            if (dto.ProjectPublicId is not null)
-            {
-                // Seeing the source proves nothing about the destination. Without
-                // this check a member of project A could push work into project B.
-                var project = await GetVisibleProjectOrThrowAsync(userId, dto.ProjectPublicId.Value);
-                await EnsureRoleAsync(userId, project.Id, ProjectRole.Member);
-                targetProjectId = project.Id;
-            }
+            var targetProjectId = await ResolveTargetProjectIdAsync(
+                userId, item, dto.ProjectPublicId, dto.ClearProject);
 
             ApplyStatus(item, dto.Status, dto.CompletedAt);
             item.UpdatedAt = DateTime.UtcNow;
@@ -333,6 +309,41 @@ namespace Ralphy.Application.Services.Work
             if (role is null || role < minimum)
                 throw new UnauthorizedAccessException(
                     $"This action requires the {minimum} role on the project.");
+        }
+
+        /// <summary>
+        /// Where a write leaves the task's project.
+        ///
+        /// The rule both write paths share: a project id moves the task there, an
+        /// explicit clearProject unlinks it, and silence keeps whatever the task
+        /// already had. Silence used to mean "unlink", so any client that edited a
+        /// task or dragged a card without echoing projectPublicId back stripped
+        /// the project off it — the task disappeared from the project board and
+        /// its own detail screen read "Project: None", with nothing anywhere
+        /// saying the edit had done that.
+        /// </summary>
+        private async Task<int?> ResolveTargetProjectIdAsync(
+            int userId, WorkItem item, Guid? projectPublicId, bool clearProject)
+        {
+            if (projectPublicId is not null)
+            {
+                // Seeing the source proves nothing about the destination. Without
+                // this check a member of project A could push work into project B.
+                var project = await GetVisibleProjectOrThrowAsync(userId, projectPublicId.Value);
+                await EnsureRoleAsync(userId, project.Id, ProjectRole.Member);
+                return project.Id;
+            }
+
+            if (!clearProject)
+                return item.ProjectId;
+
+            // Detaching to standalone would make the item private to its
+            // creator, silently removing it from everyone else's board.
+            if (item.ProjectId is not null && item.CreatedByUserId != userId)
+                throw new UnauthorizedAccessException(
+                    "Only the creator can detach this task from its project.");
+
+            return null;
         }
 
         private async Task<Project> GetVisibleProjectOrThrowAsync(int userId, Guid publicId) =>
