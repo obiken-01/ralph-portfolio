@@ -232,7 +232,8 @@ namespace Ralphy.Application.Services.Work
             LoggedAt = log.LoggedAt,
             WorkItemId = log.WorkItem?.PublicId,
             WorkItemTitle = log.WorkItem?.Title,
-            CreatedAt = log.CreatedAt
+            CreatedAt = log.CreatedAt,
+            UpdatedAt = log.UpdatedAt
         };
     }
 }
