@@ -10,7 +10,23 @@ All responses use the envelope:
 { "statusCode": 200, "message": "OK", "data": { ... } }
 ```
 
-Validation failures return `{ "statusCode": 400, "message": "Validation failed", "errors": [ ... ] }`.
+Validation failures return `400` in the same envelope, with one entry per broken
+rule. `field` is the property name as the validator spells it (`LoggedAt`, not
+`loggedAt`), and is omitted for a rule that belongs to no single property:
+
+```json
+{
+  "success": false,
+  "statusCode": 400,
+  "message": "Validation failed",
+  "errors": [
+    { "field": "LoggedAt", "message": "loggedAt must be within the last 90 days and no more than 24 hours ahead. Check the device clock." }
+  ]
+}
+```
+
+Unknown JSON members are ignored, not rejected — a client may send a property
+this API does not know about without being refused.
 
 **Auth legend**: 🌐 public · 🔒 JWT bearer (admin) · 🔑 `X-Api-Key` header · ⏱ rate-limited
 
