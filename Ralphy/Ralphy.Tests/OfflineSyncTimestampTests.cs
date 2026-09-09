@@ -162,33 +162,44 @@ public class OfflineSyncTimestampTests
     // ── the clock guard ──────────────────────────────────────────────
 
     [Theory]
-    [InlineData(-1)]
-    [InlineData(-89)]
+    [InlineData(-24 * 89)]
+    [InlineData(-24)]
     [InlineData(0)]
-    public void A_plausible_date_is_accepted(int daysAgo)
+    // Entering the day's blocks in one sitting means dating a log ahead of the
+    // moment you type it. This is the case a five-minute tolerance refused, and
+    // the whole reason the limit is a day.
+    [InlineData(2)]
+    [InlineData(8)]
+    [InlineData(23)]
+    public void A_plausible_date_is_accepted(int hoursFromNow)
     {
         var result = new CreateTimeLogDtoValidator().Validate(new CreateTimeLogDto
         {
             TaskDescription = "Real work",
             Duration = 1m,
-            LoggedAt = DateTime.UtcNow.AddDays(daysAgo),
+            LoggedAt = DateTime.UtcNow.AddHours(hoursFromNow),
         });
 
         result.IsValid.Should().BeTrue();
     }
 
-    [Fact]
-    public void A_date_in_the_future_is_refused()
+    [Theory]
+    [InlineData(2)]
+    [InlineData(30)]
+    [InlineData(365)]
+    public void A_date_beyond_the_forward_limit_is_refused(int daysFromNow)
     {
         var result = new CreateTimeLogDtoValidator().Validate(new CreateTimeLogDto
         {
-            TaskDescription = "Tomorrow's work",
+            TaskDescription = "Next week's work",
             Duration = 1m,
-            LoggedAt = DateTime.UtcNow.AddDays(1),
+            LoggedAt = DateTime.UtcNow.AddDays(daysFromNow),
         });
 
-        // A device with a badly wrong clock should not be able to write nonsense
-        // dates into the report.
+        // Widening the tolerance to a day was about ordinary entry. A device
+        // whose clock is out by weeks or years is still the thing the guard is
+        // for — that date reaches the accomplishment report and is not noticed
+        // until DTR cutoff.
         result.IsValid.Should().BeFalse();
     }
 
@@ -238,17 +249,32 @@ public class OfflineSyncTimestampTests
     }
 
     [Fact]
-    public void An_edit_still_cannot_move_a_log_into_the_future()
+    public void An_edit_still_cannot_move_a_log_far_into_the_future()
     {
         var result = new UpdateTimeLogDtoValidator().Validate(new UpdateTimeLogDto
         {
-            TaskDescription = "Tomorrow",
+            TaskDescription = "Next month",
             Duration = 1m,
-            LoggedAt = DateTime.UtcNow.AddDays(1),
+            LoggedAt = DateTime.UtcNow.AddDays(30),
         });
 
         // Forward drift is still caught on both paths.
         result.IsValid.Should().BeFalse();
+    }
+
+    [Fact]
+    public void An_edit_can_correct_a_log_to_later_the_same_day()
+    {
+        var result = new UpdateTimeLogDtoValidator().Validate(new UpdateTimeLogDto
+        {
+            TaskDescription = "Afternoon block, corrected",
+            Duration = 1m,
+            LoggedAt = DateTime.UtcNow.AddHours(6),
+        });
+
+        // Create and edit share the one limit. An entry the create path accepts
+        // that the edit path refuses would be a log you could file but not fix.
+        result.IsValid.Should().BeTrue();
     }
 
     [Fact]
