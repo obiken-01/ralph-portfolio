@@ -40,7 +40,7 @@ namespace Ralphy.Api.Controllers
             var validation = await _validator.ValidateAsync(request);
             if (!validation.IsValid)
                 return BadRequest(ApiResponse<object>.Fail(400, "Validation failed",
-                    validation.Errors.Select(e => e.ErrorMessage)));
+                    validation.Errors.ToApiErrors()));
 
             var comment = await _commentService.CreateAsync(postId, request);
             _logger.LogInformation("Comment added to post {PostId} by {Author}",

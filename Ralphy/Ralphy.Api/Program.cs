@@ -129,16 +129,26 @@ try
             {
                 var errors = context.ModelState
                     .Where(e => e.Value?.Errors.Count > 0)
-                    .SelectMany(e => e.Value!.Errors)
-                    .Select(e => e.ErrorMessage)
+                    .SelectMany(entry => entry.Value!.Errors.Select(error =>
+                        new ApiError(
+                            // A body-binding failure keys off the JSON path —
+                            // "$.duration" — which is not a field name the client
+                            // can match against its form.
+                            entry.Key.StartsWith("$.") ? entry.Key[2..] : entry.Key,
+                            // A type mismatch has no ErrorMessage, only the
+                            // exception behind it. Saying nothing at all is how
+                            // this response became unactionable in the first place.
+                            string.IsNullOrEmpty(error.ErrorMessage)
+                                ? "The value could not be read."
+                                : error.ErrorMessage)))
                     .ToList();
 
-                return new BadRequestObjectResult(new
-                {
-                    StatusCode = 400,
-                    Message = "Validation failed",
-                    Errors = errors
-                });
+                // Same envelope as every other failure. This factory used to emit
+                // a bare anonymous object with no `success`, so a client parsing
+                // the standard shape fell through to a generic message on exactly
+                // the requests that needed the detail most.
+                return new BadRequestObjectResult(
+                    ApiResponse<object>.Fail(400, "Validation failed", errors));
             };
         });
 
