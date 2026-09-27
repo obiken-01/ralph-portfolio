@@ -25,8 +25,8 @@ namespace Ralphy.Infrastructure.Data.Repositories.Work
 
         public async Task<(IEnumerable<TimeLog> Items, int TotalCount)> GetFilteredAsync(
             int workUserId,
-            DateOnly? from,
-            DateOnly? to,
+            DateTime? fromUtc,
+            DateTime? toUtcExclusive,
             string? search,
             int? workItemId,
             string sortBy,
@@ -34,7 +34,7 @@ namespace Ralphy.Infrastructure.Data.Repositories.Work
             int page,
             int pageSize)
         {
-            var query = BuildQuery(workUserId, from, to, search, workItemId);
+            var query = BuildQuery(workUserId, fromUtc, toUtcExclusive, search, workItemId);
             query = ApplySort(query, sortBy, sortDir);
 
             var totalCount = await query.CountAsync();
@@ -49,26 +49,26 @@ namespace Ralphy.Infrastructure.Data.Repositories.Work
 
         public async Task<IEnumerable<TimeLog>> GetForExportAsync(
             int workUserId,
-            DateOnly? from,
-            DateOnly? to,
+            DateTime? fromUtc,
+            DateTime? toUtcExclusive,
             string? search,
             int? workItemId,
             string sortBy,
             string sortDir)
         {
-            var query = BuildQuery(workUserId, from, to, search, workItemId);
+            var query = BuildQuery(workUserId, fromUtc, toUtcExclusive, search, workItemId);
             query = ApplySort(query, sortBy, sortDir);
 
             return await query.ToListAsync();
         }
 
         public async Task<IReadOnlyList<TimeLog>> GetForRangeAsync(
-            int workUserId, DateOnly from, DateOnly to, CancellationToken ct = default)
+            int workUserId, DateTime fromUtc, DateTime toUtcExclusive, CancellationToken ct = default)
             => await _context.TimeLogs
                 .Include(t => t.WorkItem)!.ThenInclude(w => w!.Project)
                 .Where(t => t.WorkUserId == workUserId
-                         && t.LoggedAt >= from.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc)
-                         && t.LoggedAt <= to.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc))
+                         && t.LoggedAt >= fromUtc
+                         && t.LoggedAt < toUtcExclusive)
                 .OrderBy(t => t.LoggedAt)
                 .ToListAsync(ct);
 
@@ -85,8 +85,8 @@ namespace Ralphy.Infrastructure.Data.Repositories.Work
 
         private IQueryable<TimeLog> BuildQuery(
             int workUserId,
-            DateOnly? from,
-            DateOnly? to,
+            DateTime? fromUtc,
+            DateTime? toUtcExclusive,
             string? search,
             int? workItemId)
         {
@@ -97,11 +97,11 @@ namespace Ralphy.Infrastructure.Data.Repositories.Work
             if (workItemId.HasValue)
                 query = query.Where(t => t.WorkItemId == workItemId.Value);
 
-            if (from.HasValue)
-                query = query.Where(t => t.LoggedAt >= from.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));
+            if (fromUtc.HasValue)
+                query = query.Where(t => t.LoggedAt >= fromUtc.Value);
 
-            if (to.HasValue)
-                query = query.Where(t => t.LoggedAt <= to.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc));
+            if (toUtcExclusive.HasValue)
+                query = query.Where(t => t.LoggedAt < toUtcExclusive.Value);
 
             if (!string.IsNullOrWhiteSpace(search))
                 query = query.Where(t => t.TaskDescription.ToLower().Contains(search.ToLower()));

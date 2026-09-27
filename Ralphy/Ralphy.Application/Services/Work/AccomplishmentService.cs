@@ -1,3 +1,4 @@
+using Ralphy.Application.Common;
 using Ralphy.Application.DTOs.Work.Accomplishments;
 using Ralphy.Application.Services.Interfaces;
 using Ralphy.Domain.Entities.Work;
@@ -21,18 +22,23 @@ namespace Ralphy.Application.Services.Work
             _uow = uow;
         }
 
-        public async Task<AccomplishmentRangeDto> GetAsync(int userId, DateOnly from, DateOnly to)
+        public async Task<AccomplishmentRangeDto> GetAsync(
+            int userId, DateOnly from, DateOnly to, string? timeZone = null)
         {
             if (to < from)
                 throw new ArgumentException("The end of the range cannot precede its start.");
 
-            var logs = await _uow.TimeLogs.GetForRangeAsync(userId, from, to);
+            var zone = WorkTimeZone.Resolve(timeZone);
+            var logs = await _uow.TimeLogs.GetForRangeAsync(
+                userId,
+                WorkTimeZone.StartOfDayUtc(from, zone),
+                WorkTimeZone.StartOfDayUtc(to.AddDays(1), zone));
 
-            // Grouped on the raw date portion of LoggedAt with no timezone
-            // conversion: the logs were entered in local wall-clock terms, and
-            // shifting them here would move work across the cutoff boundary.
+            // LoggedAt is stored UTC, so it is grouped on its local date: a 7:30 AM
+            // Manila log is 23:30 UTC the day before, and its raw date would move
+            // it across the day — or the cutoff — it was entered on.
             var days = logs
-                .GroupBy(log => DateOnly.FromDateTime(log.LoggedAt))
+                .GroupBy(log => DateOnly.FromDateTime(WorkTimeZone.ToLocal(log.LoggedAt, zone)))
                 .OrderBy(group => group.Key)
                 .Select(BuildDay)
                 .ToList();

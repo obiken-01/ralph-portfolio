@@ -1,4 +1,5 @@
-﻿using Ralphy.Application.DTOs.Work;
+﻿using Ralphy.Application.Common;
+using Ralphy.Application.DTOs.Work;
 using Ralphy.Application.Services.Interfaces;
 using Ralphy.Domain.Entities.Work;
 using Ralphy.Domain.Exceptions;
@@ -19,11 +20,12 @@ namespace Ralphy.Application.Services.Work
         public async Task<PagedTimeLogResultDto> GetFilteredAsync(Guid userPublicId, TimeLogQueryDto query)
         {
             var user = await GetUserOrThrowAsync(userPublicId);
+            var (fromUtc, toUtc) = ToUtcRange(query, WorkTimeZone.Resolve(query.Tz));
 
             var (items, totalCount) = await _uow.TimeLogs.GetFilteredAsync(
                 user.Id,
-                query.From,
-                query.To,
+                fromUtc,
+                toUtc,
                 query.Search,
                 await ResolveWorkItemIdAsync(user.Id, query.WorkItemId),
                 query.SortBy,
@@ -134,11 +136,13 @@ namespace Ralphy.Application.Services.Work
         public async Task<byte[]> ExportCsvAsync(Guid userPublicId, TimeLogQueryDto query)
         {
             var user = await GetUserOrThrowAsync(userPublicId);
+            var zone = WorkTimeZone.Resolve(query.Tz);
+            var (fromUtc, toUtc) = ToUtcRange(query, zone);
 
             var logs = await _uow.TimeLogs.GetForExportAsync(
                 user.Id,
-                query.From,
-                query.To,
+                fromUtc,
+                toUtc,
                 query.Search,
                 await ResolveWorkItemIdAsync(user.Id, query.WorkItemId),
                 query.SortBy,
@@ -149,7 +153,8 @@ namespace Ralphy.Application.Services.Work
 
             foreach (var log in logs)
             {
-                var loggedAt = log.LoggedAt.ToString("yyyy-MM-dd HH:mm");
+                // Stored UTC; printed as the wall-clock time the user entered.
+                var loggedAt = WorkTimeZone.ToLocal(log.LoggedAt, zone).ToString("yyyy-MM-dd HH:mm");
                 var description = log.TaskDescription.Replace("\"", "\"\"");
                 sb.AppendLine($"\"{loggedAt}\",\"{log.Duration}\",\"{description}\"");
             }
@@ -158,6 +163,12 @@ namespace Ralphy.Application.Services.Work
         }
 
         // --- private helpers ---
+
+        /// <summary>From/To as UTC instants; To is widened to the start of the next local day.</summary>
+        private static (DateTime? FromUtc, DateTime? ToUtcExclusive) ToUtcRange(
+            TimeLogQueryDto query, TimeZoneInfo zone)
+            => (query.From is { } from ? WorkTimeZone.StartOfDayUtc(from, zone) : null,
+                query.To is { } to ? WorkTimeZone.StartOfDayUtc(to.AddDays(1), zone) : null);
 
         /// <summary>
         /// Forces a client timestamp to UTC.

@@ -4,6 +4,12 @@
     {
         public DateOnly? From { get; set; }
         public DateOnly? To { get; set; }
+
+        /// <summary>
+        /// The caller's IANA timezone (e.g. "Asia/Manila"). From/To are days in
+        /// this zone, and the CSV prints times in it. Defaults to Manila.
+        /// </summary>
+        public string? Tz { get; set; }
         public string? Search { get; set; }
 
         /// <summary>Narrows the list to hours booked against one task.</summary>
