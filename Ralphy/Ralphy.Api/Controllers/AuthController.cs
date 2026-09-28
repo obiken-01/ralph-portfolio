@@ -34,7 +34,7 @@ namespace Ralphy.Api.Controllers
             var validation = await _registerValidator.ValidateAsync(request);
             if (!validation.IsValid)
                 return BadRequest(ApiResponse<object>.Fail(400, "Validation failed",
-                    validation.Errors.Select(e => e.ErrorMessage)));
+                    validation.Errors.ToApiErrors()));
 
             var result = await _authService.RegisterAsync(request);
             _logger.LogInformation("User registered: {Email}", request.Email);
@@ -47,7 +47,7 @@ namespace Ralphy.Api.Controllers
             var validation = await _loginValidator.ValidateAsync(request);
             if (!validation.IsValid)
                 return BadRequest(ApiResponse<object>.Fail(400, "Validation failed",
-                    validation.Errors.Select(e => e.ErrorMessage)));
+                    validation.Errors.ToApiErrors()));
 
             var result = await _authService.LoginAsync(request);
             _logger.LogInformation("User logged in: {Email}", request.Email);

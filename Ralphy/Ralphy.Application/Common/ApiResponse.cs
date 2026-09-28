@@ -6,7 +6,12 @@
         public int StatusCode { get; set; }
         public string Message { get; set; } = string.Empty;
         public T? Data { get; set; }
-        public IEnumerable<string>? Errors { get; set; }
+
+        /// <summary>
+        /// Field-level detail behind <see cref="Message"/>. Null when the failure
+        /// has nothing to attribute — a 401, a 404, an unexpected 500.
+        /// </summary>
+        public IEnumerable<ApiError>? Errors { get; set; }
 
         // ── Static factory methods ────────────────────────────────
 
@@ -31,7 +36,7 @@
         public static ApiResponse<T> Fail(
             int statusCode,
             string message,
-            IEnumerable<string>? errors = null) =>
+            IEnumerable<ApiError>? errors = null) =>
             new()
             {
                 Success = false,
@@ -40,6 +45,17 @@
                 Data = default,
                 Errors = errors
             };
+
+        /// <summary>
+        /// For failures that genuinely have no field to point at — a rate-limit
+        /// refusal, say. Prefer the overload above wherever the property name is
+        /// known; a message with no field is what the client could not act on.
+        /// </summary>
+        public static ApiResponse<T> Fail(
+            int statusCode,
+            string message,
+            IEnumerable<string> errors) =>
+            Fail(statusCode, message, errors.Select(e => new ApiError(null, e)));
     }
 
     // Non-generic version for responses without data

@@ -53,7 +53,7 @@ namespace Ralphy.Api.Filters
                     ApiResponse<object>.Fail(
                         400,
                         "Validation failed",
-                        result.Errors.Select(e => e.ErrorMessage)));
+                        result.Errors.ToApiErrors()));
                 return;
             }
 

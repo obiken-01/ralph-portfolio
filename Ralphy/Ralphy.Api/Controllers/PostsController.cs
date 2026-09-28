@@ -73,7 +73,7 @@ namespace Ralphy.Api.Controllers
             var validation = await _createValidator.ValidateAsync(request);
             if (!validation.IsValid)
                 return BadRequest(ApiResponse<object>.Fail(400, "Validation failed",
-                    validation.Errors.Select(e => e.ErrorMessage)));
+                    validation.Errors.ToApiErrors()));
 
             var userId = ClaimsHelper.GetUserId(User);
             var post = await _postService.CreateAsync(request, userId);
@@ -89,7 +89,7 @@ namespace Ralphy.Api.Controllers
             var validation = await _updateValidator.ValidateAsync(request);
             if (!validation.IsValid)
                 return BadRequest(ApiResponse<object>.Fail(400, "Validation failed",
-                    validation.Errors.Select(e => e.ErrorMessage)));
+                    validation.Errors.ToApiErrors()));
 
             var userId = ClaimsHelper.GetUserId(User);
             var post = await _postService.UpdateAsync(id, request, userId);

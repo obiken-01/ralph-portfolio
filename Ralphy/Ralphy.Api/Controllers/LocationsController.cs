@@ -56,7 +56,7 @@ namespace Ralphy.Api.Controllers
             var validation = await _validator.ValidateAsync(request);
             if (!validation.IsValid)
                 return BadRequest(ApiResponse<object>.Fail(400, "Validation failed",
-                    validation.Errors.Select(e => e.ErrorMessage)));
+                    validation.Errors.ToApiErrors()));
 
             var location = await _locationService.CreateAsync(request);
             _logger.LogInformation("Location created: {PlaceName}", request.PlaceName);
@@ -70,7 +70,7 @@ namespace Ralphy.Api.Controllers
             var validation = await _validator.ValidateAsync(request);
             if (!validation.IsValid)
                 return BadRequest(ApiResponse<object>.Fail(400, "Validation failed",
-                    validation.Errors.Select(e => e.ErrorMessage)));
+                    validation.Errors.ToApiErrors()));
 
             var location = await _locationService.UpdateAsync(id, request);
             _logger.LogInformation("Location updated: {Id}", id);

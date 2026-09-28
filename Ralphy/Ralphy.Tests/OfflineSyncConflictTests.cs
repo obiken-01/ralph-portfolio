@@ -242,4 +242,59 @@ public class OfflineSyncConflictTests
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
     }
+
+    // ── the client can actually obtain what the check asks for ───────
+
+    [Fact]
+    public async Task A_read_returns_the_stamp_the_next_edit_has_to_send()
+    {
+        using var db = new TestDb();
+        var user = WorkerPublicId(db);
+        var log = db.AddTimeLog();
+        db.SimulateNewRequest();
+
+        var before = await Logs(db).GetByIdAsync(user, log.Id);
+        before.UpdatedAt.Should().BeNull("this log has never been edited");
+
+        var edited = await Logs(db).UpdateAsync(user, log.Id, new UpdateTimeLogDto
+        {
+            TaskDescription = "First edit",
+            Duration = 1m,
+            LoggedAt = DateTime.UtcNow.AddHours(-2),
+            ExpectedUpdatedAt = before.UpdatedAt ?? before.CreatedAt,
+        });
+
+        // Without this the client has nothing to send on the second edit but
+        // CreatedAt, which the server has now moved past — so a correction made
+        // offline would be refused as stale forever.
+        edited.UpdatedAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task A_second_edit_using_the_returned_stamp_is_not_a_conflict()
+    {
+        using var db = new TestDb();
+        var user = WorkerPublicId(db);
+        var log = db.AddTimeLog();
+        db.SimulateNewRequest();
+
+        var first = await Logs(db).UpdateAsync(user, log.Id, new UpdateTimeLogDto
+        {
+            TaskDescription = "First edit",
+            Duration = 1m,
+            LoggedAt = DateTime.UtcNow.AddHours(-2),
+        });
+        db.SimulateNewRequest();
+
+        var act = async () => await Logs(db).UpdateAsync(user, log.Id, new UpdateTimeLogDto
+        {
+            TaskDescription = "Second edit",
+            Duration = 2m,
+            LoggedAt = DateTime.UtcNow.AddHours(-2),
+            ExpectedUpdatedAt = first.UpdatedAt ?? first.CreatedAt,
+        });
+
+        await act.Should().NotThrowAsync();
+        db.Context.TimeLogs.Single().TaskDescription.Should().Be("Second edit");
+    }
 }

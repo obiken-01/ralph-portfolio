@@ -21,10 +21,20 @@ namespace Ralphy.Application.Validators.Work
         public static readonly TimeSpan MaxBackdating = TimeSpan.FromDays(90);
 
         /// <summary>
-        /// Slack for a device clock running slightly fast. Without it a phone a
-        /// minute ahead of the server cannot log the work it just did.
+        /// How far ahead of the server a log may be dated.
+        ///
+        /// This was five minutes — enough slack for a device clock running fast,
+        /// and nothing else. That refused ordinary entry: filling in the day's
+        /// blocks in the morning means dating a log hours ahead of the moment you
+        /// type it, and the form could only say "Validation failed".
+        ///
+        /// A day is the useful line. It covers entering any block of the working
+        /// day whenever you get to it, and still catches what the guard is
+        /// actually for — a clock set to the wrong week or year, or a timestamp
+        /// mangled in the offline queue, either of which lands in the
+        /// accomplishment report and is not noticed until DTR cutoff.
         /// </summary>
-        public static readonly TimeSpan MaxClockSkew = TimeSpan.FromMinutes(5);
+        public static readonly TimeSpan MaxForwardDating = TimeSpan.FromHours(24);
 
         public CreateTimeLogDtoValidator()
         {
@@ -41,8 +51,8 @@ namespace Ralphy.Application.Validators.Work
             RuleFor(x => x.LoggedAt)
                 .Must(BeWithinClockTolerance)
                 .WithMessage(
-                    $"loggedAt must be within the last {MaxBackdating.Days} days and not in the future. " +
-                    "Check the device clock.");
+                    $"loggedAt must be within the last {MaxBackdating.Days} days and no more than " +
+                    $"{MaxForwardDating.TotalHours:0} hours ahead. Check the device clock.");
 
             // Guid.Empty is what an uninitialised client field serialises to. It
             // would be accepted as a real key, and then the second such request
@@ -54,10 +64,10 @@ namespace Ralphy.Application.Validators.Work
         }
 
         internal static bool BeWithinClockTolerance(DateTime loggedAt) =>
-            BeNotInTheFuture(loggedAt) && AsUtc(loggedAt) >= DateTime.UtcNow.Subtract(MaxBackdating);
+            BeWithinForwardLimit(loggedAt) && AsUtc(loggedAt) >= DateTime.UtcNow.Subtract(MaxBackdating);
 
-        internal static bool BeNotInTheFuture(DateTime loggedAt) =>
-            AsUtc(loggedAt) <= DateTime.UtcNow.Add(MaxClockSkew);
+        internal static bool BeWithinForwardLimit(DateTime loggedAt) =>
+            AsUtc(loggedAt) <= DateTime.UtcNow.Add(MaxForwardDating);
 
         private static DateTime AsUtc(DateTime value) =>
             value.Kind == DateTimeKind.Unspecified
@@ -82,7 +92,7 @@ namespace Ralphy.Application.Validators.Work
                 .GreaterThan(0).WithMessage("Duration must be greater than zero.")
                 .LessThanOrEqualTo(24).WithMessage("A single log cannot exceed 24 hours.");
 
-            // No future dates, but no backdating limit either.
+            // The same forward limit as create, but no backdating limit.
             //
             // On create the ninety-day window guards against a device inventing
             // an entry at a nonsense date. An update cannot do that: it targets a
@@ -91,8 +101,10 @@ namespace Ralphy.Application.Validators.Work
             // log older than ninety days permanently uneditable, typo and all,
             // for no integrity gain. Forward drift is still caught.
             RuleFor(x => x.LoggedAt)
-                .Must(CreateTimeLogDtoValidator.BeNotInTheFuture)
-                .WithMessage("loggedAt cannot be in the future. Check the device clock.");
+                .Must(CreateTimeLogDtoValidator.BeWithinForwardLimit)
+                .WithMessage(
+                    $"loggedAt cannot be more than {CreateTimeLogDtoValidator.MaxForwardDating.TotalHours:0} hours ahead. " +
+                    "Check the device clock.");
         }
     }
 }

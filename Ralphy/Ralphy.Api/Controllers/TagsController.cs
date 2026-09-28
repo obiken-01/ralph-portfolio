@@ -61,7 +61,7 @@ namespace Ralphy.Api.Controllers
             var validation = await _createValidator.ValidateAsync(request);
             if (!validation.IsValid)
                 return BadRequest(ApiResponse<object>.Fail(400, "Validation failed",
-                    validation.Errors.Select(e => e.ErrorMessage)));
+                    validation.Errors.ToApiErrors()));
 
             var tag = await _tagService.CreateAsync(request);
             _logger.LogInformation("Tag created: {Name}", request.Name);
