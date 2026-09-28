@@ -26,9 +26,10 @@ namespace Ralphy.Api.Controllers.Work
         }
 
         [HttpGet]
-        public async Task<IActionResult> Get([FromQuery] DateOnly from, [FromQuery] DateOnly to)
+        public async Task<IActionResult> Get(
+            [FromQuery] DateOnly from, [FromQuery] DateOnly to, [FromQuery] string? tz)
         {
-            var result = await _service.GetAsync(User.GetWorkUserId(), from, to);
+            var result = await _service.GetAsync(User.GetWorkUserId(), from, to, tz);
             return Ok(ApiResponse<AccomplishmentRangeDto>.Ok(result));
         }
     }

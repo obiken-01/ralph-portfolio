@@ -78,8 +78,8 @@ back the whole shape, or omitted fields are cleared.
 CSV export the report has been parsing:
 
 - Always self-scoped. Sharing a project never pools other people's hours.
-- Grouped on the raw date portion of `loggedAt` with no timezone conversion —
-  shifting them would move work across a cutoff boundary.
+- Grouped on the local (Asia/Manila) date of `loggedAt`, which is stored UTC —
+  grouping on the raw UTC date moved early-morning logs onto the previous day.
 - Several logs against one task on one day collapse into one entry with merged
   descriptions. Unlinked legacy logs have no task to collapse onto and stay
   separate, matching what the CSV produced.

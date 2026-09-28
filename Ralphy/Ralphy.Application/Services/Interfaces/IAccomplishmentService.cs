@@ -8,6 +8,7 @@ namespace Ralphy.Application.Services.Interfaces
     /// </summary>
     public interface IAccomplishmentService
     {
-        Task<AccomplishmentRangeDto> GetAsync(int userId, DateOnly from, DateOnly to);
+        /// <param name="timeZone">IANA zone the days are counted in; Manila when null.</param>
+        Task<AccomplishmentRangeDto> GetAsync(int userId, DateOnly from, DateOnly to, string? timeZone = null);
     }
 }

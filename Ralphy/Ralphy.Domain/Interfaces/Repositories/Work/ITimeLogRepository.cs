@@ -17,10 +17,15 @@ namespace Ralphy.Domain.Interfaces.Repositories.Work
         /// </summary>
         Task<TimeLog?> GetByPublicIdAsync(Guid publicId, int workUserId);
 
+        /// <remarks>
+        /// The range is a pair of UTC instants, start inclusive and end exclusive.
+        /// Which instants a calendar day spans depends on the caller's timezone,
+        /// so that conversion happens before the query gets here.
+        /// </remarks>
         Task<(IEnumerable<TimeLog> Items, int TotalCount)> GetFilteredAsync(
             int workUserId,
-            DateOnly? from,
-            DateOnly? to,
+            DateTime? fromUtc,
+            DateTime? toUtcExclusive,
             string? search,
             int? workItemId,
             string sortBy,
@@ -30,8 +35,8 @@ namespace Ralphy.Domain.Interfaces.Repositories.Work
 
         Task<IEnumerable<TimeLog>> GetForExportAsync(
             int workUserId,
-            DateOnly? from,
-            DateOnly? to,
+            DateTime? fromUtc,
+            DateTime? toUtcExclusive,
             string? search,
             int? workItemId,
             string sortBy,
@@ -40,10 +45,11 @@ namespace Ralphy.Domain.Interfaces.Repositories.Work
         /// <summary>
         /// Logs in a date range with their work item and project loaded, for the
         /// accomplishment report. Self-scoped like everything else here — there is
-        /// no overload that reads another user's hours.
+        /// no overload that reads another user's hours. Bounds are UTC, start
+        /// inclusive and end exclusive.
         /// </summary>
         Task<IReadOnlyList<TimeLog>> GetForRangeAsync(
-            int workUserId, DateOnly from, DateOnly to, CancellationToken ct = default);
+            int workUserId, DateTime fromUtc, DateTime toUtcExclusive, CancellationToken ct = default);
 
         Task AddAsync(TimeLog timeLog);
 
