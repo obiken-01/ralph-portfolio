@@ -36,7 +36,7 @@ namespace Ralphy.Api.Controllers
         public async Task<IActionResult> Get()
         {
             var siteUrl = (_configuration["Seo:SiteUrl"]
-                ?? "https://ralph-portfolio-production.up.railway.app").TrimEnd('/');
+                ?? "https://ralphalcaide.com").TrimEnd('/');
 
             var posts = await _postService.GetAllPublishedAsync();
             var tags = await _tagService.GetPublishedAsync();

@@ -59,4 +59,5 @@ jobs:
         run: npm run build
         working-directory: Ralphy/Ralphy.Web
         env:
-          VITE_API_URL: https://ralph-portfolio-production.up.railway.app/api
+          VITE_API_URL: https://api.ralphalcaide.com/api
+          VITE_SITE_URL: https://ralphalcaide.com

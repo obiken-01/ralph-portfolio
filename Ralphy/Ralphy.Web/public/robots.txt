@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin
 Disallow: /login
 
-Sitemap: https://ralphy-production.up.railway.app/sitemap.xml
+Sitemap: https://ralphalcaide.com/sitemap.xml
