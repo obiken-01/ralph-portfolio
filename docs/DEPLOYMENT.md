@@ -4,11 +4,12 @@
 
 | Piece | Where | Notes |
 |---|---|---|
-| Ralphy API | **Railway** ([project](https://railway.com/project/58762467-92f4-4a74-bb35-eb3904391b1c)) | `Ralphy/Ralphy.Api/Dockerfile`; public URL `https://ralph-portfolio-production.up.railway.app` |
-| Ralphy Web | **Railway** (same project) | `Ralphy/Ralphy.Web/Dockerfile` — Vite build baked with build-arg `VITE_API_URL`, served by nginx; public URL `https://ralphy-production.up.railway.app` |
+| Domain + DNS | **Cloudflare Registrar** | `ralphalcaide.com`. DNS records point at Railway / Cloudflare Pages. See [DOMAIN_HOSTING_STUDY.md](DOMAIN_HOSTING_STUDY.md). |
+| Ralphy API | **Railway** ([project](https://railway.com/project/58762467-92f4-4a74-bb35-eb3904391b1c)) | `Ralphy/Ralphy.Api/Dockerfile`; public URL `https://api.ralphalcaide.com` (Railway URL `https://ralph-portfolio-production.up.railway.app` still answers) |
+| Ralphy Web | **Railway** (same project) | `Ralphy/Ralphy.Web/Dockerfile`, Vite build baked with build-args `VITE_API_URL` + `VITE_SITE_URL`, served by nginx; public URL `https://ralphalcaide.com`. The old `ralphy-production.up.railway.app` host 301s to it (`nginx.conf`). |
 | PostgreSQL 16 | Railway | Connection string via `ConnectionStrings__Default` |
 | Media | Cloudinary | Account credentials via env |
-| php-currency-converter-app | **Netlify** ([site](https://app.netlify.com/projects/zippy-mousse-7dfbd1/overview)) | Separate repo/frontend; calls `POST /api/shopping-list/parse` with `X-Api-Key`. Its Netlify origin must be present in `Cors:AllowedOrigins`. |
+| php-currency-converter-app | **Cloudflare Pages** → `https://tools.ralphalcaide.com` (previously [Netlify](https://app.netlify.com/projects/zippy-mousse-7dfbd1/overview)) | Separate repo/frontend; calls `POST /api/shopping-list/parse` with `X-Api-Key` and the Work API. Its origin must be present in `Cors:AllowedOrigins`. |
 
 **Migrations are automatic** — the API runs `Database.Migrate()` on startup (5 retries). No manual EF step on deploy.
 
@@ -26,7 +27,7 @@ From `.env.example` / Railway service variables (double-underscore = .NET config
 | `ShoppingList__ApiKey` | Shared secret for the external `X-Api-Key` consumer |
 | `Seq__ServerUrl` | Structured log sink (compose: `http://seq:5341`) |
 
-**Web build-time variable**: `VITE_API_URL` (e.g. `https://ralphy-production.up.railway.app/api`). Baked into the bundle at `npm run build` — changing it requires a rebuild. v2.0 also uses `VITE_SITE_URL` (canonical public origin for SEO tags; falls back to `window.location.origin`).
+**Web build-time variables**: `VITE_API_URL` (`https://api.ralphalcaide.com/api`). Baked into the bundle at `npm run build` — changing it requires a rebuild. `VITE_SITE_URL` (`https://ralphalcaide.com`) is the canonical public origin for SEO tags; it falls back to `window.location.origin`. Keep it in step with the API's `Seo:SiteUrl`, `public/robots.txt` and the static tags in `index.html`.
 
 ## Local development
 
