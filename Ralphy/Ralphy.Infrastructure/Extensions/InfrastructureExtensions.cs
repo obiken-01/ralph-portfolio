@@ -21,6 +21,8 @@ namespace Ralphy.Infrastructure.Extensions
 {
     public static class InfrastructureExtensions
     {
+        internal const int MinJwtSecretKeyLength = 32;
+
         public static IServiceCollection AddInfrastructure(
             this IServiceCollection services,
             IConfiguration configuration)
@@ -40,8 +42,12 @@ namespace Ralphy.Infrastructure.Extensions
 
             // JWT Authentication
             var secretKey = configuration["Jwt__SecretKey"]
-                ?? configuration["Jwt:SecretKey"]
-                ?? throw new InvalidOperationException("JWT SecretKey is not configured");
+                ?? configuration["Jwt:SecretKey"];
+            if (string.IsNullOrWhiteSpace(secretKey) || secretKey.Length < MinJwtSecretKeyLength)
+                throw new InvalidOperationException(
+                    $"JWT SecretKey is not configured or shorter than {MinJwtSecretKeyLength} characters. " +
+                    "Set Jwt__SecretKey (environment variable, user-secrets or appsettings.Development.json); " +
+                    "it must never be committed to appsettings.json.");
 
             // The PAT handler needs this directly, outside the UnitOfWork: it runs
             // during authentication, before any request scope has done work.

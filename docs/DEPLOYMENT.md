@@ -20,7 +20,7 @@ From `.env.example` / Railway service variables (double-underscore = .NET config
 | Variable | Purpose |
 |---|---|
 | `ConnectionStrings__Default` | PostgreSQL connection string |
-| `Jwt__SecretKey`, `Jwt__Issuer`, `Jwt__Audience` | Admin + Work JWT signing (tokens are separated by a `user_type` claim, not by key) |
+| `Jwt__SecretKey`, `Jwt__Issuer`, `Jwt__Audience` | Admin + Work JWT signing (tokens are separated by a `user_type` claim, not by key). `Jwt__SecretKey` has no default: the API refuses to start without one of at least 32 characters. Locally, set it in `appsettings.Development.json` (gitignored) or user-secrets. |
 | `Cloudinary__CloudName`, `Cloudinary__ApiKey`, `Cloudinary__ApiSecret` | Media uploads |
 | `Cors__AllowedOrigins__0..n` | CORS allowlist (web app origin, Netlify converter origin, localhost dev) |
 | `Anthropic__ApiKey` (+ model settings) | Claude shopping-list parsing |
