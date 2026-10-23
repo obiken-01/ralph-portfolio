@@ -58,6 +58,8 @@ namespace Ralphy.Application.Services
                     ?? await NextSortOrderAsync(postId),
             };
 
+            ApplyCamera(photo, NormalizeCamera(metadata?.Camera, strict: false));
+
             await _unitOfWork.Photos.AddAsync(photo);
             await _unitOfWork.SaveChangesAsync();
 
@@ -103,6 +105,25 @@ namespace Ralphy.Application.Services
             photo.Caption = string.IsNullOrWhiteSpace(request.Caption)
                 ? null
                 : request.Caption.Trim();
+            photo.UpdatedAt = DateTime.UtcNow;
+
+            await _unitOfWork.Photos.UpdateAsync(photo);
+            await _unitOfWork.SaveChangesAsync();
+
+            return _mapper.Map<PhotoDto>(photo);
+        }
+
+        public async Task<PhotoDto> UpdateCameraAsync(
+            int id, CameraInfoDto request, int userId)
+        {
+            var photo = await _unitOfWork.Photos.GetByIdAsync(id);
+            if (photo == null)
+                throw new KeyNotFoundException($"Photo with ID {id} not found");
+
+            await RequireOwnedPostAsync(
+                photo.PostId, userId, "edit this photo");
+
+            ApplyCamera(photo, NormalizeCamera(request, strict: true));
             photo.UpdatedAt = DateTime.UtcNow;
 
             await _unitOfWork.Photos.UpdateAsync(photo);
@@ -265,6 +286,72 @@ namespace Ralphy.Application.Services
 
             if (metadata.SortOrder is < 0)
                 throw new ArgumentException("SortOrder cannot be negative");
+        }
+
+        private const int MaxCameraTextLength = 100;
+
+        /// <summary>
+        /// Trims text and range-checks numbers. Strict mode is for values typed
+        /// into the editor, where a mistake should be pointed out; lenient mode
+        /// is for EXIF, where a corrupt tag should cost that one field and
+        /// nothing else.
+        /// </summary>
+        private static CameraInfoDto NormalizeCamera(CameraInfoDto? input, bool strict)
+        {
+            if (input == null) return new CameraInfoDto();
+
+            string? Text(string? value, string name)
+            {
+                var trimmed = value?.Trim();
+                if (string.IsNullOrEmpty(trimmed)) return null;
+                if (trimmed.Length <= MaxCameraTextLength) return trimmed;
+                return strict
+                    ? throw new ArgumentException(
+                        $"{name} cannot exceed {MaxCameraTextLength} characters")
+                    : null;
+            }
+
+            double? Number(double? value, double max, string name)
+            {
+                if (value == null) return null;
+                if (double.IsFinite(value.Value) && value > 0 && value <= max)
+                    return value;
+                return strict
+                    ? throw new ArgumentException($"{name} must be between 0 and {max}")
+                    : null;
+            }
+
+            int? Iso(int? value)
+            {
+                // ISO 0 is what some cameras write when they did not record it.
+                if (value is null or (> 0 and <= 10_000_000)) return value;
+                return strict
+                    ? throw new ArgumentException("ISO must be a positive number")
+                    : null;
+            }
+
+            return new CameraInfoDto
+            {
+                Camera = Text(input.Camera, "Camera"),
+                Lens = Text(input.Lens, "Lens"),
+                EditedWith = Text(input.EditedWith, "Editor"),
+                FNumber = Number(input.FNumber, 128, "Aperture"),
+                // A day covers any single long exposure anyone actually takes.
+                ExposureTime = Number(input.ExposureTime, 86_400, "Shutter speed"),
+                FocalLength = Number(input.FocalLength, 5_000, "Focal length"),
+                Iso = Iso(input.Iso),
+            };
+        }
+
+        private static void ApplyCamera(Photo photo, CameraInfoDto camera)
+        {
+            photo.Camera = camera.Camera;
+            photo.Lens = camera.Lens;
+            photo.FNumber = camera.FNumber;
+            photo.ExposureTime = camera.ExposureTime;
+            photo.Iso = camera.Iso;
+            photo.FocalLength = camera.FocalLength;
+            photo.EditedWith = camera.EditedWith;
         }
 
         /// <summary>Npgsql rejects unspecified-kind values on timestamptz columns.</summary>

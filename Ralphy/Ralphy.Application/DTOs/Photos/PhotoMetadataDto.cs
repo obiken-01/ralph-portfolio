@@ -11,5 +11,12 @@ namespace Ralphy.Application.DTOs.Photos
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
         public int? SortOrder { get; set; }
+
+        /// <summary>
+        /// Camera and exposure. Unlike the coordinates, an implausible value
+        /// here is dropped rather than rejected — it is decoration, and not
+        /// worth failing an upload over.
+        /// </summary>
+        public CameraInfoDto? Camera { get; set; }
     }
 }

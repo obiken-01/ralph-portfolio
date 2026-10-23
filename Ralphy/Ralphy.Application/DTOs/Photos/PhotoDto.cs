@@ -14,6 +14,13 @@ namespace Ralphy.Application.DTOs.Photos
         public DateTime? TakenAt { get; set; }
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
+        public string? Camera { get; set; }
+        public string? Lens { get; set; }
+        public double? FNumber { get; set; }
+        public double? ExposureTime { get; set; }
+        public int? Iso { get; set; }
+        public double? FocalLength { get; set; }
+        public string? EditedWith { get; set; }
         public int PostId { get; set; }
         public DateTime CreatedAt { get; set; }
     }

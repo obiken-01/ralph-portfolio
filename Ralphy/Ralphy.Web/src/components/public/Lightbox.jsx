@@ -1,11 +1,35 @@
 import { useCallback, useEffect } from 'react'
 import { cldImage } from '../../utils/cloudinary'
+import { exposureLine, gearLine } from '../../utils/cameraFormat'
+
+/** Camera, lens and exposure under the caption. Absent when EXIF was. */
+function CameraDetails({ photo }) {
+  const gear = gearLine(photo)
+  const exposure = exposureLine(photo)
+
+  if (!gear && !exposure && !photo.editedWith) return null
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3
+                    gap-y-1 text-center text-xs text-white/50">
+      {gear && <span>{gear}</span>}
+      {exposure && <span className="tabular-nums">{exposure}</span>}
+      {photo.editedWith && (
+        <span className="rounded-full border border-white/15 px-2 py-0.5
+                         text-white/60">
+          Edited in {photo.editedWith}
+        </span>
+      )}
+    </div>
+  )
+}
 
 /**
  * Full-screen photo lightbox with prev/next arrows, keyboard
  * navigation (Esc / ← / →) and a position counter.
  *
- * @param photos  array of { url, caption, source }
+ * @param photos  array of { url, caption, source, camera, lens, fNumber,
+ *                exposureTime, iso, focalLength, editedWith }
  * @param index   index of the open photo
  * @param onClose () => void
  * @param onNavigate (newIndex) => void
@@ -107,6 +131,7 @@ export default function Lightbox({ photos, index, onClose, onNavigate }) {
             (photo.source === 1 ? 'Drone shot'
               : photo.source === 0 ? 'Phone shot' : '')}
         </figcaption>
+        <CameraDetails photo={photo} />
       </figure>
     </div>
   )

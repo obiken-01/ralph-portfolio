@@ -43,7 +43,8 @@ namespace Ralphy.Api.Controllers
         /// <summary>
         /// The EXIF fields are optional. The browser reads them off the original
         /// before compression strips them and posts them alongside the file, so
-        /// the geotag and capture date survive the canvas round-trip.
+        /// the geotag, capture date and camera settings survive the canvas
+        /// round-trip.
         /// </summary>
         [Authorize]
         [HttpPost("upload/{postId}")]
@@ -54,7 +55,14 @@ namespace Ralphy.Api.Controllers
             [FromForm] DateTime? takenAt = null,
             [FromForm] double? latitude = null,
             [FromForm] double? longitude = null,
-            [FromForm] int? sortOrder = null)
+            [FromForm] int? sortOrder = null,
+            [FromForm] string? camera = null,
+            [FromForm] string? lens = null,
+            [FromForm] double? fNumber = null,
+            [FromForm] double? exposureTime = null,
+            [FromForm] int? iso = null,
+            [FromForm] double? focalLength = null,
+            [FromForm] string? editedWith = null)
         {
             if (file == null || file.Length == 0)
                 return BadRequest(ApiResponse<object>.Fail(400, "No file provided"));
@@ -65,6 +73,16 @@ namespace Ralphy.Api.Controllers
                 Latitude = latitude,
                 Longitude = longitude,
                 SortOrder = sortOrder,
+                Camera = new CameraInfoDto
+                {
+                    Camera = camera,
+                    Lens = lens,
+                    FNumber = fNumber,
+                    ExposureTime = exposureTime,
+                    Iso = iso,
+                    FocalLength = focalLength,
+                    EditedWith = editedWith,
+                },
             };
 
             var userId = ClaimsHelper.GetUserId(User);
@@ -88,6 +106,20 @@ namespace Ralphy.Api.Controllers
             var userId = ClaimsHelper.GetUserId(User);
             var photo = await _photoService.UpdateAsync(id, request, userId);
             return Ok(ApiResponse<PhotoDto>.Ok(photo, "Photo updated successfully"));
+        }
+
+        /// <summary>
+        /// Corrects the camera and exposure details. Replaces all of them, so
+        /// a field left out is cleared.
+        /// </summary>
+        [Authorize]
+        [HttpPut("{id}/camera")]
+        public async Task<IActionResult> UpdateCamera(
+            int id, [FromBody] CameraInfoDto request)
+        {
+            var userId = ClaimsHelper.GetUserId(User);
+            var photo = await _photoService.UpdateCameraAsync(id, request, userId);
+            return Ok(ApiResponse<PhotoDto>.Ok(photo, "Camera details updated"));
         }
 
         [Authorize]

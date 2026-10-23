@@ -19,6 +19,9 @@ namespace Ralphy.Application.Services.Interfaces
 
         Task<PhotoDto> UpdateAsync(int id, UpdatePhotoDto request, int userId);
 
+        /// <summary>Replaces the camera and exposure fields wholesale.</summary>
+        Task<PhotoDto> UpdateCameraAsync(int id, CameraInfoDto request, int userId);
+
         Task ReorderAsync(int postId, ReorderPhotosDto request, int userId);
 
         Task DeleteAsync(int id, int userId);
