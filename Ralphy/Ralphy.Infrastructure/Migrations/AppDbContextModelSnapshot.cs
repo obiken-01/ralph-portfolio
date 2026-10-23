@@ -200,17 +200,38 @@ namespace Ralphy.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Camera")
+                        .HasColumnType("text");
+
                     b.Property<string>("Caption")
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("EditedWith")
+                        .HasColumnType("text");
+
+                    b.Property<double?>("ExposureTime")
+                        .HasColumnType("double precision");
+
+                    b.Property<double?>("FNumber")
+                        .HasColumnType("double precision");
+
+                    b.Property<double?>("FocalLength")
+                        .HasColumnType("double precision");
+
                     b.Property<int?>("Height")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("Iso")
                         .HasColumnType("integer");
 
                     b.Property<double?>("Latitude")
                         .HasColumnType("double precision");
+
+                    b.Property<string>("Lens")
+                        .HasColumnType("text");
 
                     b.Property<double?>("Longitude")
                         .HasColumnType("double precision");

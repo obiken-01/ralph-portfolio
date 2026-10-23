@@ -23,6 +23,19 @@ namespace Ralphy.Domain.Entities
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
 
+        // Camera and exposure, also EXIF. Editable afterwards, since a film scan
+        // or a stripped export reports the wrong thing or nothing at all.
+        public string? Camera { get; set; }
+        public string? Lens { get; set; }
+        public double? FNumber { get; set; }
+
+        /// <summary>Seconds: 1/250s is stored as 0.004.</summary>
+        public double? ExposureTime { get; set; }
+
+        public int? Iso { get; set; }
+        public double? FocalLength { get; set; }
+        public string? EditedWith { get; set; }
+
         // Foreign key
         public int PostId { get; set; }
 

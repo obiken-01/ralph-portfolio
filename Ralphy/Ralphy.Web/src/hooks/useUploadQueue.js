@@ -93,6 +93,9 @@ export function useUploadQueue({ postId, startingSortOrder = 0, onUploaded }) {
       if (meta.takenAt) form.append('takenAt', meta.takenAt)
       if (meta.latitude != null) form.append('latitude', String(meta.latitude))
       if (meta.longitude != null) form.append('longitude', String(meta.longitude))
+      for (const [key, value] of Object.entries(meta.camera)) {
+        if (value != null) form.append(key, String(value))
+      }
 
       await api.post(`/photos/upload/${postId}`, form, {
         headers: { 'Content-Type': 'multipart/form-data' },

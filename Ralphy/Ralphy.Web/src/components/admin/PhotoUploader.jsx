@@ -4,6 +4,8 @@ import api from '../../api/axios'
 import { cldImage } from '../../utils/cloudinary'
 import { useUploadQueue } from '../../hooks/useUploadQueue'
 import { ItemStatus, failedCount, isSettled } from '../../hooks/uploadQueueReducer'
+import { exposureLine, gearLine } from '../../utils/cameraFormat'
+import CameraInfoDialog from './CameraInfoDialog'
 
 const PHASE_LABEL = {
   [ItemStatus.Pending]: 'Waiting',
@@ -104,7 +106,7 @@ function QueueRow({ item, onCaption, onRetry, onRemove }) {
 }
 
 // ── The saved gallery, drag-reorderable ─────────────────────────
-function GalleryGrid({ photos, onReorder, onCaption, onDelete }) {
+function GalleryGrid({ photos, onReorder, onCaption, onCamera, onDelete }) {
   const [dragId, setDragId] = useState(null)
   const [order, setOrder] = useState(photos)
 
@@ -169,6 +171,23 @@ function GalleryGrid({ photos, onReorder, onCaption, onDelete }) {
 
           <button
             type="button"
+            onClick={() => onCamera(photo)}
+            title={[gearLine(photo), exposureLine(photo)].filter(Boolean)
+              .join('\n') || 'No camera details — click to add'}
+            aria-label="Edit camera details"
+            className={`absolute right-7 top-1 flex h-5 w-5 items-center
+                        justify-center rounded-full text-[10px] font-semibold
+                        transition-opacity group-hover:opacity-100 ${
+              photo.camera || photo.fNumber
+                ? 'bg-slate-950/70 text-white opacity-0'
+                : 'bg-amber-500/90 text-slate-950 opacity-0'
+            }`}
+          >
+            i
+          </button>
+
+          <button
+            type="button"
             onClick={() => onDelete(photo.id)}
             className="absolute right-1 top-1 flex h-5 w-5 items-center
                        justify-center rounded-full bg-red-500 text-xs text-white
@@ -200,6 +219,7 @@ export default function PhotoUploader({ postId, onCreateDraft }) {
   const [videos, setVideos] = useState([])
   const [dragActive, setDragActive] = useState(false)
   const [creatingDraft, setCreatingDraft] = useState(false)
+  const [cameraPhoto, setCameraPhoto] = useState(null)
   const fileInput = useRef(null)
 
   const fetchMedia = useCallback(async () => {
@@ -264,6 +284,14 @@ export default function PhotoUploader({ postId, onCreateDraft }) {
     } catch {
       toast.error('Could not save the caption')
     }
+  }
+
+  // Errors propagate so the dialog can show them and stay open.
+  const handleCamera = async (values) => {
+    const res = await api.put(`/photos/${cameraPhoto.id}/camera`, values)
+    const saved = res.data.data
+    setPhotos((prev) => prev.map((p) => (p.id === saved.id ? saved : p)))
+    toast.success('Camera details saved')
   }
 
   const handleDeletePhoto = async (photoId) => {
@@ -415,9 +443,18 @@ export default function PhotoUploader({ postId, onCreateDraft }) {
             photos={photos}
             onReorder={handleReorder}
             onCaption={handleCaption}
+            onCamera={setCameraPhoto}
             onDelete={handleDeletePhoto}
           />
         </>
+      )}
+
+      {cameraPhoto && (
+        <CameraInfoDialog
+          photo={cameraPhoto}
+          onSave={handleCamera}
+          onClose={() => setCameraPhoto(null)}
+        />
       )}
 
       {/* Videos */}
