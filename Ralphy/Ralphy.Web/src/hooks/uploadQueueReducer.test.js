@@ -102,6 +102,19 @@ describe('failure isolation', () => {
   })
 })
 
+describe('meta', () => {
+  it('records what EXIF yielded on the one item', () => {
+    let state = enqueue(initialQueue, 2)
+    expect(state.items[0].camera).toBeNull()
+
+    const camera = { camera: 'Sony ILCE-7M4', fNumber: 1.8 }
+    state = queueReducer(state, { type: 'meta', id: 'u0', camera })
+
+    expect(state.items[0].camera).toEqual(camera)
+    expect(state.items[1].camera).toBeNull()
+  })
+})
+
 describe('progress', () => {
   it('tracks per item, not for the batch', () => {
     let state = enqueue(initialQueue, 2)

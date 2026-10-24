@@ -80,6 +80,7 @@ export function useUploadQueue({ postId, startingSortOrder = 0, onUploaded }) {
       // preserveExif is not something to bet the geotag on.
       dispatch({ type: 'status', id, status: ItemStatus.Reading })
       const meta = await readPhotoMeta(file)
+      dispatch({ type: 'meta', id, camera: meta.camera })
 
       dispatch({ type: 'status', id, status: ItemStatus.Compressing })
       const prepared = await prepareForUpload(file)

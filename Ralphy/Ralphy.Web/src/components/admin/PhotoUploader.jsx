@@ -16,6 +16,24 @@ const PHASE_LABEL = {
   [ItemStatus.Failed]: 'Failed',
 }
 
+// What the file's EXIF yielded. Said out loud, because a stripped export is
+// otherwise invisible until the photo is live without its details.
+function CameraFound({ camera }) {
+  const summary = [gearLine(camera), exposureLine(camera)]
+    .filter(Boolean)
+    .join(' · ')
+
+  return summary ? (
+    <p className="mt-1 truncate text-xs text-slate-400" title={summary}>
+      📷 {summary}
+    </p>
+  ) : (
+    <p className="mt-1 text-xs leading-snug text-amber-400">
+      No camera info in this file — add it afterwards with the i button
+    </p>
+  )
+}
+
 // ── One row in the upload queue ─────────────────────────────────
 function QueueRow({ item, onCaption, onRetry, onRemove }) {
   const failed = item.status === ItemStatus.Failed
@@ -59,6 +77,8 @@ function QueueRow({ item, onCaption, onRetry, onRemove }) {
             />
           </div>
         )}
+
+        {item.camera && <CameraFound camera={item.camera} />}
 
         {failed && (
           <p className="mt-1 text-xs leading-snug text-red-400">{item.error}</p>
@@ -177,7 +197,8 @@ function GalleryGrid({ photos, onReorder, onCaption, onCamera, onDelete }) {
             aria-label="Edit camera details"
             className={`absolute right-7 top-1 flex h-5 w-5 items-center
                         justify-center rounded-full text-[10px] font-semibold
-                        transition-opacity group-hover:opacity-100 ${
+                        transition-opacity group-hover:opacity-100
+                        [@media(hover:none)]:opacity-100 ${
               photo.camera || photo.fNumber
                 ? 'bg-slate-950/70 text-white opacity-0'
                 : 'bg-amber-500/90 text-slate-950 opacity-0'
