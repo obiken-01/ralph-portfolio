@@ -35,6 +35,9 @@ export function queueReducer(state, action) {
             status: ItemStatus.Pending,
             progress: 0,
             error: null,
+            // What EXIF yielded, once read: null until then. Shown on the row
+            // so a file that arrives stripped is obvious at upload time.
+            camera: null,
           })),
         ],
       }
@@ -48,6 +51,9 @@ export function queueReducer(state, action) {
 
     case 'progress':
       return patch(state, action.id, { progress: action.progress })
+
+    case 'meta':
+      return patch(state, action.id, { camera: action.camera })
 
     case 'caption':
       return patch(state, action.id, { caption: action.caption })

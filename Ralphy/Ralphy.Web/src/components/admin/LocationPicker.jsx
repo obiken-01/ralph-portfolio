@@ -227,8 +227,10 @@ export default function LocationPicker({ onSave, onCancel, existingLocations = [
             )}
           </div>
 
-          {/* Map */}
-          <div className="rounded-xl overflow-hidden border border-slate-700"
+          {/* Map. `isolate` keeps Leaflet's own z-indexes (tiles 200, markers
+              600, controls 1000) inside the map, so the search results above
+              can sit on top of it. */}
+          <div className="isolate rounded-xl overflow-hidden border border-slate-700"
                style={{ height: '280px' }}>
             <MapContainer
               center={selected
