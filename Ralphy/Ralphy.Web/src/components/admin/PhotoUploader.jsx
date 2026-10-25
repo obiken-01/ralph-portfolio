@@ -125,6 +125,83 @@ function QueueRow({ item, onCaption, onRetry, onRemove }) {
   )
 }
 
+// ── Reorder arrows: always on touch screens, on hover elsewhere ──
+function ArrowButton({ side, label, onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      // In the caption strip, well clear of the delete button at the top.
+      className={`absolute bottom-0.5 z-10 flex h-6 w-6 items-center
+                  justify-center rounded-full bg-slate-700 text-sm text-white
+                  opacity-0 transition-opacity group-hover:opacity-100
+                  [@media(hover:none)]:opacity-100 ${
+        side === 'left' ? 'left-1' : 'right-1'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+// ── Delete confirmation ─────────────────────────────────────────
+function ConfirmDeletePhoto({ photo, onConfirm, onClose }) {
+  const [deleting, setDeleting] = useState(false)
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      onClick={onClose}
+    >
+      <div
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="delete-photo-title"
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-sm rounded-xl border border-slate-700 bg-slate-900 p-6"
+      >
+        <img
+          src={cldImage(photo.url, 400)}
+          alt=""
+          className="mx-auto mb-4 max-h-40 rounded-lg object-contain"
+        />
+        <h2 id="delete-photo-title" className="mb-1 text-center font-semibold text-white">
+          Delete this photo?
+        </h2>
+        <p className="mb-5 text-center text-sm text-slate-400">
+          It is removed from the post and from storage.
+          <span className="font-medium text-red-400"> This cannot be undone.</span>
+        </p>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-lg bg-slate-800 px-4 py-2.5 text-sm
+                       font-medium text-slate-300 transition-colors
+                       hover:bg-slate-700"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={deleting}
+            onClick={async () => {
+              setDeleting(true)
+              try { await onConfirm() } finally { setDeleting(false) }
+            }}
+            className="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm
+                       font-semibold text-white transition-colors
+                       hover:bg-red-700 disabled:opacity-50"
+          >
+            {deleting ? 'Deleting…' : 'Delete'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── The saved gallery, drag-reorderable ─────────────────────────
 function GalleryGrid({ photos, onReorder, onCaption, onCamera, onDelete }) {
   const [dragId, setDragId] = useState(null)
@@ -142,16 +219,30 @@ function GalleryGrid({ photos, onReorder, onCaption, onCamera, onDelete }) {
     setOrder(next)
   }
 
-  const commit = async () => {
-    setDragId(null)
-    if (order.map((p) => p.id).join() === photos.map((p) => p.id).join()) return
+  const save = async (next) => {
+    if (next.map((p) => p.id).join() === photos.map((p) => p.id).join()) return
 
     try {
-      await onReorder(order.map((p) => p.id))
+      await onReorder(next.map((p) => p.id))
     } catch {
       setOrder(photos)   // roll the optimistic move back
       toast.error('Could not save the new order')
     }
+  }
+
+  const commit = () => {
+    setDragId(null)
+    save(order)
+  }
+
+  // Drag and drop does not fire on touch screens, so phones get arrows.
+  const nudge = (index, delta) => {
+    const to = index + delta
+    if (to < 0 || to >= order.length) return
+    const next = [...order]
+    next.splice(to, 0, next.splice(index, 1)[0])
+    setOrder(next)
+    save(next)
   }
 
   if (order.length === 0) return null
@@ -209,9 +300,22 @@ function GalleryGrid({ photos, onReorder, onCaption, onCamera, onDelete }) {
             i
           </button>
 
+          {index > 0 && (
+            <ArrowButton side="left" label="Move earlier"
+                         onClick={() => nudge(index, -1)}>
+              ←
+            </ArrowButton>
+          )}
+          {index < order.length - 1 && (
+            <ArrowButton side="right" label="Move later"
+                         onClick={() => nudge(index, 1)}>
+              →
+            </ArrowButton>
+          )}
+
           <button
             type="button"
-            onClick={() => onDelete(photo.id)}
+            onClick={() => onDelete(photo)}
             aria-label="Delete photo"
             // Touch screens have no hover to reveal it, so it is always shown
             // there, and a size up so a fingertip can land on it.
@@ -235,6 +339,7 @@ function GalleryGrid({ photos, onReorder, onCaption, onCamera, onDelete }) {
                        px-1.5 py-1 text-xs text-white placeholder-slate-500
                        opacity-0 transition-opacity focus:opacity-100
                        focus:outline-none group-hover:opacity-100
+                       [@media(hover:none)]:px-8
                        [@media(hover:none)]:opacity-100"
           />
         </div>
@@ -250,6 +355,7 @@ export default function PhotoUploader({ postId, onCreateDraft }) {
   const [dragActive, setDragActive] = useState(false)
   const [creatingDraft, setCreatingDraft] = useState(false)
   const [cameraPhoto, setCameraPhoto] = useState(null)
+  const [deletingPhoto, setDeletingPhoto] = useState(null)
   const fileInput = useRef(null)
 
   const fetchMedia = useCallback(async () => {
@@ -324,13 +430,14 @@ export default function PhotoUploader({ postId, onCreateDraft }) {
     toast.success('Camera details saved')
   }
 
-  const handleDeletePhoto = async (photoId) => {
-    // It also deletes the file from Cloudinary, so there is no undo.
-    if (!window.confirm('Delete this photo? This cannot be undone.')) return
-
+  // Runs from the confirmation dialog. It also deletes the Cloudinary file,
+  // so there is no undo — hence the dialog.
+  const handleDeletePhoto = async () => {
+    const photoId = deletingPhoto.id
     try {
       await api.delete(`/photos/${photoId}`)
       setPhotos((prev) => prev.filter((p) => p.id !== photoId))
+      setDeletingPhoto(null)
     } catch {
       toast.error('Could not delete the photo')
     }
@@ -470,16 +577,26 @@ export default function PhotoUploader({ postId, onCreateDraft }) {
       {photos.length > 0 && (
         <>
           <p className="mb-2 text-xs text-slate-500">
-            Drag to reorder · the first photo is the cover
+            <span className="[@media(hover:none)]:hidden">Drag</span>
+            <span className="hidden [@media(hover:none)]:inline">Use the arrows</span>
+            {' '}to reorder · the first photo is the cover
           </p>
           <GalleryGrid
             photos={photos}
             onReorder={handleReorder}
             onCaption={handleCaption}
             onCamera={setCameraPhoto}
-            onDelete={handleDeletePhoto}
+            onDelete={setDeletingPhoto}
           />
         </>
+      )}
+
+      {deletingPhoto && (
+        <ConfirmDeletePhoto
+          photo={deletingPhoto}
+          onConfirm={handleDeletePhoto}
+          onClose={() => setDeletingPhoto(null)}
+        />
       )}
 
       {cameraPhoto && (
