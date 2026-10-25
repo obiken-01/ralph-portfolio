@@ -196,6 +196,8 @@ function GalleryGrid({ photos, onReorder, onCaption, onCamera, onDelete }) {
               .join('\n') || 'No camera details — click to add'}
             aria-label="Edit camera details"
             className={`absolute right-7 top-1 flex h-5 w-5 items-center
+                        [@media(hover:none)]:right-9 [@media(hover:none)]:h-7
+                        [@media(hover:none)]:w-7
                         justify-center rounded-full text-[10px] font-semibold
                         transition-opacity group-hover:opacity-100
                         [@media(hover:none)]:opacity-100 ${
@@ -210,9 +212,15 @@ function GalleryGrid({ photos, onReorder, onCaption, onCamera, onDelete }) {
           <button
             type="button"
             onClick={() => onDelete(photo.id)}
+            aria-label="Delete photo"
+            // Touch screens have no hover to reveal it, so it is always shown
+            // there, and a size up so a fingertip can land on it.
             className="absolute right-1 top-1 flex h-5 w-5 items-center
                        justify-center rounded-full bg-red-500 text-xs text-white
-                       opacity-0 transition-opacity group-hover:opacity-100"
+                       opacity-0 transition-opacity group-hover:opacity-100
+                       [@media(hover:none)]:h-7 [@media(hover:none)]:w-7
+                       [@media(hover:none)]:text-sm
+                       [@media(hover:none)]:opacity-100"
           >
             ×
           </button>
@@ -226,7 +234,8 @@ function GalleryGrid({ photos, onReorder, onCaption, onCamera, onDelete }) {
             className="absolute inset-x-0 bottom-0 w-full border-0 bg-slate-950/80
                        px-1.5 py-1 text-xs text-white placeholder-slate-500
                        opacity-0 transition-opacity focus:opacity-100
-                       focus:outline-none group-hover:opacity-100"
+                       focus:outline-none group-hover:opacity-100
+                       [@media(hover:none)]:opacity-100"
           />
         </div>
       ))}
@@ -316,6 +325,9 @@ export default function PhotoUploader({ postId, onCreateDraft }) {
   }
 
   const handleDeletePhoto = async (photoId) => {
+    // It also deletes the file from Cloudinary, so there is no undo.
+    if (!window.confirm('Delete this photo? This cannot be undone.')) return
+
     try {
       await api.delete(`/photos/${photoId}`)
       setPhotos((prev) => prev.filter((p) => p.id !== photoId))
