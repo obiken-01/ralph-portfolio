@@ -135,7 +135,11 @@ export default function PostsFeedPage({ filterByTag = false }) {
           to keep readable. */}
       <div className="mx-auto max-w-[112rem] px-3 py-8 sm:px-5">
         <div className="mb-8">
-          <TagFilterBar tags={tags} active={filterByTag ? tagName : null} />
+          <TagFilterBar
+            tags={tags}
+            active={filterByTag ? tagName : null}
+            bleed="-mx-3 px-3"
+          />
         </div>
 
         {loading ? (

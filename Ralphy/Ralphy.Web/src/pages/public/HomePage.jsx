@@ -9,32 +9,10 @@ import { TagFilterBar } from '../../components/public/TagChips'
 import { postAspect } from '../../utils/justify'
 
 // ── Hero ────────────────────────────────────────────────────────
-function Hero({ posts, tags, featured }) {
-  const photos = posts
-    ? posts.reduce((sum, p) => sum + (p.photoCount ?? 0), 0)
-    : null
-  const places = posts
-    ? new Set(posts.map((p) => p.locationId).filter(Boolean)).size
-    : null
-
-  const stats = [
-    { label: 'Photos', value: photos || '—' },
-    { label: 'Posts',  value: posts?.length ?? '—' },
-    { label: 'Places', value: places || '—' },
-    { label: 'Tags',   value: tags?.length ?? '—' },
-  ]
-
+function Hero({ featured }) {
   return (
-    <HeroSlideshow photos={featured} footer={<HeroStats stats={stats} />}>
+    <HeroSlideshow photos={featured}>
       <>
-        {/* Rule on the left only — with the block right-aligned, a rule on
-            both sides would float away from the text. */}
-        <p className="mb-4 flex items-center justify-end gap-3 text-[10px]
-                      font-semibold uppercase tracking-[0.28em] text-white/65">
-          <span className="h-px w-6 bg-white/35" aria-hidden="true" />
-          Occidental Mindoro
-        </p>
-
         <h1 className="font-display text-[1.75rem] font-semibold leading-[1.05]
                        tracking-[-0.02em] text-balance text-white
                        sm:text-4xl md:text-[2.75rem]">
@@ -44,16 +22,11 @@ function Hero({ posts, tags, featured }) {
           </span>
         </h1>
 
-        <p className="mt-4 text-pretty text-[13px] leading-relaxed
-                      text-white/70 sm:text-sm">
-          Photographs from Mindoro and beyond — shot from the air and
-          from the ground, by Ralph.
-        </p>
-
-        <div className="mt-6 flex flex-wrap justify-end gap-2.5">
+        <div className="mt-6 flex flex-col items-stretch gap-2.5
+                        min-[420px]:flex-row min-[420px]:justify-end">
           <Link
             to="/posts"
-            className="rounded-full bg-white px-5 py-2.5 text-[13px]
+            className="rounded-full bg-white px-5 py-3 text-center text-[13px]
                        font-semibold text-slate-900 shadow-lg
                        shadow-slate-950/30 transition-colors
                        hover:bg-amber-100 focus:outline-none
@@ -65,8 +38,8 @@ function Hero({ posts, tags, featured }) {
           </Link>
           <Link
             to="/map"
-            className="rounded-full border border-white/30 px-5 py-2.5
-                       text-[13px] font-semibold text-white/90 backdrop-blur-sm
+            className="rounded-full border border-white/30 px-5 py-3
+                       text-center text-[13px] font-semibold text-white/90 backdrop-blur-sm
                        transition-colors hover:border-white/60 hover:text-white
                        focus:outline-none focus-visible:ring-2
                        focus-visible:ring-white"
@@ -79,30 +52,10 @@ function Hero({ posts, tags, featured }) {
   )
 }
 
-/** The counts strip that sits under the masthead, spanning the full width. */
-function HeroStats({ stats }) {
-  return (
-    <dl className="mx-auto grid max-w-4xl grid-cols-2 divide-x divide-white/10
-                   sm:grid-cols-4">
-      {stats.map(({ label, value }) => (
-        <div key={label} className="py-6 text-center">
-          <dd className="font-display text-3xl font-semibold text-white">
-            {value}
-          </dd>
-          <dt className="mt-1 text-[11px] font-medium uppercase
-                         tracking-[0.2em] text-slate-400">
-            {label}
-          </dt>
-        </div>
-      ))}
-    </dl>
-  )
-}
-
 // ── Section header ──────────────────────────────────────────────
 function SectionHeader({ eyebrow, title, to, linkLabel }) {
   return (
-    <div className="mb-10 flex items-end justify-between gap-4">
+    <div className="mb-6 flex items-end sm:mb-10 justify-between gap-4">
       <div>
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em]
                       text-teal-700">
@@ -134,7 +87,7 @@ function LatestPhotos({ posts, tags, loading }) {
   )
 
   return (
-    <section className="py-20" aria-labelledby="latest-photos">
+    <section className="py-12 sm:py-20" aria-labelledby="latest-photos">
       <div className="mx-auto max-w-[100rem] px-4 sm:px-6 lg:px-8">
         <SectionHeader
           eyebrow="Latest adventures"
@@ -182,7 +135,7 @@ function MapBanner() {
       <Link
         to="/map"
         className="group relative block overflow-hidden rounded-3xl
-                   bg-slate-950 px-8 py-14 text-center sm:py-16"
+                   bg-slate-950 px-5 py-10 text-center sm:px-8 sm:py-16"
       >
         {/* Dotted "map" texture */}
         <div
@@ -232,7 +185,7 @@ function FollowCta() {
           Drone reels, island stories and behind-the-scenes on Instagram
           and YouTube.
         </p>
-        <div className="mt-7 flex justify-center gap-3">
+        <div className="mt-7 flex flex-wrap justify-center gap-3">
           <a
             href="https://instagram.com/lakbayOksi"
             target="_blank"
@@ -304,11 +257,7 @@ export default function HomePage() {
           author: AUTHOR_LD,
         }}
       />
-      <Hero
-        posts={loading ? null : posts}
-        tags={loading ? null : tags}
-        featured={featured}
-      />
+      <Hero featured={featured} />
       <LatestPhotos posts={posts} tags={tags} loading={loading} />
       <MapBanner />
       <FollowCta />

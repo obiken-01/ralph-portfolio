@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 
 const navLinks = [
   { to: '/posts',    label: 'Photos'   },
@@ -10,6 +10,21 @@ const navLinks = [
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const { pathname } = useLocation()
+
+  // Close on any navigation (including the brand link and browser back).
+  const [lastPath, setLastPath] = useState(pathname)
+  if (pathname !== lastPath) {
+    setLastPath(pathname)
+    setMenuOpen(false)
+  }
+
+  useEffect(() => {
+    if (!menuOpen) return
+    const onKey = (e) => { if (e.key === 'Escape') setMenuOpen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [menuOpen])
 
   const linkClass = ({ isActive }) =>
     `relative text-sm font-medium transition-colors duration-200
@@ -65,7 +80,8 @@ export default function Navbar() {
 
           {/* Mobile hamburger */}
           <button
-            className="flex flex-col gap-1.5 rounded-md p-2 transition-colors
+            className="-mr-2 flex h-11 w-11 flex-col items-center justify-center
+                       gap-1.5 rounded-md transition-colors
                        hover:bg-slate-100 md:hidden"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Toggle menu"
@@ -84,14 +100,15 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       <div className={`overflow-hidden transition-all duration-300 md:hidden
-                       ${menuOpen ? 'max-h-64 border-t border-slate-100' : 'max-h-0'}`}>
+                       ${menuOpen ? 'max-h-80 border-t border-slate-100' : 'max-h-0'}`}
+           inert={!menuOpen}>
         <div className="flex flex-col gap-1 px-4 py-3">
           {navLinks.map((link) => (
             <NavLink
               key={link.to}
               to={link.to}
               className={({ isActive }) =>
-                `rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                `rounded-md px-3 py-3 text-base font-medium transition-colors ${
                   isActive
                     ? 'bg-teal-50 font-semibold text-teal-700'
                     : 'text-slate-600 hover:bg-slate-50 hover:text-teal-700'

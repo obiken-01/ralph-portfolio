@@ -79,7 +79,7 @@ export default function HeroSlideshow({ photos = [], children, footer }) {
 
   return (
     <section
-      className="relative flex min-h-[92vh] flex-col overflow-hidden bg-slate-950"
+      className="relative flex min-h-[80svh] flex-col sm:min-h-[92vh] overflow-hidden bg-slate-950"
       // Deliberately no pause on hover. This section fills the viewport, so the
       // pointer sits over it almost permanently — hover-pause meant the
       // slideshow simply never advanced. Focus still pauses, which is the case

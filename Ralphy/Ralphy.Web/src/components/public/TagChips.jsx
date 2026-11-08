@@ -30,19 +30,31 @@ export default function TagChips({ tags = [], className = '' }) {
  * published behind it never reaches here, but guard anyway rather than render
  * a dead link.
  */
-export function TagFilterBar({ tags = [], active = null, limit = 12 }) {
+export function TagFilterBar({
+  tags = [],
+  active = null,
+  limit = 12,
+  // Must match the parent's horizontal padding on phones so the row bleeds
+  // exactly to the screen edge.
+  bleed = '-mx-4 px-4',
+}) {
   const usable = tags.filter((tag) => (tag.postCount ?? 0) > 0).slice(0, limit)
   if (usable.length === 0) return null
 
   const pill = (isActive) =>
-    `rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
+    `shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold
+     transition-colors sm:py-1.5 ${
       isActive
         ? 'bg-slate-900 text-white'
         : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:ring-teal-500'
     }`
 
   return (
-    <div className="flex flex-wrap gap-2">
+    // One swipeable row on phones (bleeding to the screen edge) instead of
+    // wrapping onto several rows above the photos.
+    <div className={`${bleed} flex gap-2 overflow-x-auto pb-1
+                    [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+                    sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0`}>
       <Link to="/posts" className={pill(!active)}>All</Link>
 
       {usable.map((tag) => (
