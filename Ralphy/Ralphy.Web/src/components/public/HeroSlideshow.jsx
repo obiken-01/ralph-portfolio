@@ -79,7 +79,7 @@ export default function HeroSlideshow({ photos = [], children, footer }) {
 
   return (
     <section
-      className="relative flex min-h-[80svh] flex-col sm:min-h-[92vh] overflow-hidden bg-slate-950"
+      className="relative flex min-h-[calc(100svh-4rem)] flex-col sm:min-h-[92vh] overflow-hidden bg-slate-950"
       // Deliberately no pause on hover. This section fills the viewport, so the
       // pointer sits over it almost permanently — hover-pause meant the
       // slideshow simply never advanced. Focus still pauses, which is the case
@@ -123,7 +123,7 @@ export default function HeroSlideshow({ photos = [], children, footer }) {
       <div className="absolute inset-0 bg-gradient-to-b from-slate-950/55
                       via-transparent to-slate-950/85" />
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 hidden sm:block"
         style={{
           background:
             'linear-gradient(to left, rgba(2,6,15,.86) 0%, '
@@ -164,9 +164,9 @@ export default function HeroSlideshow({ photos = [], children, footer }) {
       {/* Masthead — supplied by the page so this component stays about photos.
           The extra right padding clears the next arrow. */}
       <div className="relative z-10 mx-auto flex w-full max-w-[100rem] flex-1
-                      items-center justify-end px-6 pr-16 sm:px-10 sm:pr-20
-                      lg:px-14 lg:pr-24">
-        <div className="max-w-xs text-right sm:max-w-sm md:max-w-md">
+                      items-end px-5 pb-3 sm:items-center sm:justify-end sm:px-10 sm:pb-0
+                      sm:pr-20 lg:px-14 lg:pr-24">
+        <div className="max-w-xs text-left sm:max-w-sm sm:text-right md:max-w-md">
           {children}
         </div>
       </div>

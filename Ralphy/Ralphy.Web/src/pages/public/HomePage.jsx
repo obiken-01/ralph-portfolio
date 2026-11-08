@@ -13,7 +13,7 @@ function Hero({ featured }) {
   return (
     <HeroSlideshow photos={featured}>
       <>
-        <h1 className="font-display text-[1.75rem] font-semibold leading-[1.05]
+        <h1 className="font-display text-2xl font-semibold leading-[1.05]
                        tracking-[-0.02em] text-balance text-white
                        sm:text-4xl md:text-[2.75rem]">
           Chasing horizons,
@@ -22,11 +22,11 @@ function Hero({ featured }) {
           </span>
         </h1>
 
-        <div className="mt-6 flex flex-col items-stretch gap-2.5
-                        min-[420px]:flex-row min-[420px]:justify-end">
+        <div className="mt-4 flex items-center gap-2 sm:mt-6 sm:justify-end
+                        sm:gap-2.5">
           <Link
             to="/posts"
-            className="rounded-full bg-white px-5 py-3 text-center text-[13px]
+            className="rounded-full bg-white px-4 py-2.5 text-center sm:px-5 sm:py-3 text-[13px]
                        font-semibold text-slate-900 shadow-lg
                        shadow-slate-950/30 transition-colors
                        hover:bg-amber-100 focus:outline-none
@@ -38,7 +38,7 @@ function Hero({ featured }) {
           </Link>
           <Link
             to="/map"
-            className="rounded-full border border-white/30 px-5 py-3
+            className="rounded-full border border-white/30 px-4 py-2.5 sm:px-5 sm:py-3
                        text-center text-[13px] font-semibold text-white/90 backdrop-blur-sm
                        transition-colors hover:border-white/60 hover:text-white
                        focus:outline-none focus-visible:ring-2
