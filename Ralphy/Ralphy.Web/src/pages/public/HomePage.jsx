@@ -14,7 +14,7 @@ function Hero({ featured }) {
     <HeroSlideshow photos={featured}>
       <>
         <h1 className="font-display text-2xl font-semibold leading-[1.05]
-                       tracking-[-0.02em] text-balance text-white
+                       tracking-[-0.02em] text-balance text-white drop-shadow-md
                        sm:text-4xl md:text-[2.75rem]">
           Chasing horizons,
           <span className="block italic text-amber-200/95">
@@ -22,7 +22,7 @@ function Hero({ featured }) {
           </span>
         </h1>
 
-        <div className="mt-4 flex items-center gap-2 sm:mt-6 sm:justify-end
+        <div className="mt-4 flex items-center gap-2 sm:mt-6
                         sm:gap-2.5">
           <Link
             to="/posts"
