@@ -58,7 +58,7 @@ export default function PostCard({ post, width }) {
                       bg-gradient-to-t from-slate-950/80 via-slate-950/25
                       to-transparent p-3 pt-10 opacity-90 transition-opacity
                       duration-300 group-hover:opacity-100">
-        <p className="truncate font-display text-sm font-semibold
+        <p className="line-clamp-2 font-display text-sm font-semibold
                       leading-snug text-white drop-shadow-sm">
           {post.title}
         </p>
