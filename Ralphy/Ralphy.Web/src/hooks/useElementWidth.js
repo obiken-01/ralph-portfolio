@@ -14,9 +14,18 @@ import { useLayoutEffect, useRef, useState } from 'react'
  * the grid renders nothing at all in those cases. The observer still runs; it
  * just refines a width we already have instead of being the only source of one.
  */
-export function useElementWidth() {
+// Last width measured per cache key. See `cacheKey` below.
+const lastWidths = new Map()
+
+/**
+ * @param cacheKey optional. When given, the first render starts from the width
+ *   last measured under that key instead of 0. A justified grid renders no rows
+ *   at width 0, so on a revisit (the Back button) the page would be a row short
+ *   for one pass — exactly when scroll restoration needs it at full height.
+ */
+export function useElementWidth(cacheKey) {
   const ref = useRef(null)
-  const [width, setWidth] = useState(0)
+  const [width, setWidth] = useState(() => (cacheKey && lastWidths.get(cacheKey)) || 0)
 
   useLayoutEffect(() => {
     const element = ref.current
@@ -27,6 +36,7 @@ export function useElementWidth() {
       // Guard against NaN from an exotic ResizeObserver entry shape; a NaN
       // width would silently pack zero rows.
       if (!Number.isFinite(next) || next <= 0) return
+      if (cacheKey) lastWidths.set(cacheKey, next)
       setWidth((previous) => (previous === next ? previous : next))
     }
 
@@ -47,7 +57,7 @@ export function useElementWidth() {
 
     observer.observe(element)
     return () => observer.disconnect()
-  }, [])
+  }, [cacheKey])
 
   return [ref, width]
 }

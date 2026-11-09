@@ -38,3 +38,16 @@ export function cldVideo(url) {
   if (!isCloudinary(url)) return url
   return url.replace(UPLOAD_SEGMENT, `${UPLOAD_SEGMENT}q_auto/`)
 }
+
+/**
+ * A tiny, pre-blurred copy of the photo (a few hundred bytes) shown while the
+ * real image downloads. Returns null for non-Cloudinary URLs, which then load
+ * the way they always did, with no placeholder.
+ */
+export function cldPlaceholder(url) {
+  if (!isCloudinary(url)) return null
+  return url.replace(
+    UPLOAD_SEGMENT,
+    `${UPLOAD_SEGMENT}f_auto,q_auto:low,w_40,e_blur:400,c_limit/`
+  )
+}

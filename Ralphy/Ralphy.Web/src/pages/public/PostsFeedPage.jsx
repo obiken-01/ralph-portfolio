@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import api from '../../api/axios'
+import { fetchCached, peekCache } from '../../api/cache'
 import PostCard from '../../components/public/PostCard'
 import JustifiedGrid from '../../components/public/JustifiedGrid'
 import { TagFilterBar } from '../../components/public/TagChips'
@@ -35,26 +36,39 @@ function FeedSkeleton() {
  */
 export default function PostsFeedPage({ filterByTag = false }) {
   const { name: tagName } = useParams()
+  const endpoint = filterByTag
+    ? `/tags/${encodeURIComponent(tagName)}/posts`
+    : '/posts'
 
-  const [posts, setPosts] = useState([])
-  const [tags, setTags] = useState([])
-  const [loading, setLoading] = useState(true)
+  // Keyed by endpoint so switching tags starts from a clean slate (or from
+  // that tag's cached result) instead of resetting state inside an effect.
+  return (
+    <Feed key={endpoint} endpoint={endpoint}
+          filterByTag={filterByTag} tagName={tagName} />
+  )
+}
+
+function Feed({ endpoint, filterByTag, tagName }) {
+  const cached = peekCache(endpoint)
+  const [posts, setPosts] = useState(cached?.posts ?? [])
+  const [tags, setTags] = useState(cached?.tags ?? [])
+  const [loading, setLoading] = useState(!cached)
   const [notFound, setNotFound] = useState(false)
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
-    setNotFound(false)
 
-    const endpoint = filterByTag
-      ? `/tags/${encodeURIComponent(tagName)}/posts`
-      : '/posts'
-
-    Promise.all([api.get(endpoint), api.get('/tags')])
-      .then(([postsRes, tagsRes]) => {
+    fetchCached(endpoint, async () => {
+      const [postsRes, tagsRes] = await Promise.all([
+        api.get(endpoint),
+        api.get('/tags'),
+      ])
+      return { posts: postsRes.data.data ?? [], tags: tagsRes.data.data ?? [] }
+    })
+      .then((data) => {
         if (cancelled) return
-        setPosts(postsRes.data.data ?? [])
-        setTags(tagsRes.data.data ?? [])
+        setPosts(data.posts)
+        setTags(data.tags)
       })
       .catch((err) => {
         if (cancelled) return
@@ -66,7 +80,7 @@ export default function PostsFeedPage({ filterByTag = false }) {
       .finally(() => { if (!cancelled) setLoading(false) })
 
     return () => { cancelled = true }
-  }, [filterByTag, tagName])
+  }, [endpoint])
 
   const groups = useMemo(() => groupByMonth(posts), [posts])
 
@@ -87,7 +101,7 @@ export default function PostsFeedPage({ filterByTag = false }) {
         <h1 className="font-display text-xl font-bold text-slate-700">
           No such tag
         </h1>
-        <Link to="/posts" className="text-sm text-teal-700 hover:underline">
+        <Link viewTransition to="/posts" className="text-sm text-teal-700 hover:underline">
           ← Back to all photos
         </Link>
       </div>
@@ -152,7 +166,7 @@ export default function PostsFeedPage({ filterByTag = false }) {
         ) : (
           groups.map((group) => (
             <section key={group.key} className="mb-10">
-              <h2 className="mb-3 flex items-center gap-3 text-xs font-semibold
+              <h2 className="reveal mb-3 flex items-center gap-3 text-xs font-semibold
                              uppercase tracking-[0.16em] text-slate-400">
                 {group.label}
                 <span className="h-px flex-1 bg-slate-200" aria-hidden="true" />
@@ -162,6 +176,7 @@ export default function PostsFeedPage({ filterByTag = false }) {
                 items={group.posts}
                 aspectOf={postAspect}
                 renderItem={renderItem}
+                widthKey="feed"
               />
             </section>
           ))

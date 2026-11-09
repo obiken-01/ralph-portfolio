@@ -30,7 +30,7 @@ function TimelineCard({ post }) {
   const aspect = postAspect(post)
 
   return (
-    <Link to={`/posts/${post.id}`} className="group ml-4 block sm:ml-7">
+    <Link viewTransition to={`/posts/${post.id}`} className="reveal group ml-4 block sm:ml-7">
       <article className="overflow-hidden rounded-xl bg-white shadow-sm ring-1
                           ring-slate-900/5 transition-all duration-300
                           hover:-translate-y-0.5 hover:shadow-lg">

@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { getAboutProfile, sendContactMessage } from '../../api/about'
 import Seo, { SITE_URL } from '../../components/common/Seo'
 import Lightbox from '../../components/public/Lightbox'
+import { usePhotoViewer } from '../../hooks/usePhotoViewer'
+import { prefersReducedMotion } from '../../utils/viewTransition'
 import { cldImage } from '../../utils/cloudinary'
 
 const TOC = [
@@ -35,7 +37,7 @@ function SkeletonBlock({ className = '' }) {
 }
 
 // ── Hero: intro + framed ID photo ───────────────────────────────
-function Hero({ profile, loading, onViewPhoto }) {
+function Hero({ profile, loading, onViewPhoto, photoRef }) {
   const socials = profile
     ? SOCIAL_META
         .map((s) => ({ ...s, href: profile[s.key] }))
@@ -86,6 +88,17 @@ function Hero({ profile, loading, onViewPhoto }) {
           <div className="mt-8 flex flex-wrap gap-3">
             <a
               href="#contact"
+              onClick={(e) => {
+                // Smooth here only: smooth scrolling site-wide would also
+                // animate the jump to the top on every page change.
+                const target = document.getElementById('contact')
+                if (!target) return
+                e.preventDefault()
+                target.scrollIntoView({
+                  behavior: prefersReducedMotion() ? 'instant' : 'smooth',
+                })
+                window.history.replaceState(window.history.state, '', '#contact')
+              }}
               className="rounded-full bg-teal-600 px-7 py-3 text-sm
                          font-semibold text-white transition-colors
                          hover:bg-teal-500"
@@ -148,6 +161,7 @@ function Hero({ profile, loading, onViewPhoto }) {
                    aria-hidden="true" />
 
               <button
+                ref={photoRef}
                 onClick={onViewPhoto}
                 aria-label="View photo full screen"
                 className="group relative block rotate-2 cursor-zoom-in
@@ -159,6 +173,8 @@ function Hero({ profile, loading, onViewPhoto }) {
                            focus:ring-teal-500"
               >
                 <img
+                  data-photo-frame=""
+                  data-main-image=""
                   src={cldImage(profile.profileImageUrl, 600)}
                   alt={`Portrait of ${profile.displayName || 'Ralph Alcaide'}`}
                   className="aspect-[4/5] w-60 rounded-lg bg-stone-100
@@ -202,7 +218,7 @@ function Hero({ profile, loading, onViewPhoto }) {
 // ── Work experience timeline ────────────────────────────────────
 function WorkExperience({ profile, loading }) {
   return (
-    <section aria-labelledby="work-experience" className="mb-14">
+    <section aria-labelledby="work-experience" className="reveal mb-14">
       <SectionHeader id="work-experience" label="Work experience" />
 
       <div className="relative">
@@ -304,7 +320,7 @@ function TechSkills({ profile, loading, skillsRef, animated }) {
   const tools    = profile?.skills?.filter((s) => s.category === 'Tool')     ?? []
 
   return (
-    <section aria-labelledby="tech-skills" className="mb-14" ref={skillsRef}>
+    <section aria-labelledby="tech-skills" className="reveal mb-14" ref={skillsRef}>
       <SectionHeader id="tech-skills" label="Tech skills" />
 
       <div className="rounded-2xl bg-white p-6 ring-1 ring-slate-900/5 sm:p-8">
@@ -401,7 +417,7 @@ function ContactForm() {
      focus:ring-teal-500`
 
   return (
-    <section aria-labelledby="contact" className="mb-6">
+    <section aria-labelledby="contact" className="reveal mb-6">
       <SectionHeader id="contact" label="Contact" />
 
       <form onSubmit={handleSubmit}
@@ -487,7 +503,7 @@ export default function AboutPage() {
   const [error, setError] = useState(null)
   const [activeSection, setActiveSection] = useState('about-me')
   const [skillsVisible, setSkillsVisible] = useState(false)
-  const [photoOpen, setPhotoOpen] = useState(false)
+  const viewer = usePhotoViewer()
   const skillsRef = useRef(null)
 
   useEffect(() => {
@@ -562,19 +578,21 @@ export default function AboutPage() {
       <Hero
         profile={profile}
         loading={loading}
-        onViewPhoto={() => setPhotoOpen(true)}
+        onViewPhoto={() => viewer.open(0)}
+        photoRef={viewer.sourceRef(0)}
       />
 
       {/* Full-screen ID photo viewer */}
-      {photoOpen && profile?.profileImageUrl && (
+      {viewer.index !== null && profile?.profileImageUrl && (
         <Lightbox
           photos={[{
             url: profile.profileImageUrl,
             caption: profile.displayName || 'Ralph Alcaide',
           }]}
           index={0}
-          onClose={() => setPhotoOpen(false)}
+          onClose={viewer.close}
           onNavigate={() => {}}
+          previewSrc={viewer.previewSrc}
         />
       )}
 
@@ -591,7 +609,7 @@ export default function AboutPage() {
           )}
 
           {/* About me */}
-          <section aria-labelledby="about-me" className="mb-14">
+          <section aria-labelledby="about-me" className="reveal mb-14">
             <SectionHeader id="about-me" label="About me" />
             <div className="rounded-2xl bg-white p-6 ring-1 ring-slate-900/5
                             sm:p-8">

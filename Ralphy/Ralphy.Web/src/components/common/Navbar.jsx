@@ -35,7 +35,7 @@ export default function Navbar() {
        : 'text-slate-600 hover:text-teal-700 after:w-0 hover:after:w-full'}`
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-900/5
+    <header className="vt-header sticky top-0 z-50 border-b border-slate-900/5
                        bg-white/85 backdrop-blur-md">
       <nav
         aria-label="Main navigation"
@@ -44,7 +44,7 @@ export default function Navbar() {
         <div className="flex h-16 items-center justify-between">
 
           {/* Brand */}
-          <Link
+          <Link viewTransition
             to="/"
             className="flex items-center gap-2.5 hover:opacity-80
                        transition-opacity"
@@ -72,7 +72,7 @@ export default function Navbar() {
           {/* Desktop links */}
           <div className="hidden items-center gap-8 md:flex">
             {navLinks.map((link) => (
-              <NavLink key={link.to} to={link.to} className={linkClass}>
+              <NavLink viewTransition key={link.to} to={link.to} className={linkClass}>
                 {link.label}
               </NavLink>
             ))}
@@ -104,7 +104,7 @@ export default function Navbar() {
            inert={!menuOpen}>
         <div className="flex flex-col gap-1 px-4 py-3">
           {navLinks.map((link) => (
-            <NavLink
+            <NavLink viewTransition
               key={link.to}
               to={link.to}
               className={({ isActive }) =>

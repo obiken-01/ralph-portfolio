@@ -1,7 +1,8 @@
-import { Link } from 'react-router-dom'
+import { Link, useViewTransitionState } from 'react-router-dom'
 import { formatShortDate, postDate } from '../../utils/helpers'
 import { cldImage } from '../../utils/cloudinary'
-import { bucketWidth } from '../../utils/justify'
+import { bucketWidth, postAspect } from '../../utils/justify'
+import BlurImage from '../common/BlurImage'
 
 /**
  * A tile in the justified feed.
@@ -18,23 +19,47 @@ export default function PostCard({ post, width }) {
 
   const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
   const requestWidth = bucketWidth(width || 800, dpr)
+  const src = thumb ? cldImage(thumb, requestWidth) : null
+
+  // While a transition to or from this post runs, the tile's photo takes the
+  // same view-transition-name as the post page's hero, so the browser morphs
+  // one into the other. Only this tile carries the name — names must be
+  // unique on a page.
+  const to = `/posts/${post.id}`
+  const morphing = useViewTransitionState(to)
+
+  // Enough for the post page to draw its hero straight away, using this very
+  // image (already downloaded) until its own larger copy arrives.
+  const preview = {
+    title: post.title,
+    locationName: post.locationName,
+    locationIsPlaceholder: post.locationIsPlaceholder,
+    date,
+    photoUrl: thumb,
+    aspect: postAspect(post),
+    previewSrc: src,
+    photoCount,
+  }
 
   return (
-    <Link
-      to={`/posts/${post.id}`}
+    <Link viewTransition
+      to={to}
+      state={{ preview }}
       className="group relative block h-full w-full overflow-hidden rounded-sm
                  bg-slate-200 focus:outline-none focus-visible:ring-2
                  focus-visible:ring-teal-500 focus-visible:ring-offset-2"
     >
       {thumb ? (
-        <img
-          src={cldImage(thumb, requestWidth)}
+        <BlurImage
+          url={thumb}
+          src={src}
           alt={post.title}
           loading="lazy"
           decoding="async"
-          className="h-full w-full object-cover transition-transform
-                     duration-700 ease-out group-hover:scale-[1.03]
-                     motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+          className="h-full w-full"
+          style={morphing ? { viewTransitionName: 'post-photo' } : undefined}
+          imgClassName="object-cover group-hover:scale-[1.03]
+                        motion-reduce:group-hover:scale-100"
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center

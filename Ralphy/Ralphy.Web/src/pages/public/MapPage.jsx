@@ -117,7 +117,7 @@ function PopupPosts({ locationId }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <Link to={`/posts/${lead.id}`} className="group block">
+      <Link viewTransition to={`/posts/${lead.id}`} className="group block">
         <div className="relative overflow-hidden rounded-lg bg-slate-100"
              style={{
                aspectRatio:
@@ -148,7 +148,7 @@ function PopupPosts({ locationId }) {
       {rest.length > 0 && (
         <div className="flex gap-1.5">
           {rest.slice(0, 4).map((post) => (
-            <Link
+            <Link viewTransition
               key={post.id}
               to={`/posts/${post.id}`}
               title={post.title}

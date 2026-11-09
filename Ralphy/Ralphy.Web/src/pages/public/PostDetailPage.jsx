@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, useLocation, Link } from 'react-router-dom'
 import api from '../../api/axios'
+import { fetchCached, peekCache } from '../../api/cache'
+import { usePhotoViewer } from '../../hooks/usePhotoViewer'
+import BlurImage from '../../components/common/BlurImage'
 import { formatDate, formatShortDate, stripHtml, truncateText } from '../../utils/helpers'
 import { cldImage, cldVideo, cldVideoPoster } from '../../utils/cloudinary'
 import Seo, { SITE_URL, AUTHOR_LD } from '../../components/common/Seo'
@@ -20,9 +23,9 @@ function Breadcrumb({ postTitle, onDark = false }) {
   return (
     <nav aria-label="Breadcrumb"
          className={`flex flex-wrap items-center gap-1.5 text-xs ${base}`}>
-      <Link to="/" className={`transition-colors ${link}`}>Home</Link>
+      <Link viewTransition to="/" className={`transition-colors ${link}`}>Home</Link>
       <span aria-hidden="true">/</span>
-      <Link to="/posts" className={`transition-colors ${link}`}>Photos</Link>
+      <Link viewTransition to="/posts" className={`transition-colors ${link}`}>Photos</Link>
       <span aria-hidden="true">/</span>
       <span className={`max-w-[180px] truncate ${current}`}>{postTitle}</span>
     </nav>
@@ -38,9 +41,7 @@ function Breadcrumb({ postTitle, onDark = false }) {
  * tall portrait is capped at the viewport height rather than running off the
  * bottom of the screen.
  */
-function PhotoGallery({ photos, lead }) {
-  const [lightboxIndex, setLightboxIndex] = useState(null)
-
+function PhotoGallery({ photos, lead, viewer }) {
   if (!photos?.length) return null
 
   const rest = lead ? photos.slice(1) : photos
@@ -57,10 +58,11 @@ function PhotoGallery({ photos, lead }) {
           : null
 
         return (
-          <figure key={photo.id} className="m-0">
+          <figure key={photo.id} className="reveal m-0">
             <button
-              onClick={() => setLightboxIndex(index)}
-              className="group relative block w-full overflow-hidden
+              ref={viewer.sourceRef(index)}
+              onClick={() => viewer.open(index)}
+              className="group relative block w-full cursor-zoom-in overflow-hidden
                          bg-slate-100 focus:outline-none focus-visible:ring-2
                          focus-visible:ring-inset focus-visible:ring-teal-500"
               aria-label={photo.caption || `Open photo ${index + 1} full screen`}
@@ -68,7 +70,8 @@ function PhotoGallery({ photos, lead }) {
               // width, so nothing but the middle of the photo is ever visible.
               style={aspect ? { aspectRatio: aspect, maxHeight: '88vh' } : undefined}
             >
-              <img
+              <BlurImage
+                url={photo.url}
                 src={cldImage(photo.url, 2000)}
                 alt={photo.caption || ''}
                 loading={index < 2 ? 'eager' : 'lazy'}
@@ -76,7 +79,8 @@ function PhotoGallery({ photos, lead }) {
                 decoding="async"
                 width={photo.width || undefined}
                 height={photo.height || undefined}
-                className="h-full w-full object-contain"
+                className="h-full w-full"
+                imgClassName="object-contain"
               />
             </button>
 
@@ -89,38 +93,36 @@ function PhotoGallery({ photos, lead }) {
           </figure>
         )
       })}
-
-      {lightboxIndex !== null && (
-        <Lightbox
-          photos={photos}
-          index={lightboxIndex}
-          onClose={() => setLightboxIndex(null)}
-          onNavigate={setLightboxIndex}
-        />
-      )}
     </section>
   )
 }
 
 // ── Full-bleed hero ─────────────────────────────────────────────
-/** The lead photograph with the title set over it. */
-function Hero({ post, photo, date, photoCount }) {
-  const aspect = photo?.width > 0 && photo?.height > 0
-    ? photo.width / photo.height
-    : 3 / 2
-
-  if (!photo) {
+/**
+ * The lead photograph with the title set over it.
+ *
+ * Takes plain fields rather than the post, so it can be drawn from the
+ * preview a grid tile hands over (see PostCard) before the post has loaded.
+ * That's what lets the tile's photo morph straight into this one.
+ *
+ * Clicking the photo opens it full screen.
+ */
+function Hero({
+  title, locationName, date, photoUrl, aspect = 3 / 2, previewSrc,
+  photoCount, onOpen, sourceRef,
+}) {
+  if (!photoUrl) {
     return (
       <header className="mx-auto max-w-3xl px-4 pb-8 pt-14 text-center sm:px-6">
-        {post.locationName && !post.locationIsPlaceholder && (
+        {locationName && (
           <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em]
                         text-teal-700">
-            {post.locationName}
+            {locationName}
           </p>
         )}
         <h1 className="font-display text-3xl font-semibold leading-tight
                        text-slate-900 sm:text-5xl">
-          {post.title}
+          {title}
         </h1>
         {date && (
           <p className="mt-5 text-sm text-slate-400">
@@ -131,42 +133,59 @@ function Hero({ post, photo, date, photoCount }) {
     )
   }
 
+  const photo = (
+    <BlurImage
+      url={photoUrl}
+      src={cldImage(photoUrl, 2000)}
+      placeholder={previewSrc}
+      alt=""
+      fetchPriority="high"
+      decoding="async"
+      className="vt-post-photo h-full w-full"
+      imgClassName="object-cover"
+    />
+  )
+
   return (
     <header className="relative bg-slate-950">
       <div
-        className="relative w-full"
+        className="relative w-full overflow-hidden"
         style={{ aspectRatio: aspect, maxHeight: '80vh' }}
       >
-        <img
-          src={cldImage(photo.url, 2000)}
-          alt={photo.caption || post.title}
-          fetchPriority="high"
-          decoding="async"
-          width={photo.width || undefined}
-          height={photo.height || undefined}
-          className="h-full w-full object-cover"
-        />
+        {/* `drift`: the photo scrolls a little slower than the page.
+            Always this same button, disabled until the post has loaded, so
+            the photo element is never swapped out: a page transition that's
+            still morphing into it would be cancelled if it were. */}
+        <button
+          ref={sourceRef}
+          type="button"
+          onClick={onOpen}
+          disabled={!onOpen}
+          aria-label={`Open “${title}” photo full screen`}
+          className="drift absolute inset-0 block h-full w-full
+                     enabled:cursor-zoom-in focus:outline-none
+                     focus-visible:ring-2 focus-visible:ring-inset
+                     focus-visible:ring-white"
+        >
+          {photo}
+        </button>
 
         {/* The scrim is anchored to the text, not the whole frame, so a bright
             photo keeps its brightness everywhere the title isn't. */}
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t
-                        from-slate-950/85 via-slate-950/35 to-transparent
-                        px-4 pb-8 pt-24 sm:px-6 sm:pb-12">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0
+                        bg-gradient-to-t from-slate-950/85 via-slate-950/35
+                        to-transparent px-4 pb-8 pt-24 sm:px-6 sm:pb-12">
           <div className="mx-auto max-w-5xl">
             <p className="mb-2 flex flex-wrap items-center gap-x-2 text-xs
                           font-semibold uppercase tracking-[0.18em]
                           text-white/75">
-              {post.locationName && !post.locationIsPlaceholder && (
-                <span>{post.locationName}</span>
-              )}
-              {post.locationName && !post.locationIsPlaceholder && date && (
-                <span aria-hidden="true">·</span>
-              )}
+              {locationName && <span>{locationName}</span>}
+              {locationName && date && <span aria-hidden="true">·</span>}
               {date && <time dateTime={date}>{formatDate(date)}</time>}
             </p>
             <h1 className="font-display text-3xl font-semibold leading-tight
                            text-white drop-shadow-sm sm:text-5xl">
-              {post.title}
+              {title}
             </h1>
             {photoCount > 0 && (
               <p className="mt-3 text-xs text-white/60">
@@ -177,6 +196,18 @@ function Hero({ post, photo, date, photoCount }) {
         </div>
       </div>
     </header>
+  )
+}
+
+/** Placeholder for the rest of the page while a previewed post loads. */
+function BodySkeleton() {
+  return (
+    <div className="mx-auto max-w-3xl space-y-3 px-4 py-12 sm:px-6"
+         aria-hidden="true">
+      <div className="h-4 w-full animate-pulse rounded bg-slate-200" />
+      <div className="h-4 w-5/6 animate-pulse rounded bg-slate-200" />
+      <div className="h-4 w-2/3 animate-pulse rounded bg-slate-200" />
+    </div>
   )
 }
 
@@ -226,7 +257,7 @@ function LocationCard({ post }) {
   if (!post.locationName || post.locationIsPlaceholder) return null
 
   return (
-    <Link
+    <Link viewTransition
       to="/map"
       className="group mt-12 flex items-center gap-4 rounded-2xl bg-white p-5
                  ring-1 ring-slate-900/5 transition-shadow hover:shadow-lg"
@@ -430,35 +461,55 @@ function Comments({ postId }) {
 // ── Main Page ───────────────────────────────────────────────────
 export default function PostDetailPage() {
   const { id } = useParams()
+  // Keyed so moving from one post to another starts from fresh state.
+  return <PostDetail key={id} id={id} />
+}
 
-  const [post, setPost] = useState(null)
-  const [photos, setPhotos] = useState([])
-  const [videos, setVideos] = useState([])
-  const [loading, setLoading] = useState(true)
+function PostDetail({ id }) {
+  // Handed over by the grid tile that was clicked; absent on a direct visit.
+  const preview = useLocation().state?.preview
+  const cacheKey = `post:${id}`
+  const cached = peekCache(cacheKey)
+
+  const [post, setPost] = useState(cached?.post ?? null)
+  const [photos, setPhotos] = useState(cached?.photos ?? [])
+  const [videos, setVideos] = useState(cached?.videos ?? [])
+  const [loading, setLoading] = useState(!cached)
   const [error, setError] = useState(null)
+  const viewer = usePhotoViewer({ syncUrl: true })
 
   useEffect(() => {
-    const fetchAll = async () => {
-      setLoading(true)
-      try {
-        const [postRes, photosRes, videosRes] = await Promise.all([
-          api.get(`/posts/${id}`),
-          api.get(`/photos/post/${id}`),
-          api.get(`/videos/post/${id}`),
-        ])
-        setPost(postRes.data.data)
-        setPhotos(photosRes.data.data ?? [])
-        setVideos(videosRes.data.data ?? [])
-      } catch {
-        setError('Post not found.')
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchAll()
-  }, [id])
+    let cancelled = false
 
-  if (loading) {
+    fetchCached(cacheKey, async () => {
+      const [postRes, photosRes, videosRes] = await Promise.all([
+        api.get(`/posts/${id}`),
+        api.get(`/photos/post/${id}`),
+        api.get(`/videos/post/${id}`),
+      ])
+      return {
+        post: postRes.data.data,
+        photos: photosRes.data.data ?? [],
+        videos: videosRes.data.data ?? [],
+      }
+    })
+      .then((data) => {
+        if (cancelled) return
+        setPost(data.post)
+        setPhotos(data.photos)
+        setVideos(data.videos)
+      })
+      .catch(() => { if (!cancelled) setError('Post not found.') })
+      .finally(() => { if (!cancelled) setLoading(false) })
+
+    return () => { cancelled = true }
+  }, [id, cacheKey])
+
+  // With a preview from the clicked tile, the page renders straight away
+  // (below) and fills in as the data arrives.
+  const showPreview = loading && !!preview
+
+  if (loading && !showPreview) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4
@@ -467,7 +518,7 @@ export default function PostDetailPage() {
     )
   }
 
-  if (error || !post) {
+  if (!showPreview && (error || !post)) {
     return (
       <div className="flex min-h-screen flex-col items-center
                       justify-center gap-4">
@@ -475,7 +526,7 @@ export default function PostDetailPage() {
         <h1 className="font-display text-xl font-bold text-slate-700">
           Post not found
         </h1>
-        <Link to="/posts" className="text-sm text-teal-700 hover:underline">
+        <Link viewTransition to="/posts" className="text-sm text-teal-700 hover:underline">
           ← Back to Photos
         </Link>
       </div>
@@ -483,105 +534,150 @@ export default function PostDetailPage() {
   }
 
   const cover = photos[0]
-  const date = post.takenAt ?? post.publishedAt
+  const date = post ? post.takenAt ?? post.publishedAt : preview.date
 
   // With content optional, fall back to the place and the date rather than
   // shipping an empty meta description.
-  const description = post.content
-    ? truncateText(stripHtml(post.content), 160)
-    : [post.locationName, date && formatDate(date)].filter(Boolean).join(' · ')
-      || post.title
+  const description = !post ? ''
+    : post.content
+      ? truncateText(stripHtml(post.content), 160)
+      : [post.locationName, date && formatDate(date)].filter(Boolean).join(' · ')
+        || post.title
+
+  const hero = post
+    ? {
+        title: post.title,
+        locationName: post.locationIsPlaceholder ? null : post.locationName,
+        photoUrl: cover?.url,
+        aspect: cover?.width > 0 && cover?.height > 0
+          ? cover.width / cover.height
+          : preview?.aspect,
+        // Only when it's the same photo the tile showed.
+        previewSrc: preview?.photoUrl === cover?.url ? preview?.previewSrc : undefined,
+        photoCount: photos.length,
+      }
+    : {
+        title: preview.title,
+        locationName: preview.locationIsPlaceholder ? null : preview.locationName,
+        photoUrl: preview.photoUrl,
+        aspect: preview.aspect,
+        previewSrc: preview.previewSrc,
+        photoCount: preview.photoCount,
+      }
 
   return (
     <div className="relative min-h-screen">
-      <Seo
-        title={post.title}
-        description={description}
-        image={cover?.url}
-        type="article"
-        path={`/posts/${post.id}`}
-        jsonLd={{
-          '@context': 'https://schema.org',
-          '@type': 'BlogPosting',
-          headline: post.title,
-          description,
-          datePublished: post.publishedAt,
-          author: AUTHOR_LD,
-          image: photos.slice(0, 3).map((p) => p.url),
-          mainEntityOfPage: `${SITE_URL}/posts/${post.id}`,
-        }}
-      />
+      {post && (
+          <Seo
+            title={post.title}
+            description={description}
+            image={cover?.url}
+            type="article"
+            path={`/posts/${post.id}`}
+            jsonLd={{
+              '@context': 'https://schema.org',
+              '@type': 'BlogPosting',
+              headline: post.title,
+              description,
+              datePublished: post.publishedAt,
+              author: AUTHOR_LD,
+              image: photos.slice(0, 3).map((p) => p.url),
+              mainEntityOfPage: `${SITE_URL}/posts/${post.id}`,
+            }}
+          />
+      )}
 
       {/* Breadcrumb floats over the hero so the photograph starts at the very
           top of the page rather than below a bar of chrome. */}
       <div className="absolute inset-x-0 top-0 z-10 mx-auto max-w-5xl px-4
                       pt-4 sm:px-6">
-        <Breadcrumb postTitle={post.title} onDark={!!cover} />
+        <Breadcrumb postTitle={hero.title} onDark={!!hero.photoUrl} />
       </div>
 
       <article>
-        <Hero post={post} photo={cover} date={date} photoCount={photos.length} />
+        <Hero
+          {...hero}
+          date={date}
+          onOpen={post && cover ? () => viewer.open(0) : undefined}
+          sourceRef={viewer.sourceRef(0)}
+        />
+
+        {!post && <BodySkeleton />}
 
         {/* Photos lead. Words, if there are any, come after. */}
-        <PhotoGallery photos={photos} lead={!!cover} />
+        <PhotoGallery photos={photos} lead={!!cover} viewer={viewer} />
 
-        <div className="mx-auto max-w-3xl px-4 sm:px-6">
-          {post.content && (
-            <div
-              className="prose prose-slate prose-lg mt-12
-                         prose-headings:font-display
-                         prose-headings:font-semibold
-                         prose-a:text-teal-700 prose-img:rounded-2xl"
-              dangerouslySetInnerHTML={{ __html: post.content }}
-            />
-          )}
+        {viewer.index !== null && photos[viewer.index] && (
+          <Lightbox
+            photos={photos}
+            index={viewer.index}
+            onClose={viewer.close}
+            onNavigate={viewer.navigate}
+            previewSrc={viewer.previewSrc}
+          />
+        )}
 
-          <div className="mt-12 flex flex-wrap items-center justify-between
-                          gap-4 border-t border-slate-200 pt-6">
-            {post.tags?.length > 0
-              ? <TagChips tags={post.tags} />
-              : <span />}
-            {post.viewCount > 0 && (
-              <span className="text-xs text-slate-400">
-                {post.viewCount} views
-              </span>
+        {post && (
+          <div className="mx-auto max-w-3xl px-4 sm:px-6">
+            {post.content && (
+              <div
+                className="reveal prose prose-slate prose-lg mt-12
+                           prose-headings:font-display
+                           prose-headings:font-semibold
+                           prose-a:text-teal-700 prose-img:rounded-2xl"
+                dangerouslySetInnerHTML={{ __html: post.content }}
+              />
             )}
+
+            <div className="mt-12 flex flex-wrap items-center justify-between
+                            gap-4 border-t border-slate-200 pt-6">
+              {post.tags?.length > 0
+                ? <TagChips tags={post.tags} />
+                : <span />}
+              {post.viewCount > 0 && (
+                <span className="text-xs text-slate-400">
+                  {post.viewCount} views
+                </span>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </article>
 
-      <div className="mx-auto max-w-3xl px-4 pb-8 sm:px-6">
-        <VideoGallery videos={videos} />
+      {post && (
+        <div className="mx-auto max-w-3xl px-4 pb-8 sm:px-6">
+          <VideoGallery videos={videos} />
 
-        <LocationCard post={post} />
+          <LocationCard post={post} />
 
-        <div className="mt-10 flex items-center justify-center gap-3">
-          <span className="text-xs font-semibold uppercase tracking-widest
-                           text-slate-400">
-            Share
-          </span>
-          <a
-            href={`https://facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
-            target="_blank" rel="noopener noreferrer"
-            className="rounded-full bg-slate-900 px-5 py-2 text-xs
-                       font-semibold text-white transition-opacity
-                       hover:opacity-85"
-          >
-            Facebook
-          </a>
-          <a
-            href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(post.title)}`}
-            target="_blank" rel="noopener noreferrer"
-            className="rounded-full border border-slate-200 px-5 py-2 text-xs
-                       font-semibold text-slate-700 transition-colors
-                       hover:border-teal-600 hover:text-teal-700"
-          >
-            X / Twitter
-          </a>
+          <div className="mt-10 flex items-center justify-center gap-3">
+            <span className="text-xs font-semibold uppercase tracking-widest
+                             text-slate-400">
+              Share
+            </span>
+            <a
+              href={`https://facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
+              target="_blank" rel="noopener noreferrer"
+              className="rounded-full bg-slate-900 px-5 py-2 text-xs
+                         font-semibold text-white transition-opacity
+                         hover:opacity-85"
+            >
+              Facebook
+            </a>
+            <a
+              href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(post.title)}`}
+              target="_blank" rel="noopener noreferrer"
+              className="rounded-full border border-slate-200 px-5 py-2 text-xs
+                         font-semibold text-slate-700 transition-colors
+                         hover:border-teal-600 hover:text-teal-700"
+            >
+              X / Twitter
+            </a>
+          </div>
+
+          <Comments postId={id} />
         </div>
-
-        <Comments postId={id} />
-      </div>
+      )}
     </div>
   )
 }

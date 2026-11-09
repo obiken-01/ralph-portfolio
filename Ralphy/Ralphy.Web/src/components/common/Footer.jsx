@@ -138,7 +138,7 @@ export default function Footer() {
             <ul className="space-y-2">
               {footerLinks.map((link) => (
                 <li key={link.to}>
-                  <Link
+                  <Link viewTransition
                     to={link.to}
                     className="text-sm text-slate-400 hover:text-teal-400
                                transition-colors duration-200"

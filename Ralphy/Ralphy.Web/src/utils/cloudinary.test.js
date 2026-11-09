@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { cldImage, cldVideoPoster, cldVideo } from './cloudinary'
+import { cldImage, cldVideoPoster, cldVideo, cldPlaceholder } from './cloudinary'
 
 const UPLOADED = 'https://res.cloudinary.com/demo/image/upload/v1/ralphy/photos/falls.jpg'
 
@@ -45,5 +45,17 @@ describe('cldVideo', () => {
   it('adds auto quality', () => {
     const video = 'https://res.cloudinary.com/demo/video/upload/v1/clip.mp4'
     expect(cldVideo(video)).toContain('/upload/q_auto/')
+  })
+})
+
+describe('cldPlaceholder', () => {
+  it('asks for a tiny, blurred, low-quality variant', () => {
+    expect(cldPlaceholder(UPLOADED)).toBe(
+      'https://res.cloudinary.com/demo/image/upload/f_auto,q_auto:low,w_40,e_blur:400,c_limit/v1/ralphy/photos/falls.jpg'
+    )
+  })
+
+  it('returns null for a non-Cloudinary url', () => {
+    expect(cldPlaceholder('https://example.com/photo.jpg')).toBeNull()
   })
 })

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../../api/axios'
+import { fetchCached, peekCache } from '../../api/cache'
 import Seo, { SITE_URL, AUTHOR_LD } from '../../components/common/Seo'
 import PostCard from '../../components/public/PostCard'
 import JustifiedGrid from '../../components/public/JustifiedGrid'
@@ -24,7 +25,7 @@ function Hero({ featured }) {
 
         <div className="mt-4 flex items-center gap-2 sm:mt-6
                         sm:gap-2.5">
-          <Link
+          <Link viewTransition
             to="/posts"
             className="rounded-full bg-white px-4 py-2.5 text-center sm:px-5 sm:py-3 text-[13px]
                        font-semibold text-slate-900 shadow-lg
@@ -36,7 +37,7 @@ function Hero({ featured }) {
           >
             Browse the photos
           </Link>
-          <Link
+          <Link viewTransition
             to="/map"
             className="rounded-full border border-white/30 px-4 py-2.5 sm:px-5 sm:py-3
                        text-center text-[13px] font-semibold text-white/90 backdrop-blur-sm
@@ -55,7 +56,7 @@ function Hero({ featured }) {
 // ── Section header ──────────────────────────────────────────────
 function SectionHeader({ eyebrow, title, to, linkLabel }) {
   return (
-    <div className="mb-6 flex items-end sm:mb-10 justify-between gap-4">
+    <div className="reveal mb-6 flex items-end sm:mb-10 justify-between gap-4">
       <div>
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em]
                       text-teal-700">
@@ -67,7 +68,7 @@ function SectionHeader({ eyebrow, title, to, linkLabel }) {
         </h2>
       </div>
       {to && (
-        <Link
+        <Link viewTransition
           to={to}
           className="hidden shrink-0 text-sm font-semibold text-teal-700
                      hover:text-teal-600 sm:block"
@@ -121,6 +122,7 @@ function LatestPhotos({ posts, tags, loading }) {
             items={posts.slice(0, 9)}
             aspectOf={postAspect}
             renderItem={renderItem}
+            widthKey="home"
           />
         )}
       </div>
@@ -132,9 +134,9 @@ function LatestPhotos({ posts, tags, loading }) {
 function MapBanner() {
   return (
     <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-      <Link
+      <Link viewTransition
         to="/map"
-        className="group relative block overflow-hidden rounded-3xl
+        className="reveal group relative block overflow-hidden rounded-3xl
                    bg-slate-950 px-5 py-10 text-center sm:px-8 sm:py-16"
       >
         {/* Dotted "map" texture */}
@@ -176,7 +178,7 @@ function MapBanner() {
 function FollowCta() {
   return (
     <section className="border-t border-slate-900/5 bg-white py-16">
-      <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
+      <div className="reveal mx-auto max-w-3xl px-4 text-center sm:px-6">
         <p className="font-display text-2xl font-semibold text-slate-900
                       sm:text-3xl">
           Follow the journey
@@ -214,32 +216,39 @@ function FollowCta() {
 
 // ── Main Page ───────────────────────────────────────────────────
 export default function HomePage() {
-  const [posts, setPosts] = useState([])
-  const [tags, setTags] = useState([])
-  const [featured, setFeatured] = useState([])
-  const [loading, setLoading] = useState(true)
+  // On a return visit the page renders from the cache straight away (and keeps
+  // the same slideshow photos), then refreshes the posts in the background.
+  const cached = peekCache('home')
+  const [data, setData] = useState(cached ?? { posts: [], tags: [], featured: [] })
+  const [loading, setLoading] = useState(!cached)
+  const { posts, tags, featured } = data
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [postsRes, tagsRes, featuredRes] = await Promise.all([
-          api.get('/posts'),
-          api.get('/tags'),
-          // Any published photo will do — the slideshow is about the
-          // photographs, not about which post they belong to.
-          api.get('/photos/random', { params: { count: 10 } }),
-        ])
-        setPosts(postsRes.data.data ?? [])
-        setTags(tagsRes.data.data ?? [])
-        setFeatured(featuredRes.data.data ?? [])
-      } catch (err) {
-        console.error('Failed to fetch home data:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
+    let cancelled = false
 
-    fetchData()
+    fetchCached('home', async () => {
+      const previous = peekCache('home')
+      const [postsRes, tagsRes, featuredRes] = await Promise.all([
+        api.get('/posts'),
+        api.get('/tags'),
+        // Any published photo will do — the slideshow is about the
+        // photographs, not about which post they belong to. Drawn once per
+        // visit: swapping them under someone mid-slideshow would be jarring.
+        previous?.featured.length
+          ? null
+          : api.get('/photos/random', { params: { count: 10 } }),
+      ])
+      return {
+        posts: postsRes.data.data ?? [],
+        tags: tagsRes.data.data ?? [],
+        featured: featuredRes?.data.data ?? previous?.featured ?? [],
+      }
+    })
+      .then((next) => { if (!cancelled) setData(next) })
+      .catch((err) => console.error('Failed to fetch home data:', err))
+      .finally(() => { if (!cancelled) setLoading(false) })
+
+    return () => { cancelled = true }
   }, [])
 
   return (
