@@ -2,10 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { cldImage } from '../../utils/cloudinary'
 
-const ADVANCE_MS = 2000
+// Long enough to actually look at a landscape before it moves on.
+const ADVANCE_MS = 5500
 
-// Short enough that a 2s slide is mostly settled rather than mostly fading.
-const FADE_MS = 600
+// A slow dissolve; each photo also drifts in slightly (the `kenburns` class)
+// for the whole time it's on screen, fade-out included.
+const FADE_MS = 1200
 
 /**
  * Rotating full-bleed photographs behind the home page masthead.
@@ -18,7 +20,14 @@ const FADE_MS = 600
  * outgoing photo stays put while the next one fades in over it.
  */
 export default function HeroSlideshow({ photos = [], children, footer }) {
-  const [index, setIndex] = useState(0)
+  // `previous` is the slide currently fading out.
+  const [{ index, previous }, setSlide] = useState({ index: 0, previous: null })
+  const setIndex = useCallback((update) => {
+    setSlide((slide) => {
+      const next = typeof update === 'function' ? update(slide.index) : update
+      return next === slide.index ? slide : { index: next, previous: slide.index }
+    })
+  }, [])
   const [paused, setPaused] = useState(false)
   const reduceMotion = useRef(false)
 
@@ -36,12 +45,12 @@ export default function HeroSlideshow({ photos = [], children, footer }) {
       photos.length === 0
         ? current
         : ((current + delta) % photos.length + photos.length) % photos.length)
-  }, [photos.length])
+  }, [photos.length, setIndex])
 
   const goTo = useCallback((target) => {
     if (photos.length === 0) return
     setIndex(((target % photos.length) + photos.length) % photos.length)
-  }, [photos.length])
+  }, [photos.length, setIndex])
 
   // setTimeout keyed on `index`, not setInterval. An interval keeps its own
   // cadence, so pressing next could be followed 100ms later by an automatic
@@ -90,22 +99,31 @@ export default function HeroSlideshow({ photos = [], children, footer }) {
       aria-roledescription="carousel"
       aria-label="Recent photographs"
     >
-      {photos.map((photo, i) => (
-        <img
-          key={photo.id}
-          src={cldImage(photo.url, 1800)}
-          alt=""
-          aria-hidden="true"
-          fetchPriority={i === 0 ? 'high' : 'auto'}
-          decoding="async"
-          style={{ transitionDuration: `${FADE_MS}ms` }}
-          className={`absolute inset-0 h-full w-full object-cover
-                      transition-opacity ease-in-out
-                      motion-reduce:transition-none ${
-            i === index ? 'opacity-100' : 'opacity-0'
-          }`}
-        />
-      ))}
+      {/* `drift`: the photos scroll a little slower than the page. */}
+      <div className="drift absolute inset-0" aria-hidden="true">
+        {photos.map((photo, i) => (
+          <img
+            key={photo.id}
+            src={cldImage(photo.url, 1800)}
+            alt=""
+            fetchPriority={i === 0 ? 'high' : 'auto'}
+            decoding="async"
+            style={{
+              transitionDuration: `${FADE_MS}ms`,
+              '--kenburns-ms': `${ADVANCE_MS + FADE_MS * 2}ms`,
+            }}
+            className={`absolute inset-0 h-full w-full object-cover
+                        transition-opacity ease-in-out
+                        motion-reduce:transition-none ${
+              i === index ? 'opacity-100' : 'opacity-0'
+            } ${
+              // The outgoing photo keeps its zoom running while it fades,
+              // rather than snapping back to scale(1) mid-dissolve.
+              (i === index || i === previous) && photos.length > 1 ? 'kenburns' : ''
+            }`}
+          />
+        ))}
+      </div>
 
       {photos.length === 0 && (
         <img
@@ -168,7 +186,7 @@ export default function HeroSlideshow({ photos = [], children, footer }) {
       {current && (
         <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-wrap
                         items-center justify-between gap-3 px-4 pb-4 sm:px-6">
-          <Link
+          <Link viewTransition
             to={`/posts/${current.postId}`}
             className="group max-w-full truncate rounded-full bg-white/10 px-4
                        py-2 text-xs text-white/80 backdrop-blur-sm

@@ -24,8 +24,10 @@ export default function JustifiedGrid({
   mobileHeightRatio = 0.7,
   mobileBreakpoint = 640,
   className = '',
+  // Grids that share a key share a remembered width; see useElementWidth.
+  widthKey,
 }) {
-  const [ref, width] = useElementWidth()
+  const [ref, width] = useElementWidth(widthKey)
 
   const rows = useMemo(() => {
     const height = width > 0 && width < mobileBreakpoint
@@ -49,7 +51,8 @@ export default function JustifiedGrid({
 
       <div className="flex flex-col" style={{ gap }}>
         {rows.map((row, rowIndex) => (
-          <div key={rowIndex} className="flex" style={{ gap }}>
+          // `reveal`: each row fades up as it scrolls into view (CSS only).
+          <div key={rowIndex} className="reveal flex" style={{ gap }}>
             {row.items.map(({ index, width: w, height: h }) => (
               <div key={keyOf(items[index], index)} style={{ width: w, height: h }}>
                 {renderItem(items[index], { width: w, height: h })}

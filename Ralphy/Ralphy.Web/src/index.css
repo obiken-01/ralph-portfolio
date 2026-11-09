@@ -7,13 +7,142 @@
   --font-display: "Fraunces", Georgia, "Times New Roman", serif;
 }
 
-html {
-  scroll-behavior: smooth;
-}
+/* No global `scroll-behavior: smooth`: route changes scroll to the top (or
+   back to a remembered position) with window.scrollTo, and smooth scrolling
+   would animate that jump — mid page transition, at that. In-page links that
+   want smooth scrolling ask for it themselves. */
 
 body {
   @apply antialiased text-slate-800 bg-stone-50;
 }
+
+/* ── Page transitions (View Transitions API) ─────────────────── */
+/* React Router wraps each navigation in document.startViewTransition. The
+   page crossfades, the sticky header holds still, and a grid photo morphs into
+   the post's hero (PostCard ↔ PostDetailPage). Browsers without the API just
+   change pages instantly. */
+
+.vt-header { view-transition-name: site-header; }
+.vt-post-photo { view-transition-name: post-photo; }
+
+/* While the photo viewer opens or closes, the header and the hero must not
+   take part: their snapshots would be drawn above the viewer's backdrop. */
+html[data-vt="lightbox"] .vt-header,
+html[data-vt="lightbox"] .vt-post-photo { view-transition-name: none; }
+
+::view-transition-old(root) {
+  animation: 220ms ease-in both vt-fade-out;
+}
+::view-transition-new(root) {
+  animation: 380ms cubic-bezier(.2, .8, .2, 1) 60ms both vt-fade-in;
+}
+
+::view-transition-group(post-photo),
+::view-transition-group(lightbox-photo) {
+  animation-duration: 480ms;
+  animation-timing-function: cubic-bezier(.2, .8, .2, 1);
+}
+/* The tile and the hero (or the page and the viewer) crop the same photo to
+   different shapes. Cover-fit both snapshots so the morph never squashes it. */
+::view-transition-old(post-photo),
+::view-transition-new(post-photo),
+::view-transition-old(lightbox-photo),
+::view-transition-new(lightbox-photo) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation-duration: 480ms;
+}
+
+/* The viewer's own backdrop crossfades with the page, a touch quicker. */
+html[data-vt="lightbox"]::view-transition-old(root),
+html[data-vt="lightbox"]::view-transition-new(root) {
+  animation-duration: 320ms;
+  animation-delay: 0ms;
+}
+
+@keyframes vt-fade-out { to { opacity: 0; } }
+@keyframes vt-fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) { animation: none !important; }
+}
+
+/* ── Navigation progress bar (Layout) ─────────────────────────── */
+.nav-progress {
+  opacity: 0;
+  animation: nav-progress-show 0s linear 150ms forwards;
+}
+.nav-progress > div {
+  transform-origin: left;
+  animation: nav-progress-grow 8s cubic-bezier(.1, .7, .2, 1) 150ms both;
+}
+@keyframes nav-progress-show { to { opacity: 1; } }
+@keyframes nav-progress-grow { from { transform: scaleX(0); } to { transform: scaleX(.9); } }
+
+/* ── Scroll animations (scroll-driven, CSS only) ─────────────── */
+/* Tied to scroll position rather than fired once by script, so whatever is on
+   screen is always in its finished state — including right after the Back
+   button restores a scroll position. Browsers without scroll-driven
+   animations show everything as normal. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Fade up while the element's first 160px scroll into view. */
+    .reveal {
+      animation: reveal-up linear both;
+      animation-timeline: view();
+      animation-range: cover 0px cover 160px;
+    }
+
+    /* Header photos move at ~80% of the page's speed as it scrolls away. */
+    .drift {
+      animation: drift linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 100vh;
+    }
+  }
+}
+
+@keyframes reveal-up {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes drift {
+  from { transform: translateY(0); }
+  to   { transform: translateY(20vh); }
+}
+
+/* ── Home slideshow: slow zoom on the photo being shown ───────── */
+.kenburns {
+  animation: kenburns var(--kenburns-ms, 8s) ease-out both;
+}
+@keyframes kenburns {
+  from { transform: scale(1); }
+  to   { transform: scale(1.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kenburns { animation: none; }
+}
+
+/* ── Photo viewer ─────────────────────────────────────────────── */
+.lightbox-backdrop { animation: lightbox-fade 250ms ease-out both; }
+.lightbox-enter-next { animation: lightbox-in-next 320ms cubic-bezier(.2, .8, .2, 1) both; }
+.lightbox-enter-prev { animation: lightbox-in-prev 320ms cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes lightbox-fade { from { opacity: 0; } }
+@keyframes lightbox-in-next { from { opacity: 0; transform: translateX(6%); } }
+@keyframes lightbox-in-prev { from { opacity: 0; transform: translateX(-6%); } }
+@media (prefers-reduced-motion: reduce) {
+  .lightbox-backdrop,
+  .lightbox-enter-next,
+  .lightbox-enter-prev { animation: none; }
+}
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
 
 /* ── TipTap editor styles (admin) ───────────────────────────── */
 .tiptap p.is-editor-empty:first-child::before {

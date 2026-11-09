@@ -11,7 +11,7 @@ export default function TagChips({ tags = [], className = '' }) {
     <ul className={`flex flex-wrap gap-2 ${className}`}>
       {tags.map((tag) => (
         <li key={tag}>
-          <Link
+          <Link viewTransition
             to={`/tags/${encodeURIComponent(tag)}`}
             className="inline-block rounded-full bg-teal-50 px-3 py-1 text-xs
                        font-medium text-teal-700 ring-1 ring-teal-100
@@ -55,10 +55,10 @@ export function TagFilterBar({
     <div className={`${bleed} flex gap-2 overflow-x-auto pb-1
                     [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
                     sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0`}>
-      <Link to="/posts" className={pill(!active)}>All</Link>
+      <Link viewTransition to="/posts" className={pill(!active)}>All</Link>
 
       {usable.map((tag) => (
-        <Link
+        <Link viewTransition
           key={tag.id ?? tag.name}
           to={`/tags/${encodeURIComponent(tag.name)}`}
           className={pill(active === tag.name)}
